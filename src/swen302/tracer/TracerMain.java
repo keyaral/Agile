@@ -57,18 +57,6 @@ public class TracerMain {
 		for(ThreadReference thread : vm.allThreads())
 			thread.resume();
 
-		// Find the main thread.
-		// TODO: instead of finding the thread called "main", find the one that calls the main method
-		ThreadReference mainThread = null;
-		for(ThreadReference thread : vm.allThreads()) {
-			if(thread.name().equals("main")) {
-				mainThread = thread;
-				break;
-			}
-		}
-		if(mainThread == null)
-			throw new Exception("didn't find main thread");
-
 		// When a method is entered, send an event to this tracer and suspend the thread that entered it
 		MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
 		entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
