@@ -12,7 +12,7 @@ import java.util.Map;
 public class Node {
 	private Map<Node,Transition> connections = new HashMap<Node,Transition>();
 	private String label;
-
+	private String state = "";
 
 
 	/**
@@ -43,11 +43,19 @@ public class Node {
 	}
 
 
+	public void setState(String state) {
+		this.state = state;
+	}
+
 	/**
 	 * Returns the name of the node.
 	 * @return
 	 */
 	public String getLabel(){
+		return (label + (state.equals("")?"":": "+ state));
+	}
+
+	public String getID(){
 		return label;
 	}
 }

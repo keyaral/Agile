@@ -30,10 +30,10 @@ public class Graph {
 
 			print.println("digraph g{");
 			for(Node n : nodes){
-				print.println(n.getLabel()+";");
+				print.println(n.getID()+"[label=\""+n.getLabel()+"\"]"+";");
 				Map<Node,Transition> connections = n.getConnections();
 				for(Node n2 : connections.keySet()){
-					print.println(n.getLabel()+"->"+n2.getLabel()+" [label=\""+connections.get(n2).shortname+"\"];");
+					print.println(n.getID()+"->"+n2.getID()+" [label=\""+connections.get(n2).shortname+"\"];");
 				}
 			}
 

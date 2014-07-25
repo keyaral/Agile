@@ -41,10 +41,23 @@ public class Main {
 			Stack<Node> stack = new Stack<Node>();
 			int nodeCount = 0;
 			Node currentNode = new Node(String.format("%d", nodeCount++));
+
+
 			allNodes.add(currentNode);
 			while(in.hasNextLine()){
 				String line = in.nextLine();
-				if(isMethod(line)){  // Reads an instance of a method call
+
+				if (isStateCall(line) ) {
+					if (line.startsWith("staticContext")) {
+
+					}else{
+						currentNode.setState(line.substring(12) );
+					}
+
+
+				}
+				else if(isMethod(line)){  // Reads an instance of a method call
+
 					Method m = new Method(getLongMethodName(line), getShortMethodName(line));
 					stack.push(currentNode);
 					currentNode = new Node(String.format("%d", nodeCount++));
@@ -58,6 +71,7 @@ public class Main {
 					temp.addNode(r, currentNode);
 
 				}
+
 			}
 
 
@@ -65,6 +79,11 @@ public class Main {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	private boolean isStateCall(String line) {
+		return line.startsWith("staticContext") || line.startsWith("objectState");
 	}
 
 
@@ -84,13 +103,7 @@ public class Main {
 	 * @return
 	 */
 	private String getLongReturnName(String line) {
-		line = line.substring(8);
-		String[] lineArray = line.split(" ");
-		String toReturn = "";
-		for(int i=0; i<lineArray.length-1; i++){
-			toReturn += lineArray[i];
-		}
-		return toReturn;
+		return line.substring(7);
 	}
 
 
@@ -103,19 +116,15 @@ public class Main {
 	 */
 	private String getShortMethodName(String line) {
 		line = getLongMethodName(line);
-		String[] lineArray = line.split("\\.");
 
-		String toReturn = "";
+		String[] lineArrayS = line.split(" ");
 
-		for (int i=0; i< lineArray.length; i++ ){
-			if(lineArray[i].contains("(")){
+		String met = lineArrayS[1];
 
-			}
+		String[] lineArray = lineArrayS[0].split("\\.");
 
 
-		}
-
-		return toReturn;
+		return lineArray[lineArray.length-1] + " " + met;
 	}
 	/**
 	 * Returns the long name for a method call
@@ -123,13 +132,7 @@ public class Main {
 	 * @return
 	 */
 	private String getLongMethodName(String line) {
-		line = line.substring(20);
-		String[] lineArray = line.split(" ");
-		String toReturn = "";
-		for(int i=0; i<lineArray.length-2; i++){
-			toReturn += lineArray[i];
-		}
-		return toReturn;
+		return line.substring(11);
 	}
 
 
@@ -139,7 +142,7 @@ public class Main {
 	 * @return
 	 */
 	private boolean isReturn(String line) {
-		return line.startsWith("Call to ");
+		return line.startsWith("return");
 	}
 
 	/***
@@ -148,7 +151,7 @@ public class Main {
 	 * @return
 	 */
 	private boolean isMethod(String line) {
-		return line.startsWith("Intercepted call to ");
+		return line.startsWith("methodCall");
 	}
 
 	/**
