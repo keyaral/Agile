@@ -1,11 +1,13 @@
 package swen302.tracer;
 
+import java.util.List;
 import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.InternalException;
+import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
@@ -66,7 +68,8 @@ public class TracerMain {
 						StackFrame frame = event2.thread().frame(0);
 						ObjectReference _this = frame.thisObject();
 
-						System.out.println("Intercepted call to "+event2.method()+" on "+(_this == null ? "null" : _this.type().name()));
+						System.out.println("methodCall "+getMethodNameInTraceFormat(event2.method()));
+						//System.out.println("Intercepted call to "+event2.method());//+" on "+(_this == null ? "null" : _this.type().name()));
 
 						try {
 							for(Value v : frame.getArgumentValues()) {
@@ -74,7 +77,7 @@ public class TracerMain {
 							}
 							if(_this != null && _this.type() instanceof ClassType) {
 								for(Field f : ((ClassType)_this.type()).allFields()) {
-									//System.out.println("field "+f.name()+": "+_this.getValue(f));
+									//System.out.println("   field "+f.name()+": "+_this.getValue(f));
 								}
 							}
 						} catch(InternalException e) {
@@ -92,12 +95,29 @@ public class TracerMain {
 					MethodExitEvent event2 = (MethodExitEvent)event;
 
 					if(methodFilter.isMethodTraced(event2.method())) {
-						System.out.println("Call to "+event2.method()+" returned");
+						System.out.println("return "+getMethodNameInTraceFormat(event2.method()));
 					}
 
 				}
 			}
 		}
+	}
+
+	private static String getMethodNameInTraceFormat(Method m) {
+		StringBuilder result = new StringBuilder();
+		result.append(m.declaringType().name());
+		result.append(' ');
+		result.append(m.name());
+		result.append('(');
+
+		List<String> argTypeNames = m.argumentTypeNames();
+		for(int k = 0; k < argTypeNames.size(); k++) {
+			if(k > 0) result.append(',');
+			result.append(argTypeNames.get(k));
+		}
+
+		result.append(')');
+		return result.toString();
 	}
 
 	private static VirtualMachine launchTracee(String mainClass, String jvmOptions) throws Exception {
