@@ -25,6 +25,8 @@ public class TracerMain {
 
 	public static void main(String[] commandLineArgs) throws Exception {
 
+		
+		
 		if(commandLineArgs.length != 3) {
 			System.err.println("Requires 2 arguments:");
 			System.err.println(" 1. VM options (remember to quote the entire string)");
