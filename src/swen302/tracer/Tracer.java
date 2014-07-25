@@ -20,16 +20,14 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.MethodEntryEvent;
 import com.sun.jdi.event.MethodExitEvent;
+import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
+import com.sun.jdi.request.VMDeathRequest;
 
-public class TracerMain {
-
+class TracerMain {
 	public static void main(String[] commandLineArgs) throws Exception {
-
-
-
 		if(commandLineArgs.length != 3) {
 			System.err.println("Requires 2 arguments:");
 			System.err.println(" 1. VM options (remember to quote the entire string)");
@@ -37,10 +35,21 @@ public class TracerMain {
 			System.err.println(" 3. Filter regex");
 			System.exit(1);
 		}
+		
+		System.out.println("Trace: ");
+		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], commandLineArgs[2]));
+	}
+}
+	
+public class Tracer {
+	public static String Trace(String vmOptions, String mainClass, String filterRegex) throws Exception
+	{
+		
+		StringBuilder sb = new StringBuilder();
+		
+		TraceMethodFilter methodFilter = new RegexTraceMethodFilter(filterRegex);
 
-		TraceMethodFilter methodFilter = new RegexTraceMethodFilter(commandLineArgs[2]);
-
-		VirtualMachine vm = launchTracee(commandLineArgs[1], commandLineArgs[0]);
+		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
 
 		// When a method is entered, send an event to this tracer and suspend the thread that entered it
@@ -52,11 +61,14 @@ public class TracerMain {
 		MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
 		exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		exitRequest.enable();
+		
+		VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
+		
+		deathRequest.enable();
 
 
 		// Resume the program (AFTER setting up event requests)
-		for(ThreadReference thread : vm.allThreads())
-			thread.resume();
+		vm.resume();
 
 
 		while(true) {
@@ -72,11 +84,19 @@ public class TracerMain {
 						ObjectReference _this = frame.thisObject();
 
 						if(_this == null)
-							System.out.println("staticContext");
+						{
+							sb.append("staticContext");
+							sb.append('\n');
+						}
 						else
-							System.out.println("objectState "+valueToStateString(_this));
-						System.out.println("methodCall "+getMethodNameInTraceFormat(event2.method()));
-
+						{
+							sb.append("objectState "+valueToStateString(_this));
+							sb.append('\n');
+						}
+						
+						sb.append("methodCall "+getMethodNameInTraceFormat(event2.method()));
+						sb.append('\n');
+						
 						try {
 							for(Value v : frame.getArgumentValues()) {
 								//System.out.println("   argument: "+v);
@@ -105,14 +125,26 @@ public class TracerMain {
 						ObjectReference _this = frame.thisObject();
 
 						if(_this == null)
-							System.out.println("staticContext");
+						{
+							sb.append("staticContext");
+							sb.append('\n');
+						}
 						else
-							System.out.println("objectState "+valueToStateString(_this));
-						System.out.println("return "+getMethodNameInTraceFormat(event2.method()));
+						{
+							sb.append("objectState "+valueToStateString(_this));
+							sb.append('\n');
+						}
+						
+						sb.append("return "+getMethodNameInTraceFormat(event2.method()));
+						sb.append('\n');
 					}
 
 					event2.thread().resume();
 
+				}
+				else if(event instanceof VMDeathEvent)
+				{
+					return sb.toString();
 				}
 			}
 		}
