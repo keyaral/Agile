@@ -43,6 +43,16 @@ class TracerMain {
 }
 	
 public class Tracer {
+	
+	/**
+	 * Generates a Trace of a given application.
+	 * 
+	 * @param vmOptions The arguments passed into the Virtual Machine
+	 * @param mainClass The Main class of the given application
+	 * @param filterRegex A regex to filter the results by
+	 * @return A string representation of the program trace
+	 * @throws Exception This becomes your problem if thrown
+	 */
 	public static String Trace(String vmOptions, String mainClass, String filterRegex) throws Exception
 	{
 		
