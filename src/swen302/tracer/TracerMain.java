@@ -26,6 +26,13 @@ public class TracerMain {
 
 	public static void main(String[] commandLineArgs) throws Exception {
 
+		if(commandLineArgs.length != 2) {
+			System.err.println("Requires 2 arguments:");
+			System.err.println(" 1. VM options (remember to quote the entire string)");
+			System.err.println(" 2. Main class name");
+			System.exit(1);
+		}
+
 		// Find the command-line LaunchingConnector
 		LaunchingConnector processConnector = null;
 		for(LaunchingConnector ac : Bootstrap.virtualMachineManager().launchingConnectors()) {
