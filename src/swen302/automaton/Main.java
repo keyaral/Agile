@@ -31,7 +31,7 @@ public class Main {
 
 
 	/**
-	 * Build Graph reads a trace file to construct the graph of Nodes *
+	 * Build Graph reads a trace file to construct the graph of Nodes
 	 *
 	 * @param filename
 	 */
@@ -47,7 +47,7 @@ public class Main {
 			while(in.hasNextLine()){
 				String line = in.nextLine();
 
-				if (isStateCall(line) ) {
+				if (isStateCall(line) ) { //Updates state of next node
 					if (line.startsWith("staticContext")) {
 
 					}else{
@@ -82,6 +82,11 @@ public class Main {
 	}
 
 
+	/**
+	 * Returns whether the line is a state call
+	 * @param line
+	 * @return
+	 */
 	private boolean isStateCall(String line) {
 		return line.startsWith("staticContext") || line.startsWith("objectState");
 	}

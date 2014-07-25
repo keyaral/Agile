@@ -24,7 +24,7 @@ import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
 
-public class TracerMain {
+public class Tracer {
 
 	public static void main(String[] commandLineArgs) throws Exception {
 

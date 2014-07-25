@@ -5,23 +5,23 @@ import java.util.Map;
 /**
  * Node class holds the transitions calls between states.
  *
- * Nodes are numbered sequentially
+ * Nodes are numbered sequentially with the state appended
  * * @author Oliver Greenaway, Marian Clements
  *
  */
 public class Node {
 	private Map<Node,Transition> connections = new HashMap<Node,Transition>();
-	private String label;
+	private String id;
 	private String state = "";
 
 
 	/**
 	 * Constructs a node with given label.
 	 *
-	 * @param label
+	 * @param id
 	 */
-	public Node(String label){
-		this.label = label;
+	public Node(String id){
+		this.id = id;
 	}
 
 	/**
@@ -42,20 +42,27 @@ public class Node {
 		return connections;
 	}
 
-
+	/**
+	 * Sets the state of the node
+	 * @param state
+	 */
 	public void setState(String state) {
 		this.state = state;
 	}
 
 	/**
-	 * Returns the name of the node.
+	 * Returns the ID of the node with the state appended if one exists.
 	 * @return
 	 */
 	public String getLabel(){
-		return (label + (state.equals("")?"":": "+ state));
+		return (id + (state.equals("")?"":": "+ state));
 	}
 
+	/**
+	 * Returns the ID of the node.
+	 * @return
+	 */
 	public String getID(){
-		return label;
+		return id;
 	}
 }
