@@ -6,7 +6,6 @@ import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.InternalException;
-import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
@@ -26,36 +25,18 @@ public class TracerMain {
 
 	public static void main(String[] commandLineArgs) throws Exception {
 
-		if(commandLineArgs.length != 2) {
+		if(commandLineArgs.length != 3) {
 			System.err.println("Requires 2 arguments:");
 			System.err.println(" 1. VM options (remember to quote the entire string)");
 			System.err.println(" 2. Main class name");
+			System.err.println(" 3. Filter regex");
 			System.exit(1);
 		}
 
-		// Find the command-line LaunchingConnector
-		LaunchingConnector processConnector = null;
-		for(LaunchingConnector ac : Bootstrap.virtualMachineManager().launchingConnectors()) {
-			if(ac.name().equals("com.sun.jdi.CommandLineLaunch")) {
-				processConnector = ac;
-				break;
-			}
-		}
-		if(processConnector == null)
-			throw new Exception("didn't find CommandLineLaunch connector");
+		TraceMethodFilter methodFilter = new RegexTraceMethodFilter(commandLineArgs[2]);
 
+		VirtualMachine vm = launchTracee(commandLineArgs[1], commandLineArgs[0]);
 
-		// Launch the program, initially suspended
-		// Possible Java bug: with suspend=true, processConnector.launch throws an exception
-		Map<String, Connector.Argument> args = processConnector.defaultArguments();
-		args.get("main").setValue(commandLineArgs[1]);
-		args.get("options").setValue(commandLineArgs[0]);
-		args.get("suspend").setValue("true");
-		VirtualMachine vm = processConnector.launch(args);
-
-		// Resume the program
-		for(ThreadReference thread : vm.allThreads())
-			thread.resume();
 
 		// When a method is entered, send an event to this tracer and suspend the thread that entered it
 		MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
@@ -67,13 +48,19 @@ public class TracerMain {
 		exitRequest.setSuspendPolicy(EventRequest.SUSPEND_NONE);
 		exitRequest.enable();
 
+
+		// Resume the program (AFTER setting up event requests)
+		for(ThreadReference thread : vm.allThreads())
+			thread.resume();
+
+
 		while(true) {
 			EventSet events = vm.eventQueue().remove();
 			for(Event event : events) {
 				if(event instanceof MethodEntryEvent) {
 					MethodEntryEvent event2 = (MethodEntryEvent)event;
 
-					if(isMethodIncluded(event2.method())) {
+					if(methodFilter.isMethodTraced(event2.method())) {
 
 						// Handle a method entry
 						StackFrame frame = event2.thread().frame(0);
@@ -104,7 +91,7 @@ public class TracerMain {
 					// Handle a method return
 					MethodExitEvent event2 = (MethodExitEvent)event;
 
-					if(isMethodIncluded(event2.method())) {
+					if(methodFilter.isMethodTraced(event2.method())) {
 						System.out.println("Call to "+event2.method()+" returned");
 					}
 
@@ -113,7 +100,26 @@ public class TracerMain {
 		}
 	}
 
-	private static boolean isMethodIncluded(Method m) {
-		return m.declaringType().name().startsWith("swen302.testprograms");
+	private static VirtualMachine launchTracee(String mainClass, String jvmOptions) throws Exception {
+
+		// Find the command-line LaunchingConnector
+		LaunchingConnector processConnector = null;
+		for(LaunchingConnector ac : Bootstrap.virtualMachineManager().launchingConnectors()) {
+			if(ac.name().equals("com.sun.jdi.CommandLineLaunch")) {
+				processConnector = ac;
+				break;
+			}
+		}
+		if(processConnector == null)
+			throw new Exception("didn't find CommandLineLaunch connector");
+
+
+		// Launch the program, initially suspended
+		// Possible Java bug: with suspend=true, processConnector.launch throws an exception
+		Map<String, Connector.Argument> args = processConnector.defaultArguments();
+		args.get("main").setValue(mainClass);
+		args.get("options").setValue(jvmOptions);
+		args.get("suspend").setValue("true");
+		return processConnector.launch(args);
 	}
 }
