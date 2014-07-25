@@ -30,24 +30,24 @@ import com.sun.jdi.request.VMDeathRequest;
 class TracerMain {
 	public static void main(String[] commandLineArgs) throws Exception {
 		if(commandLineArgs.length != 3) {
-			System.err.println("Requires 2 arguments:");
+			System.err.println("Requires 3 arguments:");
 			System.err.println(" 1. VM options (remember to quote the entire string)");
 			System.err.println(" 2. Main class name");
 			System.err.println(" 3. Filter regex");
 			System.exit(1);
 		}
-		
+
 		System.out.println("Trace: ");
 		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], commandLineArgs[2]));
 	}
 }
-	
+
 public class Tracer {
 	public static String Trace(String vmOptions, String mainClass, String filterRegex) throws Exception
 	{
-		
+
 		StringBuilder sb = new StringBuilder();
-		
+
 		TraceMethodFilter methodFilter = new RegexTraceMethodFilter(filterRegex);
 
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
@@ -62,9 +62,9 @@ public class Tracer {
 		MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
 		exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		exitRequest.enable();
-		
+
 		VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
-		
+
 		deathRequest.enable();
 
 
@@ -94,10 +94,10 @@ public class Tracer {
 							sb.append("objectState "+valueToStateString(_this));
 							sb.append('\n');
 						}
-						
+
 						sb.append("methodCall "+getMethodNameInTraceFormat(event2.method()));
 						sb.append('\n');
-						
+
 						try {
 							for(Value v : frame.getArgumentValues()) {
 								//System.out.println("   argument: "+v);
@@ -135,7 +135,7 @@ public class Tracer {
 							sb.append("objectState "+valueToStateString(_this));
 							sb.append('\n');
 						}
-						
+
 						sb.append("return "+getMethodNameInTraceFormat(event2.method()));
 						sb.append('\n');
 					}
