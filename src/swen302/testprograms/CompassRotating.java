@@ -46,6 +46,7 @@ public class CompassRotating {
 			}
 			
 			
+			
 			return this.point;
 		}
 	}

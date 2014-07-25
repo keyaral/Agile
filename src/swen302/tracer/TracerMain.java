@@ -1,5 +1,6 @@
 package swen302.tracer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +28,8 @@ public class TracerMain {
 
 	public static void main(String[] commandLineArgs) throws Exception {
 
-		
-		
+
+
 		if(commandLineArgs.length != 3) {
 			System.err.println("Requires 2 arguments:");
 			System.err.println(" 1. VM options (remember to quote the entire string)");
@@ -49,7 +50,7 @@ public class TracerMain {
 
 		// When a method is exited, send an event to this tracer
 		MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
-		exitRequest.setSuspendPolicy(EventRequest.SUSPEND_NONE);
+		exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		exitRequest.enable();
 
 
@@ -70,8 +71,11 @@ public class TracerMain {
 						StackFrame frame = event2.thread().frame(0);
 						ObjectReference _this = frame.thisObject();
 
+						if(_this == null)
+							System.out.println("staticContext");
+						else
+							System.out.println("objectState "+valueToStateString(_this));
 						System.out.println("methodCall "+getMethodNameInTraceFormat(event2.method()));
-						//System.out.println("Intercepted call to "+event2.method());//+" on "+(_this == null ? "null" : _this.type().name()));
 
 						try {
 							for(Value v : frame.getArgumentValues()) {
@@ -97,12 +101,81 @@ public class TracerMain {
 					MethodExitEvent event2 = (MethodExitEvent)event;
 
 					if(methodFilter.isMethodTraced(event2.method())) {
+						StackFrame frame = event2.thread().frame(0);
+						ObjectReference _this = frame.thisObject();
+
+						if(_this == null)
+							System.out.println("staticContext");
+						else
+							System.out.println("objectState "+valueToStateString(_this));
 						System.out.println("return "+getMethodNameInTraceFormat(event2.method()));
 					}
+
+					event2.thread().resume();
 
 				}
 			}
 		}
+	}
+
+	/**
+	 * Returns a string containing the relevant state of an object, in some human-readable format.
+	 */
+	private static String objectToStateString(ObjectReference object) throws Exception {
+		if(object.type() instanceof ClassType) {
+
+			if(((ClassType)object.type()).isEnum()) {
+				boolean fullyInitialized = true;
+				for(Field f : ((ClassType)object.type()).allFields()) {
+					if(f.isEnumConstant()) {
+						Value value = object.getValue(f);
+						if(value != null && object.getValue(f).equals(object))
+							return f.name();
+						if(value == null)
+							fullyInitialized = false;
+					}
+				}
+				if(!fullyInitialized)
+					return "<uninitialized-enum>";
+				throw new AssertionError("failed to find enum constant name");
+			}
+
+			if(((ClassType)object.type()).name().equals("java.lang.String")) {
+				return "<string>";
+			}
+
+			List<Field> fields = ((ClassType)object.type()).allFields();
+
+			StringBuilder result = new StringBuilder();
+			//result.append(object.type().name());
+			result.append('{');
+
+			for(int k = 0; k < fields.size(); k++) {
+				if(k > 0) result.append(",");
+
+				Field f = fields.get(k);
+				result.append(f.name());
+				result.append('=');
+				result.append(valueToStateString( object.getValue(f)));
+			}
+
+			result.append('}');
+
+			return result.toString();
+
+		} else
+			return object.type().name();
+	}
+
+	/**
+	 * Returns a string containing the relevant state of any value, in some human-readable format.
+	 */
+	private static String valueToStateString(Value value) throws Exception {
+		if(value == null)
+			return "null";
+		if(value instanceof ObjectReference)
+			return objectToStateString((ObjectReference)value);
+		return value.toString();
 	}
 
 	private static String getMethodNameInTraceFormat(Method m) {
