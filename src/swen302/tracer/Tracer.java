@@ -26,6 +26,7 @@ import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
 import com.sun.jdi.request.VMDeathRequest;
 
+
 class TracerMain {
 	public static void main(String[] commandLineArgs) throws Exception {
 		if(commandLineArgs.length != 3) {
