@@ -17,3 +17,5 @@ bin
 .metadata
 .settings/*
 
+test.txt
+test.png
