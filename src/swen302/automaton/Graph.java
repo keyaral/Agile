@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +24,7 @@ public class Graph {
 	 * Runs the save process with final output of a png file displaying the graph
 	 * @param nodes Nodes making up the graph.
 	 */
-	public void save(List<Node> nodes){
+	public void save(Collection<Node> nodes){
 
 		try {
 			PrintStream print = new PrintStream(new File("test.txt"));   //converting Nodes into dot language txt file
