@@ -1,17 +1,14 @@
 package swen302.tracer;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
-import com.sun.jdi.InternalException;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.StackFrame;
-import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
@@ -53,10 +50,9 @@ public class Tracer {
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static String Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter) throws Exception
+	public static Trace Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter) throws Exception
 	{
-
-		StringBuilder sb = new StringBuilder();
+		Trace t = new Trace();
 
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
@@ -93,33 +89,26 @@ public class Tracer {
 						ObjectReference _this = frame.thisObject();
 
 						if(_this == null)
-						{
-							sb.append("staticContext");
-							sb.append('\n');
-						}
+							t.lines.add("staticContext");
 						else
-						{
-							sb.append("objectState "+valueToStateString(_this));
-							sb.append('\n');
-						}
+							t.lines.add("objectState "+valueToStateString(_this));
 
-						sb.append("methodCall "+getMethodNameInTraceFormat(event2.method()));
-						sb.append('\n');
+						t.lines.add("methodCall "+getMethodNameInTraceFormat(event2.method()));
 
-						try {
+						/*try {
 							for(Value v : frame.getArgumentValues()) {
-								//System.out.println("   argument: "+v);
+								System.out.println("   argument: "+v);
 							}
 							if(_this != null && _this.type() instanceof ClassType) {
 								for(Field f : ((ClassType)_this.type()).allFields()) {
-									//System.out.println("   field "+f.name()+": "+_this.getValue(f));
+									System.out.println("   field "+f.name()+": "+_this.getValue(f));
 								}
 							}
 						} catch(InternalException e) {
 							// Java bug; InternalException is thrown if getting arguments from a native method
 							// see http://bugs.java.com/view_bug.do?bug_id=6810565
 							//System.out.println("   (unable to get arguments)");
-						}
+						}*/
 					}
 
 					event2.thread().resume();
@@ -134,18 +123,11 @@ public class Tracer {
 						ObjectReference _this = frame.thisObject();
 
 						if(_this == null)
-						{
-							sb.append("staticContext");
-							sb.append('\n');
-						}
+							t.lines.add("staticContext");
 						else
-						{
-							sb.append("objectState "+valueToStateString(_this));
-							sb.append('\n');
-						}
+							t.lines.add("objectState "+valueToStateString(_this));
 
-						sb.append("return "+getMethodNameInTraceFormat(event2.method()));
-						sb.append('\n');
+						t.lines.add("return "+getMethodNameInTraceFormat(event2.method()));
 					}
 
 					event2.thread().resume();
@@ -153,7 +135,7 @@ public class Tracer {
 				}
 				else if(event instanceof VMDeathEvent)
 				{
-					return sb.toString();
+					return t;
 				}
 			}
 		}
