@@ -98,13 +98,18 @@ public class MainWindow {
 						    {
 						    	ClassLoader classLoader = MainWindow.class.getClassLoader();
 								InputStream is = zip.getInputStream(zipEntry);
-								File outputZipFile = new File("output/classes/" + zipEntry);
+								
+								String[] zpName = zipEntry.getName().split("/");
+								
+								String fileShortName = zpName[zpName.length-1];
+								
+								File outputZipFile = new File("output/classes/" + fileShortName);
 								
 								FileOutputStream fos = new FileOutputStream(outputZipFile);
 								
 								try
 								{
-									Class<?> cls = classLoader.loadClass("output/classes/" + zipEntry.getName());
+									Class<?> cls = classLoader.loadClass("output/classes/" + fileShortName);
 									
 									System.out.println(cls.getName());
 								}
