@@ -9,8 +9,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -24,6 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -36,7 +42,7 @@ public class MainWindow {
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
 	private final JFileChooser fc = new JFileChooser();
-	
+
 	public MainWindow() {
 		window = new JFrame("UltimaTracer 9000");
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -64,20 +70,21 @@ public class MainWindow {
 			}
 		});
 
-		
+		fc.setFileFilter(new FileNameExtensionFilter("JAR files", "zip", "jar"));
+
 		fileLoadJAR.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				int returnVal = fc.showOpenDialog(window);
-				
+
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            File file = fc.getSelectedFile();
 		            //This is where a real application would open the file.
-		            
-		            ArrayList<String> classNames = new ArrayList<String>();
-		            
+
+		            ArrayList<TreeNodeData> classData = new ArrayList<TreeNodeData>();
+
 		            ZipFile zip = null;
 					try
 					{
@@ -87,108 +94,128 @@ public class MainWindow {
 					{
 						exception.printStackTrace();
 					}
-					
-		            try
+
+					try
 		            {
-		            	Enumeration<?> enu = zip.entries();
+						URLClassLoader zipClassLoader = new URLClassLoader(new URL[] {file.toURI().toURL()});
+
+			            Enumeration<?> enu = zip.entries();
 		    			while (enu.hasMoreElements()) {
 		    				ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-		    				
+
 						    if(zipEntry.getName().endsWith(".class") && !zipEntry.isDirectory())
 						    {
-						    	ClassLoader classLoader = MainWindow.class.getClassLoader();
-								InputStream is = zip.getInputStream(zipEntry);
-								
-								String[] zpName = zipEntry.getName().split("/");
-								
-								String fileShortName = zpName[zpName.length-1];
-								
-								File outputZipFile = new File("output/classes/" + fileShortName);
-								
-								FileOutputStream fos = new FileOutputStream(outputZipFile);
-								
-								try
-								{
-									Class<?> cls = classLoader.loadClass("output/classes/" + fileShortName);
-									
-									System.out.println(cls.getName());
-								}
-								catch (Exception classLoadException)
-								{
-									
-								}
-						    	
-						    	
-						    	
-						    	
-						        StringBuilder className = new StringBuilder();
-						        for(String part : zipEntry.getName().split("/"))
-						        {
-						            if(className.length() != 0) { className.append("."); }
-						            className.append(part);
-						            if(part.endsWith(".class")) { className.setLength(className.length()-".class".length()); }
-						        }
-						        classNames.add(className.toString());
+						    	String className = zipEntry.getName().replace("/", ".");
+						    	className = className.substring(0, className.length() - 6);
+
+						    	Class<?> cls = zipClassLoader.loadClass(className);
+
+						    	classData.add(new TreeNodeData(cls.getName(), cls.getFields(), cls.getMethods()));
 						    }
 						}
+
+		    			zipClassLoader.close();
 					}
-		            catch (IOException exception)
+		            catch (IOException | ClassNotFoundException exception)
 		            {
 						exception.printStackTrace();
 					}
-		            
+
 		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(file.getName());
-		    	    createNodes(top, classNames);
-		    	        
+		    	    createNodes(top, classData);
+
 		    		tree = new JTree(top);
 		            tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-		            
+
 		            JScrollPane treeView = new JScrollPane(tree);
-		            
+
 		            window.add(treeView, BorderLayout.WEST);
 		        }
 			}
 		});
-		
+
 		menuBar.add(fileMenu);
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
 		window.add(new JButton("Graph"), BorderLayout.CENTER);
 
-		
-		
-		
+
+
+
 		window.pack();
 		window.setLocationRelativeTo(null);
-		
+
 	}
 
 	public void setVisible(boolean visible) {
 		window.setVisible(visible);
 	}
+
+	private class TreeNodeData {
+		
+		private String name;
+		private ArrayList<String> fields;
+		private ArrayList<String> methods;
+		
+		public String getName() { return name; }
+		public void setName(String name) { this.name = name; }
+
+		public ArrayList<String> getFieldNames() { return fields; }
+		public void setFields(ArrayList<String> fields) { this.fields = fields; }
+
+		public ArrayList<String> getMethods() { return methods; }
+		public void setMethods(ArrayList<String> methods) { this.methods = methods; }
+		
+		public TreeNodeData(String name, Field[] fields, Method[] methods){
+			this.name = name;
+			this.fields = new ArrayList<String>();
+			this.methods = new ArrayList<String>();
+			
+			List<Field> listFields = Arrays.asList(fields);
+			List<Method> listMethods = Arrays.asList(methods);
+			
+			for (Field field : listFields)
+			{
+				this.fields.add(field.getName());
+			}
+			
+			for (Method method : listMethods)
+			{
+				this.methods.add(method.getName());
+			}
+		}
+		
+		
+	}
 	
-    private void createNodes(DefaultMutableTreeNode top, ArrayList<String> classNames) {
+    private void createNodes(DefaultMutableTreeNode top, ArrayList<TreeNodeData> classData) {
         DefaultMutableTreeNode category = null;
         DefaultMutableTreeNode book = null;
- 
-        for (String name : classNames)
+
+        for (TreeNodeData data : classData)
         {
-        	category = new DefaultMutableTreeNode(name);
+        	category = new DefaultMutableTreeNode(data.getName());
             top.add(category);
-            category.add(new DefaultMutableTreeNode("FieldName"));
-            category.add(new DefaultMutableTreeNode("MethodName"));
+            
+            for (String field : data.getFieldNames()){
+            	category.add(new DefaultMutableTreeNode(field));
+            }
+            
+            for (String method : data.getMethods()){
+            	category.add(new DefaultMutableTreeNode(method));
+            }
         }
     }
-    
+
     private class BookInfo {
         public String bookName;
         public URL bookURL;
- 
+
         public BookInfo(String book, String filename) {
             bookName = book;
         }
- 
+
         public String toString() {
             return bookName;
         }
