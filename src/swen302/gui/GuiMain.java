@@ -11,6 +11,9 @@ public class GuiMain {
 			@Override
 			public void run() {
 
+				System.setProperty("awt.useSystemAAFontSettings","on");
+				System.setProperty("swing.aatext", "true");
+
 				String systemLAF = UIManager.getSystemLookAndFeelClassName();
 
 				//System.out.println("System look-and-feel class name: "+systemLAF);
