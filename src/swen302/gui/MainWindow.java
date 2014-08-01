@@ -112,7 +112,7 @@ public class MainWindow {
 
 						    	Class<?> cls = zipClassLoader.loadClass(className);
 
-						    	classData.add(new TreeNodeData(cls.getName(), cls.getFields(), cls.getDeclaredMethods()));
+						    	classData.add(new TreeNodeData(cls.getName(), cls.getDeclaredFields(), cls.getDeclaredMethods()));
 						    }
 						}
 
