@@ -54,7 +54,7 @@ public class GraphSaver {
 	}
 
 	public static void save(Graph graph, File pngfile) throws InterruptedException, IOException {
-		save(graph, File.createTempFile("swen302-", ".dot"));
+		save(graph, File.createTempFile("swen302-", ".dot"), pngfile);
 	}
 
 }
