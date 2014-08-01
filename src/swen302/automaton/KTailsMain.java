@@ -1,10 +1,13 @@
 package swen302.automaton;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
 
+import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.graph.Node;
 import swen302.tracer.RegexTraceMethodFilter;
@@ -26,7 +29,13 @@ public class KTailsMain {
 		buildGraph("abcd");
 		System.out.println("Graph Complete");
 
-		GraphSaver.save(allNodes);
+		try {
+			GraphSaver.save(Graph.createFromNodes(allNodes),new File("output.png"));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.out.println("Image Complete");
 
 	}

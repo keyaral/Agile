@@ -1,4 +1,6 @@
 package swen302.automaton;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -6,6 +8,7 @@ import java.util.Map;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
+import swen302.graph.GraphSaver;
 import swen302.graph.Node;
 
 /**
@@ -33,7 +36,13 @@ public class KTails {
 			printNodes(getOrderedArray(n));
 		}
 		createEdgeSets();
-		new Graph().save(finalNodes);
+		try {
+			GraphSaver.save(Graph.createFromNodes(finalNodes),new File("output.png"));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void createEdgeSets(){
