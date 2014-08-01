@@ -24,6 +24,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -36,7 +37,7 @@ public class MainWindow {
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
 	private final JFileChooser fc = new JFileChooser();
-	
+
 	public MainWindow() {
 		window = new JFrame("UltimaTracer 9000");
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -64,20 +65,21 @@ public class MainWindow {
 			}
 		});
 
-		
+		fc.setFileFilter(new FileNameExtensionFilter("JAR files", "zip", "jar"));
+
 		fileLoadJAR.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				int returnVal = fc.showOpenDialog(window);
-				
+
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            File file = fc.getSelectedFile();
 		            //This is where a real application would open the file.
-		            
+
 		            ArrayList<String> classNames = new ArrayList<String>();
-		            
+
 		            ZipFile zip = null;
 					try
 					{
@@ -87,35 +89,35 @@ public class MainWindow {
 					{
 						exception.printStackTrace();
 					}
-					
+
 		            try
 		            {
 		            	Enumeration<?> enu = zip.entries();
 		    			while (enu.hasMoreElements()) {
 		    				ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-		    				
+
 						    if(zipEntry.getName().endsWith(".class") && !zipEntry.isDirectory())
 						    {
 						    	ClassLoader classLoader = MainWindow.class.getClassLoader();
 								InputStream is = zip.getInputStream(zipEntry);
 								File outputZipFile = new File("output/classes/" + zipEntry);
-								
+
 								FileOutputStream fos = new FileOutputStream(outputZipFile);
-								
+
 								try
 								{
 									Class<?> cls = classLoader.loadClass("output/classes/" + zipEntry.getName());
-									
+
 									System.out.println(cls.getName());
 								}
 								catch (Exception classLoadException)
 								{
-									
+
 								}
-						    	
-						    	
-						    	
-						    	
+
+
+
+
 						        StringBuilder className = new StringBuilder();
 						        for(String part : zipEntry.getName().split("/"))
 						        {
@@ -131,42 +133,42 @@ public class MainWindow {
 		            {
 						exception.printStackTrace();
 					}
-		            
+
 		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(file.getName());
 		    	    createNodes(top, classNames);
-		    	        
+
 		    		tree = new JTree(top);
 		            tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-		            
+
 		            JScrollPane treeView = new JScrollPane(tree);
-		            
+
 		            window.add(treeView, BorderLayout.WEST);
 		        }
 			}
 		});
-		
+
 		menuBar.add(fileMenu);
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
 		window.add(new JButton("Graph"), BorderLayout.CENTER);
 
-		
-		
-		
+
+
+
 		window.pack();
 		window.setLocationRelativeTo(null);
-		
+
 	}
 
 	public void setVisible(boolean visible) {
 		window.setVisible(visible);
 	}
-	
+
     private void createNodes(DefaultMutableTreeNode top, ArrayList<String> classNames) {
         DefaultMutableTreeNode category = null;
         DefaultMutableTreeNode book = null;
- 
+
         for (String name : classNames)
         {
         	category = new DefaultMutableTreeNode(name);
@@ -175,15 +177,15 @@ public class MainWindow {
             category.add(new DefaultMutableTreeNode("MethodName"));
         }
     }
-    
+
     private class BookInfo {
         public String bookName;
         public URL bookURL;
- 
+
         public BookInfo(String book, String filename) {
             bookName = book;
         }
- 
+
         public String toString() {
             return bookName;
         }
