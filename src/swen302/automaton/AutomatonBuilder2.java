@@ -1,11 +1,8 @@
 package swen302.automaton;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
@@ -39,9 +36,13 @@ public class AutomatonBuilder2 {
 
 	private int nodeCount = 0;
 	private Node getStateNode(String state) {
-		if(!states.containsKey(state))
-			states.put(state, new Node(String.valueOf(nodeCount++)));
+		if(!states.containsKey(state)){
+			Node n = new Node(String.valueOf(nodeCount++));
+			n.setState(state);
+			states.put(state, n);
+		}
 		return states.get(state);
+
 	}
 
 	/**
@@ -53,6 +54,7 @@ public class AutomatonBuilder2 {
 		try {
 			Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.CompassRotating", "swen302\\.testprograms\\.CompassRotating\\$Compass.*"));
 			Stack<Node> stack = new Stack<Node>();
+			Stack<String> methodStack = new Stack<String>();
 			int nodeCount = 0;
 
 			while(in.hasNextLine()){
@@ -69,13 +71,16 @@ public class AutomatonBuilder2 {
 				}
 				else if(isMethod(line)){  // Reads an instance of a method call
 
+					methodStack.push(getShortMethodName(line));
 
 				}else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
 
 					Node finalState = stack.pop();
 					Node initState = stack.pop();
 
-					initState.addNode(new Transition(String.valueOf(nodeCount++), getLongReturnName(line)), finalState);
+					String trans = methodStack.pop();
+
+					initState.addNode(new Transition(getLongReturnName(line), trans), finalState);
 					allNodes.add(finalState); allNodes.add(initState);
 				}
 

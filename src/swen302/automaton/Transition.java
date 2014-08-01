@@ -6,7 +6,7 @@ package swen302.automaton;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class Transition {
+public class Transition{
 
 	public String longname,shortname;
 

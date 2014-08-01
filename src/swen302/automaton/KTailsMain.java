@@ -12,13 +12,13 @@ import swen302.tracer.Tracer;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class Main {
+public class KTailsMain {
 
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.
 	 * @param filename
 	 */
-	public Main(/*String filename*/){
+	public KTailsMain(/*String filename*/){
 		buildGraph("abcd");
 		System.out.println("Graph Complete");
 
@@ -27,7 +27,7 @@ public class Main {
 
 	}
 
-	public Main(String input){
+	public KTailsMain(String input){
 		System.out.println("Start Main");
 		buildGraph(input);
 		System.out.println("End Main");
@@ -174,7 +174,7 @@ public class Main {
 		//		if(args.length != 1){
 		//			System.out.println("Program requires file name as argument.");
 		//		}else{
-		new Main();//args[0]);
+		new KTailsMain();//args[0]);
 		//}
 	}
 
