@@ -1,4 +1,4 @@
-package swen302.automaton;
+package swen302.graph;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +10,7 @@ import java.util.Map;
  *
  */
 public class Node {
-	private Map<Node,Transition> connections = new HashMap<Node,Transition>();
+	private Map<Node,Edge> connections = new HashMap<Node,Edge>();
 	private String id;
 	private String state = "";
 
@@ -29,7 +29,7 @@ public class Node {
 	 * @param trans
 	 * @param n
 	 */
-	public void addNode(Transition trans, Node n){
+	public void addNode(Edge trans, Node n){
 		connections.put(n, trans);
 	}
 
@@ -38,7 +38,7 @@ public class Node {
 	 * Returns the lists of connection from this node to other nodes
 	 * @return
 	 */
-	public Map<Node,Transition> getConnections(){
+	public Map<Node,Edge> getConnections(){
 		return connections;
 	}
 

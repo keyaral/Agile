@@ -7,34 +7,38 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
 
+import swen302.graph.Edge;
+import swen302.graph.Graph;
+import swen302.graph.GraphSaver;
+import swen302.tracer.Trace;
 import swen302.tracer.Tracer;
+import swen302.graph.Node;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class AutomatonBuilder2 {
+public class AutomatonBuilder2 implements VisualizationAlgorithm {
 
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.
 	 * @param filename
 	 */
-	public AutomatonBuilder2(String filename) throws Exception{
-		buildGraph(filename);
-		System.out.println("Graph Complete");
-
-		new Graph().save(allNodes);
-		System.out.println("Image Complete");
-
-	}
+//	public AutomatonBuilder2(String filename) throws Exception{
+//		buildGraph(filename);
+//		System.out.println("Graph Complete");
+//
+//		new Graph().save(allNodes);
+//		System.out.println("Image Complete");
+//
+//	}
 
 	private Collection<Node> allNodes = new HashSet<Node>(); // Graph of Nodes
-
-
 	private Map<String, Node> states = new HashMap<String, Node>();
 
 	private int nodeCount = 0;
+
 	private Node getStateNode(String state) {
 		if(!states.containsKey(state)){
 			Node n = new Node(String.valueOf(nodeCount++));
@@ -50,46 +54,36 @@ public class AutomatonBuilder2 {
 	 *
 	 * @param filename
 	 */
-	private void buildGraph(String filename) throws Exception {
-		try {
-			Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.CompassRotating", "swen302\\.testprograms\\.CompassRotating\\$Compass.*"));
-			Stack<Node> stack = new Stack<Node>();
-			Stack<String> methodStack = new Stack<String>();
-			int nodeCount = 0;
 
-			while(in.hasNextLine()){
-				String line = in.nextLine();
+	private void buildGraph(Trace trace) {
+		Stack<Node> stack = new Stack<Node>();
+		int nodeCount = 0;
 
-				if (isStateCall(line) ) { //Updates state of next node
-					if (line.startsWith("staticContext")) {
-						stack.push(null);
-					}else{
-						stack.push(getStateNode(line.substring(12)));
-					}
+		for (String line : trace.lines) {
 
-
-				}
-				else if(isMethod(line)){  // Reads an instance of a method call
-
-					methodStack.push(getShortMethodName(line));
-
-				}else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
-
-					Node finalState = stack.pop();
-					Node initState = stack.pop();
-
-					String trans = methodStack.pop();
-
-					initState.addNode(new Transition(getLongReturnName(line), trans), finalState);
-					allNodes.add(finalState); allNodes.add(initState);
+			if (isStateCall(line) ) { //Updates state of next node
+				if (line.startsWith("staticContext")) {
+					stack.push(null);
+				}else{
+					stack.push(getStateNode(line.substring(12)));
 				}
 
 			}
+			else if(isMethod(line)){  // Reads an instance of a method call
 
+			}
+			else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
 
-			in.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+				Node finalState = stack.pop();
+				Node initState = stack.pop();
+
+				if (finalState != null && initState != null) {
+					initState.addNode(new Edge(String.valueOf(nodeCount++), getLongReturnName(line)), finalState);
+
+					allNodes.add(finalState);
+					allNodes.add(initState);
+				}
+			}
 		}
 	}
 
@@ -171,16 +165,19 @@ public class AutomatonBuilder2 {
 		return line.startsWith("methodCall");
 	}
 
-	/**
-	 * Main method
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception{
-		//if(args.length != 1){
-		//	System.out.println("Program requires file name as argument.");
-		//}else{
-			new AutomatonBuilder2(null);
-		//}
+	@Override
+	public Graph generateGraph(Trace trace) {
+
+		buildGraph(trace);
+
+		Graph g = new Graph();
+		g.nodes.addAll(allNodes);
+		for(Node n : allNodes) {
+			g.edges.removeAll(n.getConnections().values());
+			g.edges.addAll(n.getConnections().values());
+		}
+
+		return g;
 	}
 
 }

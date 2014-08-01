@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
 
+import swen302.graph.GraphSaver;
+import swen302.graph.Node;
+import swen302.tracer.RegexTraceMethodFilter;
+import swen302.tracer.Trace;
 import swen302.tracer.Tracer;
 
 /**
@@ -22,7 +26,7 @@ public class KTailsMain {
 		buildGraph("abcd");
 		System.out.println("Graph Complete");
 
-		new Graph().save(allNodes);
+		GraphSaver.save(allNodes);
 		System.out.println("Image Complete");
 
 	}
@@ -49,15 +53,14 @@ public class KTailsMain {
 	private void buildGraph(String input) {
 		try {
 			//Scanner in = new Scanner(new File(filename));
-			Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, "swen302\\.testprograms\\.StringParser.*"));
+			//Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, "swen302\\.testprograms\\.StringParser.*"));
 			Stack<Node> stack = new Stack<Node>();
 			int nodeCount = 0;
 			Node currentNode = new Node(String.format("%d", nodeCount++));
 
 
 			allNodes.add(currentNode);
-			while(in.hasNextLine()){
-				String line = in.nextLine();
+			for(String line : Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.*")).lines){
 
 				if(isMethod(line)){  // Reads an instance of a method call
 
@@ -79,8 +82,6 @@ public class KTailsMain {
 
 			}
 
-
-			in.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (Exception e) {

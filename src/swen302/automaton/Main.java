@@ -1,43 +1,40 @@
 package swen302.automaton;
-import java.io.FileNotFoundException;
+
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Stack;
 
-import swen302.tracer.Tracer;
+
+import swen302.graph.Graph;
+import swen302.graph.GraphSaver;
+import swen302.graph.Node;
+import swen302.tracer.Trace;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class Main {
 
-	/**
-	 * Calls the trace reader method, and then calls the graph drawer.
-	 * @param filename
-	 */
-	public Main(/*String filename*/){
-		buildGraph("abcd");
-		System.out.println("Graph Complete");
-
-		new Graph().save(allNodes);
-		System.out.println("Image Complete");
-
-	}
-
-	public Main(String input){
-		System.out.println("Start Main");
-		buildGraph(input);
-		System.out.println("End Main");
-	}
-
-	public List<Node> getNodes(){
-		return allNodes;
-	}
+public class Main implements VisualizationAlgorithm {
 
 	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
+
+	@Override
+	public Graph generateGraph(Trace trace) {
+		allNodes.clear();
+		buildGraph(trace.lines);
+		Graph graph = new Graph();
+		graph.nodes.addAll(allNodes);
+		for(Node n : allNodes) {
+			graph.edges.removeAll(n.getConnections().values());
+			graph.edges.addAll(n.getConnections().values());
+		}
+		return graph;
+	}
+
 
 
 
@@ -46,45 +43,45 @@ public class Main {
 	 *
 	 * @param filename
 	 */
-	private void buildGraph(String input) {
-		try {
-			//Scanner in = new Scanner(new File(filename));
-			Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, "swen302\\.testprograms\\.StringParser.*"));
-			Stack<Node> stack = new Stack<Node>();
-			int nodeCount = 0;
-			Node currentNode = new Node(String.format("%d", nodeCount++));
+
+	private void buildGraph(List<String> lines) {
+		Stack<Node> stack = new Stack<Node>();
+		int nodeCount = 0;
+		Node currentNode = new Node(String.format("%d", nodeCount++));
 
 
-			allNodes.add(currentNode);
-			while(in.hasNextLine()){
-				String line = in.nextLine();
 
-				if(isMethod(line)){  // Reads an instance of a method call
+		allNodes.add(currentNode);
+		Iterator<String> in = lines.iterator();
+		while(in.hasNext()){
+			String line = in.next();
 
-					Method m = new Method(getLongMethodName(line), getShortMethodName(line));
-					//if(m.shortname.contains("method")){
-						stack.push(currentNode);
-						currentNode = new Node(String.format("%d", nodeCount++));
-						allNodes.add(currentNode);
-						stack.peek().addNode(m,currentNode);
-					//}
+			if (isStateCall(line) ) { //Updates state of next node
+				if (line.startsWith("staticContext")) {
 
-				}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-					Return r = new Return(getLongReturnName(line), getShortReturnName(line));
-					Node temp = currentNode;
-					currentNode = stack.pop();
-					//temp.addNode(r, currentNode);
-
+				}else{
+					currentNode.setState(line.substring(12) );
 				}
+
+
+			}
+			else if(isMethod(line)){  // Reads an instance of a method call
+
+				Method m = new Method(getLongMethodName(line), getShortMethodName(line));
+				stack.push(currentNode);
+				currentNode = new Node(String.format("%d", nodeCount++));
+				allNodes.add(currentNode);
+				stack.peek().addNode(m,currentNode);
+
+			}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
+				Return r = new Return(getLongReturnName(line), getShortReturnName(line));
+				Node temp = currentNode;
+				currentNode = stack.pop();
+				temp.addNode(r, currentNode);
 
 			}
 
 
-			in.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -170,12 +167,16 @@ public class Main {
 	 * Main method
 	 * @param args
 	 */
-	public static void main(String[] args){
-		//		if(args.length != 1){
-		//			System.out.println("Program requires file name as argument.");
-		//		}else{
-		new Main();//args[0]);
-		//}
+	public static void main(String[] args) throws Exception {
+		if(args.length != 1){
+			System.out.println("Program requires file name as argument.");
+		}else{
+			Graph g = new Main().generateGraph(Trace.readFile(args[0]));
+			System.out.println("Graph Complete");
+
+			GraphSaver.save(g, new File("test.txt"), new File("test.png"));
+			System.out.println("Image Complete");
+		}
 	}
 
 }

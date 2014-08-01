@@ -1,9 +1,12 @@
 package swen302.automaton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import swen302.graph.Edge;
+import swen302.graph.Graph;
+import swen302.graph.Node;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -15,7 +18,7 @@ public class KTails {
 	private List<List<Node>> traces = new ArrayList<List<Node>>();
 	private String[] inputs = new String[]{"bcbca","aaabca","aabcbca","aaa"};
 
-	private List<Transition[]> transitions = new ArrayList<Transition[]>();
+	private List<Edge[]> Edges = new ArrayList<Edge[]>();
 
 	private List<Node> finalNodes = new ArrayList<Node>();
 
@@ -23,24 +26,24 @@ public class KTails {
 
 	public KTails(){
 		for(String input: inputs){
-			Main m = new Main(input);
+			KTailsMain m = new KTailsMain(input);
 			traces.add(m.getNodes());
 		}
 		for(List<Node> n : traces){
 			printNodes(getOrderedArray(n));
 		}
-		createTransitionSets();
+		createEdgeSets();
 		new Graph().save(finalNodes);
 	}
 
-	private void createTransitionSets(){
+	private void createEdgeSets(){
 
 
 		for(List<Node> n : traces){
-			Transition[] prev = null;
-			Transition[] t = getOrderedArray(n);
+			Edge[] prev = null;
+			Edge[] t = getOrderedArray(n);
 			for(int i=0; i<t.length-k; i++){
-				Transition[] array = new Transition[k];
+				Edge[] array = new Edge[k];
 				for(int j=0; j<k; j++){
 					array[j] = t[i+j];
 				}
@@ -49,7 +52,7 @@ public class KTails {
 
 
 				boolean contains = false;
-				for(Transition[] trans : transitions ){
+				for(Edge[] trans : Edges ){
 					if(Arrays.equals(trans, array)){
 						contains = true;
 						break;
@@ -59,7 +62,7 @@ public class KTails {
 
 
 				if(!contains){
-					transitions.add(array);
+					Edges.add(array);
 				}
 				connect(prev, array, !contains);
 				prev = array;
@@ -67,11 +70,11 @@ public class KTails {
 		}
 	}
 
-	private void connect(Transition[] prev, Transition[] next, boolean newNode){
+	private void connect(Edge[] prev, Edge[] next, boolean newNode){
 		if(prev == null){ //New trace
-			finalNodes.add(new Node(String.valueOf(transitions.size()-1)));
+			finalNodes.add(new Node(String.valueOf(Edges.size()-1)));
 		}else if(newNode){
-			Node newN = new Node(String.valueOf(transitions.size()-1));
+			Node newN = new Node(String.valueOf(Edges.size()-1));
 			finalNodes.add(newN);
 			Node prevNode = findNode(prev);
 			prevNode.addNode(prev[0], newN);
@@ -83,9 +86,9 @@ public class KTails {
 		}
 	}
 
-	private Node findNode(Transition[] trans){
-		for(int i=0; i<transitions.size(); i++ ){
-			if(Arrays.equals(transitions.get(i), trans)){
+	private Node findNode(Edge[] trans){
+		for(int i=0; i<Edges.size(); i++ ){
+			if(Arrays.equals(Edges.get(i), trans)){
 				for(Node n : finalNodes){
 					if(n.getID().equals(String.valueOf(i))){
 						return n;
@@ -96,18 +99,18 @@ public class KTails {
 		return null;
 	}
 
-	private void printNodes(Transition[] trans){
-		for(Transition t : trans){
+	private void printNodes(Edge[] trans){
+		for(Edge t : trans){
 			if(t != null){
 				System.out.println(t.shortname);
 			}
 		}
 	}
 
-	private Transition[] getOrderedArray(List<Node> nodes){
-		Transition[] toReturn = new Transition[nodes.size()];
+	private Edge[] getOrderedArray(List<Node> nodes){
+		Edge[] toReturn = new Edge[nodes.size()];
 		for(Node n : nodes){
-			Map<Node,Transition> trans = n.getConnections();
+			Map<Node,Edge> trans = n.getConnections();
 			for(Node neigh : trans.keySet()){
 				toReturn[Integer.parseInt(neigh.getID())-1] = trans.get(neigh);
 			}

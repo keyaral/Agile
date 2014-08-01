@@ -4,7 +4,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 
@@ -16,4 +15,9 @@ bin
 .classpath
 .metadata
 .settings/*
+
+test.txt
+test.png
+/*.cfg
+tempAnalysis.png
 
