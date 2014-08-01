@@ -5,11 +5,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
-
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 public class ImagePane extends JPanel {
+	private static final long serialVersionUID = 1L;
+
 	public Image image;
 
 	{

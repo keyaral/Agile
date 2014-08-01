@@ -2,44 +2,29 @@ package swen302.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.EventObject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
-import javax.swing.Box;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -47,27 +32,20 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.event.CellEditorListener;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.RowMapper;
 import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import swen302.automaton.Graph;
 import swen302.automaton.Main;
-import swen302.automaton.Node;
-import swen302.automaton.Trace;
 import swen302.automaton.VisualizationAlgorithm;
+import swen302.graph.Graph;
+import swen302.graph.GraphSaver;
+import swen302.tracer.Trace;
 import swen302.tracer.TraceMethodFilter;
 import swen302.tracer.Tracer;
 
@@ -176,15 +154,14 @@ public class MainWindow {
 		};
 
 		try {
-			Trace trace = new Trace();
-			String data = Tracer.Trace("-cp \""+selectedJarFile.getAbsolutePath()+"\"", selectedJarManifest.getMainAttributes().getValue(Name.MAIN_CLASS), filter);
-			trace.lines = Arrays.asList(data.split("\n"));
+			Trace trace = Tracer.Trace("-cp \""+selectedJarFile.getAbsolutePath()+"\"", selectedJarManifest.getMainAttributes().getValue(Name.MAIN_CLASS), filter);
 
 			VisualizationAlgorithm algo = new Main();
+			Graph graph = algo.generateGraph(trace);
 
-			List<Node> graph = algo.generateGraph(trace);
-			new Graph().save(graph);
-			BufferedImage image = ImageIO.read(new File("test.png"));
+			File pngfile = new File("tempAnalysis.png");
+			GraphSaver.save(graph, pngfile);
+			BufferedImage image = ImageIO.read(pngfile);
 
 			graphPane.setImage(image);
 
@@ -197,7 +174,6 @@ public class MainWindow {
 
     private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
         DefaultMutableTreeNode category = null;
-        DefaultMutableTreeNode book = null;
 
         allMethodTreeItems.clear();
 
@@ -321,6 +297,7 @@ public class MainWindow {
     }
 
 	private class ClassTreeCellEditor extends AbstractCellEditor implements TreeCellEditor {
+		private static final long serialVersionUID = 1L;
 
 		Object value;
 

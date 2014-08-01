@@ -1,7 +1,8 @@
 package swen302.automaton;
 
-import java.util.List;
+import swen302.graph.Graph;
+import swen302.tracer.Trace;
 
 public interface VisualizationAlgorithm {
-	public List<Node> generateGraph(Trace trace);
+	public Graph generateGraph(Trace trace);
 }

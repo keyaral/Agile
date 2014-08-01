@@ -1,11 +1,14 @@
 package swen302.automaton;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Stack;
+
+import swen302.graph.Graph;
+import swen302.graph.GraphSaver;
+import swen302.graph.Node;
+import swen302.tracer.Trace;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -14,43 +17,19 @@ import java.util.Stack;
  */
 public class Main implements VisualizationAlgorithm {
 
-	public Main() {}
-
-	/**
-	 * Calls the trace reader method, and then calls the graph drawer.
-	 * @param filename
-	 */
-	public Main(String filename){
-		buildGraph(readFile(filename));
-		System.out.println("Graph Complete");
-
-		new Graph().save(allNodes);
-		System.out.println("Image Complete");
-
-	}
-
 	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
 
 	@Override
-	public List<Node> generateGraph(Trace trace) {
+	public Graph generateGraph(Trace trace) {
 		allNodes.clear();
 		buildGraph(trace.lines);
-		return new ArrayList<Node>(allNodes);
-	}
-
-	private List<String> readFile(String filename) {
-		try {
-			Scanner in = new Scanner(new File(filename));
-			List<String> lines = new ArrayList<String>();
-
-			while(in.hasNextLine())
-				lines.add(in.nextLine());
-			in.close();
-
-			return lines;
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
+		Graph graph = new Graph();
+		graph.nodes.addAll(allNodes);
+		for(Node n : allNodes) {
+			graph.edges.removeAll(n.getConnections().values());
+			graph.edges.addAll(n.getConnections().values());
 		}
+		return graph;
 	}
 
 
@@ -181,11 +160,15 @@ public class Main implements VisualizationAlgorithm {
 	 * Main method
 	 * @param args
 	 */
-	public static void main(String[] args){
+	public static void main(String[] args) throws Exception {
 		if(args.length != 1){
 			System.out.println("Program requires file name as argument.");
 		}else{
-			new Main(args[0]);
+			Graph g = new Main().generateGraph(Trace.readFile(args[0]));
+			System.out.println("Graph Complete");
+
+			GraphSaver.save(g, new File("test.txt"), new File("test.png"));
+			System.out.println("Image Complete");
 		}
 	}
 
