@@ -2,6 +2,7 @@ package swen302.automaton;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
@@ -11,14 +12,14 @@ import java.util.Stack;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class Main {
+public class Main implements VisualizationAlgorithm {
 
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.
 	 * @param filename
 	 */
 	public Main(String filename){
-		buildGraph(filename);
+		buildGraph(readFile(filename));
 		System.out.println("Graph Complete");
 
 		new Graph().save(allNodes);
@@ -28,6 +29,28 @@ public class Main {
 
 	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
 
+	@Override
+	public List<Node> generateGraph(Trace trace) {
+		allNodes.clear();
+		buildGraph(trace.lines);
+		return new ArrayList<Node>(allNodes);
+	}
+
+	private List<String> readFile(String filename) {
+		try {
+			Scanner in = new Scanner(new File(filename));
+			List<String> lines = new ArrayList<String>();
+
+			while(in.hasNextLine())
+				lines.add(in.nextLine());
+			in.close();
+
+			return lines;
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 
 	/**
@@ -35,49 +58,42 @@ public class Main {
 	 *
 	 * @param filename
 	 */
-	private void buildGraph(String filename) {
-		try {
-			Scanner in = new Scanner(new File(filename));
-			Stack<Node> stack = new Stack<Node>();
-			int nodeCount = 0;
-			Node currentNode = new Node(String.format("%d", nodeCount++));
+	private void buildGraph(List<String> lines) {
+		Stack<Node> stack = new Stack<Node>();
+		int nodeCount = 0;
+		Node currentNode = new Node(String.format("%d", nodeCount++));
 
 
-			allNodes.add(currentNode);
-			while(in.hasNextLine()){
-				String line = in.nextLine();
+		allNodes.add(currentNode);
+		Iterator<String> in = lines.iterator();
+		while(in.hasNext()){
+			String line = in.next();
 
-				if (isStateCall(line) ) { //Updates state of next node
-					if (line.startsWith("staticContext")) {
+			if (isStateCall(line) ) { //Updates state of next node
+				if (line.startsWith("staticContext")) {
 
-					}else{
-						currentNode.setState(line.substring(12) );
-					}
-
-
+				}else{
+					currentNode.setState(line.substring(12) );
 				}
-				else if(isMethod(line)){  // Reads an instance of a method call
 
-					Method m = new Method(getLongMethodName(line), getShortMethodName(line));
-					stack.push(currentNode);
-					currentNode = new Node(String.format("%d", nodeCount++));
-					allNodes.add(currentNode);
-					stack.peek().addNode(m,currentNode);
 
-				}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-					Return r = new Return(getLongReturnName(line), getShortReturnName(line));
-					Node temp = currentNode;
-					currentNode = stack.pop();
-					temp.addNode(r, currentNode);
+			}
+			else if(isMethod(line)){  // Reads an instance of a method call
 
-				}
+				Method m = new Method(getLongMethodName(line), getShortMethodName(line));
+				stack.push(currentNode);
+				currentNode = new Node(String.format("%d", nodeCount++));
+				allNodes.add(currentNode);
+				stack.peek().addNode(m,currentNode);
+
+			}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
+				Return r = new Return(getLongReturnName(line), getShortReturnName(line));
+				Node temp = currentNode;
+				currentNode = stack.pop();
+				temp.addNode(r, currentNode);
 
 			}
 
-
-			in.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		}
 	}
 
