@@ -40,9 +40,11 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
+
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
 import swen302.graph.Graph;
+import swen302.automaton.AutomatonBuilder2;
 import swen302.automaton.Main;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.graph.GraphSaver;
@@ -173,7 +175,7 @@ public class MainWindow {
 			
 			Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 			
-			VisualizationAlgorithm algo = new Main();
+			VisualizationAlgorithm algo = new AutomatonBuilder2();
 			Graph graph = algo.generateGraph(trace);
 
 			File pngfile = new File("tempAnalysis.png");
