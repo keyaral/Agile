@@ -35,8 +35,11 @@ public class ImagePane extends JPanel {
 
 		if(iw < cw) {
 			dx1 = (cw - iw) / 2;
-			dy1 = (ch - ih) / 2;
 			dx2 = dx1 + iw;
+		}
+
+		if(ih < ch) {
+			dy1 = (ch - ih) / 2;
 			dy2 = dy1 + ih;
 		}
 
