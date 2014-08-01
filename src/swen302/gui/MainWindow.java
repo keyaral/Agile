@@ -104,6 +104,9 @@ public class MainWindow {
 		            
 		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(fc.getSelectedFile().getName());
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
+					
+					createNodes(top, jarData.data);
+					doTraceAndAnalysis();
 		        }
 			}
 		});
@@ -135,6 +138,9 @@ public class MainWindow {
 			
 			DefaultMutableTreeNode top = new DefaultMutableTreeNode(testfile.getName());
 			((DefaultTreeModel)tree.getModel()).setRoot(top);
+			
+			createNodes(top, jarData.data);
+			doTraceAndAnalysis();
 		}
 	}
 
