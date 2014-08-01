@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -90,46 +91,28 @@ public class MainWindow {
 						exception.printStackTrace();
 					}
 
-		            try
+					try
 		            {
-		            	Enumeration<?> enu = zip.entries();
+						URLClassLoader zipClassLoader = new URLClassLoader(new URL[] {file.toURI().toURL()});
+
+			            Enumeration<?> enu = zip.entries();
 		    			while (enu.hasMoreElements()) {
 		    				ZipEntry zipEntry = (ZipEntry) enu.nextElement();
 
 						    if(zipEntry.getName().endsWith(".class") && !zipEntry.isDirectory())
 						    {
-						    	ClassLoader classLoader = MainWindow.class.getClassLoader();
-								InputStream is = zip.getInputStream(zipEntry);
-								File outputZipFile = new File("output/classes/" + zipEntry);
+						    	String className = zipEntry.getName().replace("/", ".");
+						    	className = className.substring(0, className.length() - 6);
 
-								FileOutputStream fos = new FileOutputStream(outputZipFile);
+						    	Class<?> cls = zipClassLoader.loadClass(className);
 
-								try
-								{
-									Class<?> cls = classLoader.loadClass("output/classes/" + zipEntry.getName());
-
-									System.out.println(cls.getName());
-								}
-								catch (Exception classLoadException)
-								{
-
-								}
-
-
-
-
-						        StringBuilder className = new StringBuilder();
-						        for(String part : zipEntry.getName().split("/"))
-						        {
-						            if(className.length() != 0) { className.append("."); }
-						            className.append(part);
-						            if(part.endsWith(".class")) { className.setLength(className.length()-".class".length()); }
-						        }
-						        classNames.add(className.toString());
+						    	System.out.println(cls.getName());
 						    }
 						}
+
+		    			zipClassLoader.close();
 					}
-		            catch (IOException exception)
+		            catch (IOException | ClassNotFoundException exception)
 		            {
 						exception.printStackTrace();
 					}
