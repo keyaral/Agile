@@ -2,13 +2,21 @@ package swen302.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -39,7 +47,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
 import swen302.graph.Graph;
@@ -52,6 +62,9 @@ import swen302.tracer.Tracer;
 
 public class MainWindow {
 
+	/** Whether methods are selected by default */
+	private static final boolean DEFAULT_METHOD_SELECTED = true;
+
 	private JFrame window;
 
 	private JMenuBar menuBar;
@@ -59,9 +72,11 @@ public class MainWindow {
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
 	private ImagePane graphPane;
-	private final JFileChooser fc = new JFileChooser();
 
 	private JarData jarData;
+
+	private File lastJarDirectory = new File(".");
+	private File lastConfigDirectory = new File(".");
 
 	public MainWindow() {
 		window = new JFrame("UltimaTracer 9000");
@@ -78,10 +93,7 @@ public class MainWindow {
 		fileMenu.addSeparator();
 		fileExit = fileMenu.add("Exit");
 
-		fileLoadJAR.setEnabled(true);
-		fileLoadAdvanced.setEnabled(true);
-		fileLoadConfig.setEnabled(false);
-		fileSaveConfig.setEnabled(false);
+		fileLoadAdvanced.setEnabled(false); // not implemented
 
 		fileExit.addActionListener(new ActionListener() {
 			@Override
@@ -90,23 +102,71 @@ public class MainWindow {
 			}
 		});
 
-		fc.setFileFilter(new FileNameExtensionFilter("JAR files", "zip", "jar"));
-
-		fileLoadJAR.addActionListener(new ActionListener()
-		{
+		fileLoadJAR.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e)
-			{
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser(lastJarDirectory);
+				fc.setFileFilter(new FileNameExtensionFilter("JAR files", "zip", "jar"));
 				int returnVal = fc.showOpenDialog(window);
+
+				lastJarDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            jarData = JarLoader.loadJarFile(fc.getSelectedFile());
-		            
+
 		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(fc.getSelectedFile().getName());
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
-					
+
 					createNodes(top, jarData.data);
 					doTraceAndAnalysis();
+		        }
+			}
+		});
+
+		fileSaveConfig.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser(lastConfigDirectory);
+				fc.setFileFilter(new FileNameExtensionFilter("Configuration files", "cfg"));
+				int returnVal = fc.showSaveDialog(window);
+
+				File file = fc.getSelectedFile();
+				if(!fc.getFileFilter().accept(file))
+					file = new File(file.toString()+".cfg");
+
+				lastConfigDirectory = fc.getCurrentDirectory();
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+		            TracerConfiguration conf = new TracerConfiguration();
+		            saveToConfiguration(conf);
+		            try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+		            	out.writeObject(conf);
+		            } catch(IOException ex) {
+		            	ex.printStackTrace();
+		            }
+		        }
+			}
+		});
+
+		fileLoadConfig.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser(lastConfigDirectory);
+				fc.setFileFilter(new FileNameExtensionFilter("Configuration files", "cfg"));
+				int returnVal = fc.showOpenDialog(window);
+
+				File file = fc.getSelectedFile();
+
+				lastConfigDirectory = fc.getCurrentDirectory();
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+		            try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+		            	TracerConfiguration conf = (TracerConfiguration)in.readObject();
+		            	loadFromConfiguration(conf);
+
+		            } catch(IOException | ClassNotFoundException ex) {
+		            	ex.printStackTrace();
+		            }
 		        }
 			}
 		});
@@ -134,14 +194,24 @@ public class MainWindow {
 		File testfile = new File("testprogs/CompassRotating.jar");
 		if(testfile.exists())
 		{
-			jarData = JarLoader.loadJarFile(testfile);
-			
-			DefaultMutableTreeNode top = new DefaultMutableTreeNode(testfile.getName());
-			((DefaultTreeModel)tree.getModel()).setRoot(top);
-			
-			createNodes(top, jarData.data);
+			loadJarFile(testfile);
+
 			doTraceAndAnalysis();
 		}
+	}
+
+	private void loadJarFile(File testfile) {
+		jarData = JarLoader.loadJarFile(testfile);
+
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode(testfile.getName());
+		((DefaultTreeModel)tree.getModel()).setRoot(top);
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				tree.expandPath(new TreePath(new Object[] {tree.getModel().getRoot()}));
+			}
+		});
+
+		createNodes(top, jarData.data);
 	}
 
 	public void setVisible(boolean visible) {
@@ -155,14 +225,12 @@ public class MainWindow {
 			{
 				for(MethodTreeItem i : allMethodTreeItems)
 					if(i.checked)
-						selectedMethods.add(i.className+"."+i.name);
+						selectedMethods.add(i.method.className+"."+i.method.name);
 			}
 
 			@Override
 			public boolean isMethodTraced(com.sun.jdi.Method m) {
-				boolean result = selectedMethods.contains(m.declaringType().name()+"."+m.name());
-				if(result) System.out.println(m);
-				return result;
+				return selectedMethods.contains(m.declaringType().name()+"."+m.name());
 			}
 
 		};
@@ -170,9 +238,9 @@ public class MainWindow {
 		try {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
-			
+
 			Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
-			
+
 			VisualizationAlgorithm algo = new Main();
 			Graph graph = algo.generateGraph(trace);
 
@@ -186,6 +254,25 @@ public class MainWindow {
 			e.printStackTrace();
 		}
 	}
+
+
+	public void saveToConfiguration(TracerConfiguration conf) {
+		conf.jarFile = jarData.file;
+		for(MethodTreeItem mti : allMethodTreeItems)
+			conf.selectedMethods.put(mti.method, mti.checked);
+	}
+
+	public void loadFromConfiguration(TracerConfiguration conf) {
+		loadJarFile(conf.jarFile);
+
+		for(MethodTreeItem mti : allMethodTreeItems) {
+			Boolean saved = conf.selectedMethods.get(mti.method);
+			mti.checked = (saved != null ? saved : DEFAULT_METHOD_SELECTED);
+		}
+
+		doTraceAndAnalysis();
+	}
+
 
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 
@@ -203,21 +290,8 @@ public class MainWindow {
             	category.add(new DefaultMutableTreeNode(field.getName()));
             }
 
-            for (Method method : data.getDeclaredMethods()){
-
-            	StringBuilder argsString = new StringBuilder();
-				argsString.append('(');
-				Class<?>[] argTypes = method.getParameterTypes();
-				for(Class<?> argType : argTypes) {
-					argsString.append(argType.getSimpleName());
-					argsString.append(", ");
-				}
-				if(argTypes.length != 0)
-					argsString.setLength(argsString.length() - 2);
-				argsString.append(')');
-
-
-            	MethodTreeItem treeItem = new MethodTreeItem(data.getName(), method.getName(), argsString.toString());
+            for (Method method : data.getDeclaredMethods()) {
+            	MethodTreeItem treeItem = new MethodTreeItem(new MethodKey(method));
             	allMethodTreeItems.add(treeItem);
             	category.add(new DefaultMutableTreeNode(treeItem));
             }
@@ -226,27 +300,19 @@ public class MainWindow {
 
 
 
+	private class MethodTreeItem {
+		MethodKey method;
+		boolean checked = DEFAULT_METHOD_SELECTED;
+		public MethodTreeItem(MethodKey method) {
+			this.method = method;
+		}
+		@Override
+		public String toString() {
+			return method.name + "(" + method.getReadableArgs() + ")";
+		}
+	}
 
-
-    private class MethodTreeItem {
-    	String name;
-    	String className;
-    	String args;
-    	boolean checked = true;
-    	public MethodTreeItem(String className, String name, String argsString) {
-    		this.className = className;
-    		this.name = name;
-    		this.args = argsString;
-    	}
-    	@Override
-    	public String toString() {
-    		return name+args;
-    	}
-    }
-
-
-
-	private class ClassTreeCellRenderer implements TreeCellRenderer {
+    private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
 		private JCheckBox checkBox = new JCheckBox();
