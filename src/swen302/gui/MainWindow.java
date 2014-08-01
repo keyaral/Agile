@@ -1,6 +1,7 @@
 package swen302.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -27,6 +28,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 
 public class MainWindow {
@@ -120,28 +122,26 @@ public class MainWindow {
 		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(file.getName());
 		    	    createNodes(top, classNames);
 
-		    		tree = new JTree(top);
-		            tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-
-		            JScrollPane treeView = new JScrollPane(tree);
-
-		            window.add(treeView, BorderLayout.WEST);
+		    	    ((DefaultTreeModel)tree.getModel()).setRoot(top);
 		        }
 			}
 		});
 
 		menuBar.add(fileMenu);
 
+		tree = new JTree(new DefaultMutableTreeNode("No file loaded"));
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
-		window.add(new JButton("Graph"), BorderLayout.CENTER);
+		window.add(new JButton("Graph placeholder"), BorderLayout.CENTER);
+		window.add(new JScrollPane(tree), BorderLayout.WEST);
 
-
-
+		tree.setPreferredSize(new Dimension(300, 0));
 
 		window.pack();
 		window.setLocationRelativeTo(null);
-
+		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 	}
 
 	public void setVisible(boolean visible) {

@@ -22,7 +22,7 @@ public class GuiMain {
 				//System.out.println("System look-and-feel class name: "+systemLAF);
 
 				for(LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-					if(info.getName().equals("GTK+"))
+					if(info.getName().equals("Nimbus"))
 						systemLAF = info.getClassName();
 					//System.out.println(info.getName()+": "+info.getClassName());
 				}
