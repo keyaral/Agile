@@ -63,6 +63,8 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import swen302.analysis.JarLoader;
+import swen302.analysis.JarLoader.JarData;
 import swen302.automaton.Graph;
 import swen302.automaton.Main;
 import swen302.automaton.Node;
@@ -82,8 +84,7 @@ public class MainWindow {
 	private ImagePane graphPane;
 	private final JFileChooser fc = new JFileChooser();
 
-	private File selectedJarFile;
-	private Manifest selectedJarManifest;
+	private JarData jarData;
 
 	public MainWindow() {
 		window = new JFrame("UltimaTracer 9000");
@@ -122,7 +123,10 @@ public class MainWindow {
 				int returnVal = fc.showOpenDialog(window);
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            loadJarFile(fc.getSelectedFile());
+		            jarData = JarLoader.loadJarFile(fc.getSelectedFile());
+		            
+		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(fc.getSelectedFile().getName());
+					((DefaultTreeModel)tree.getModel()).setRoot(top);
 		        }
 			}
 		});
@@ -149,7 +153,12 @@ public class MainWindow {
 		// for testing
 		File testfile = new File("testprogs/CompassRotating.jar");
 		if(testfile.exists())
-			loadJarFile(testfile);
+		{
+			jarData = JarLoader.loadJarFile(testfile);
+			
+			DefaultMutableTreeNode top = new DefaultMutableTreeNode(testfile.getName());
+			((DefaultTreeModel)tree.getModel()).setRoot(top);
+		}
 	}
 
 	public void setVisible(boolean visible) {
@@ -176,8 +185,11 @@ public class MainWindow {
 		};
 
 		try {
+			String path = jarData.file.getAbsolutePath();
+			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
+			
 			Trace trace = new Trace();
-			String data = Tracer.Trace("-cp \""+selectedJarFile.getAbsolutePath()+"\"", selectedJarManifest.getMainAttributes().getValue(Name.MAIN_CLASS), filter);
+			String data = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 			trace.lines = Arrays.asList(data.split("\n"));
 
 			VisualizationAlgorithm algo = new Main();
@@ -197,7 +209,6 @@ public class MainWindow {
 
     private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
         DefaultMutableTreeNode category = null;
-        DefaultMutableTreeNode book = null;
 
         allMethodTreeItems.clear();
 
@@ -231,50 +242,7 @@ public class MainWindow {
         }
     }
 
-    private void loadJarFile(File file) {
-		ArrayList<Class<?>> classData = new ArrayList<Class<?>>();
 
-		JarFile zip = null;
-		try
-		{
-			zip = new JarFile(file.getAbsoluteFile());
-
-			URLClassLoader zipClassLoader = new URLClassLoader(new URL[] {file.toURI().toURL()});
-
-		    Enumeration<?> enu = zip.entries();
-			while (enu.hasMoreElements()) {
-				ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-
-			    if(zipEntry.getName().endsWith(".class") && !zipEntry.isDirectory())
-			    {
-			    	String className = zipEntry.getName().replace("/", ".");
-			    	className = className.substring(0, className.length() - 6);
-
-			    	Class<?> cls = zipClassLoader.loadClass(className);
-
-			    	classData.add(cls);
-			    }
-			}
-
-			selectedJarFile = file;
-			selectedJarManifest = zip.getManifest();
-
-			zipClassLoader.close();
-			zip.close();
-
-			DefaultMutableTreeNode top = new DefaultMutableTreeNode(file.getName());
-			createNodes(top, classData);
-
-			((DefaultTreeModel)tree.getModel()).setRoot(top);
-		}
-		catch (IOException | ClassNotFoundException exception)
-		{
-			exception.printStackTrace();
-			return;
-		}
-
-		doTraceAndAnalysis();
-	}
 
 
 
