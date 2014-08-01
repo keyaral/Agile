@@ -182,7 +182,7 @@ public class MainWindow {
 			
 			for (Method method : listMethods)
 			{
-				this.methods.add(method.getName());
+				this.methods.add(method.getName() + "()");
 			}
 		}
 		
