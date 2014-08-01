@@ -10,6 +10,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,15 +23,22 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.EventObject;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.jar.Attributes.Name;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -55,6 +63,14 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import swen302.automaton.Graph;
+import swen302.automaton.Main;
+import swen302.automaton.Node;
+import swen302.automaton.Trace;
+import swen302.automaton.VisualizationAlgorithm;
+import swen302.tracer.TraceMethodFilter;
+import swen302.tracer.Tracer;
+
 public class MainWindow {
 
 	private JFrame window;
@@ -63,7 +79,11 @@ public class MainWindow {
 	private JMenu fileMenu;
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
+	private ImagePane graphPane;
 	private final JFileChooser fc = new JFileChooser();
+
+	private File selectedJarFile;
+	private Manifest selectedJarManifest;
 
 	public MainWindow() {
 		window = new JFrame("UltimaTracer 9000");
@@ -115,9 +135,11 @@ public class MainWindow {
 		tree.setEditable(true);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
+        graphPane = new ImagePane();
+
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
-		window.add(new JButton("Graph placeholder"), BorderLayout.CENTER);
+		window.add(graphPane, BorderLayout.CENTER);
 		window.add(new JScrollPane(tree), BorderLayout.WEST);
 
 		window.pack();
@@ -134,88 +156,89 @@ public class MainWindow {
 		window.setVisible(visible);
 	}
 
-	private class TreeNodeData {
+	private void doTraceAndAnalysis() {
+		TraceMethodFilter filter = new TraceMethodFilter() {
+			private Set<String> selectedMethods = new HashSet<String>();
 
-		private String name;
-		private ArrayList<String> fields;
-		private ArrayList<String> methods;
-
-		public String getName() { return name; }
-		public void setName(String name) { this.name = name; }
-
-		public ArrayList<String> getFieldNames() { return fields; }
-		public void setFields(ArrayList<String> fields) { this.fields = fields; }
-
-		public ArrayList<String> getMethods() { return methods; }
-		public void setMethods(ArrayList<String> methods) { this.methods = methods; }
-
-		public TreeNodeData(String name, Field[] fields, Method[] methods){
-			this.name = name;
-			this.fields = new ArrayList<String>();
-			this.methods = new ArrayList<String>();
-
-			List<Field> listFields = Arrays.asList(fields);
-			List<Method> listMethods = Arrays.asList(methods);
-
-			for (Field field : listFields)
 			{
-				this.fields.add(field.getName());
+				for(MethodTreeItem i : allMethodTreeItems)
+					if(i.checked)
+						selectedMethods.add(i.className+"."+i.name);
 			}
 
-			for (Method method : listMethods)
-			{
-				StringBuilder dispString = new StringBuilder();
-				dispString.append(method.getName());
-				dispString.append('(');
-				Class<?>[] argTypes = method.getParameterTypes();
-				for(Class<?> argType : argTypes) {
-					dispString.append(argType.getSimpleName());
-					dispString.append(", ");
-				}
-				if(argTypes.length != 0)
-					dispString.setLength(dispString.length() - 2);
-				dispString.append(')');
-				this.methods.add(dispString.toString());
+			@Override
+			public boolean isMethodTraced(com.sun.jdi.Method m) {
+				boolean result = selectedMethods.contains(m.declaringType().name()+"."+m.name());
+				if(result) System.out.println(m);
+				return result;
 			}
+
+		};
+
+		try {
+			Trace trace = new Trace();
+			String data = Tracer.Trace("-cp \""+selectedJarFile.getAbsolutePath()+"\"", selectedJarManifest.getMainAttributes().getValue(Name.MAIN_CLASS), filter);
+			trace.lines = Arrays.asList(data.split("\n"));
+
+			VisualizationAlgorithm algo = new Main();
+
+			List<Node> graph = algo.generateGraph(trace);
+			new Graph().save(graph);
+			BufferedImage image = ImageIO.read(new File("test.png"));
+
+			graphPane.setImage(image);
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-
-
 	}
 
-    private void createNodes(DefaultMutableTreeNode top, ArrayList<TreeNodeData> classData) {
+	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
+
+    private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
         DefaultMutableTreeNode category = null;
         DefaultMutableTreeNode book = null;
 
-        for (TreeNodeData data : classData)
+        allMethodTreeItems.clear();
+
+        for (Class<?> data : classData)
         {
         	category = new DefaultMutableTreeNode(data.getName());
             top.add(category);
 
-            for (String field : data.getFieldNames()){
-            	category.add(new DefaultMutableTreeNode(field));
+            for (Field field : data.getDeclaredFields()){
+            	category.add(new DefaultMutableTreeNode(field.getName()));
             }
 
-            for (String method : data.getMethods()){
-            	category.add(new DefaultMutableTreeNode(new ClassTreeItem(method)));
+            for (Method method : data.getDeclaredMethods()){
+
+            	StringBuilder argsString = new StringBuilder();
+				argsString.append('(');
+				Class<?>[] argTypes = method.getParameterTypes();
+				for(Class<?> argType : argTypes) {
+					argsString.append(argType.getSimpleName());
+					argsString.append(", ");
+				}
+				if(argTypes.length != 0)
+					argsString.setLength(argsString.length() - 2);
+				argsString.append(')');
+
+
+            	MethodTreeItem treeItem = new MethodTreeItem(data.getName(), method.getName(), argsString.toString());
+            	allMethodTreeItems.add(treeItem);
+            	category.add(new DefaultMutableTreeNode(treeItem));
             }
         }
     }
 
     private void loadJarFile(File file) {
-		ArrayList<TreeNodeData> classData = new ArrayList<TreeNodeData>();
+		ArrayList<Class<?>> classData = new ArrayList<Class<?>>();
 
-		ZipFile zip = null;
+		JarFile zip = null;
 		try
 		{
-			zip = new ZipFile(file.getAbsoluteFile());
-		}
-		catch (IOException exception)
-		{
-			exception.printStackTrace();
-		}
+			zip = new JarFile(file.getAbsoluteFile());
 
-		try
-		{
 			URLClassLoader zipClassLoader = new URLClassLoader(new URL[] {file.toURI().toURL()});
 
 		    Enumeration<?> enu = zip.entries();
@@ -229,35 +252,45 @@ public class MainWindow {
 
 			    	Class<?> cls = zipClassLoader.loadClass(className);
 
-			    	classData.add(new TreeNodeData(cls.getName(), cls.getDeclaredFields(), cls.getDeclaredMethods()));
+			    	classData.add(cls);
 			    }
 			}
 
+			selectedJarFile = file;
+			selectedJarManifest = zip.getManifest();
+
 			zipClassLoader.close();
+			zip.close();
+
+			DefaultMutableTreeNode top = new DefaultMutableTreeNode(file.getName());
+			createNodes(top, classData);
+
+			((DefaultTreeModel)tree.getModel()).setRoot(top);
 		}
 		catch (IOException | ClassNotFoundException exception)
 		{
 			exception.printStackTrace();
+			return;
 		}
 
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(file.getName());
-		createNodes(top, classData);
-
-		((DefaultTreeModel)tree.getModel()).setRoot(top);
+		doTraceAndAnalysis();
 	}
 
 
 
-    private class ClassTreeItem {
+    private class MethodTreeItem {
     	String name;
-    	boolean checked;
-    	public ClassTreeItem(String name) {
+    	String className;
+    	String args;
+    	boolean checked = true;
+    	public MethodTreeItem(String className, String name, String argsString) {
+    		this.className = className;
     		this.name = name;
-    		this.checked = false;
+    		this.args = argsString;
     	}
     	@Override
     	public String toString() {
-    		return name;
+    		return name+args;
     	}
     }
 
@@ -272,8 +305,8 @@ public class MainWindow {
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			value = ((DefaultMutableTreeNode)value).getUserObject();
 			try {
-				if(value instanceof ClassTreeItem) {
-					checkBox.setSelected(((ClassTreeItem)value).checked);
+				if(value instanceof MethodTreeItem) {
+					checkBox.setSelected(((MethodTreeItem)value).checked);
 					checkBox.setText(value.toString());
 					return checkBox;
 				} else {
@@ -306,7 +339,8 @@ public class MainWindow {
 					public void itemStateChanged(ItemEvent e) {
 						if(stopCellEditing())
 							fireEditingStopped();
-						((ClassTreeItem)value).checked = ((JCheckBox)rv).isSelected();
+						((MethodTreeItem)value).checked = ((JCheckBox)rv).isSelected();
+						doTraceAndAnalysis();
 					}
 				});
 			}

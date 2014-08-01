@@ -14,6 +14,8 @@ import java.util.Stack;
  */
 public class Main implements VisualizationAlgorithm {
 
+	public Main() {}
+
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.
 	 * @param filename

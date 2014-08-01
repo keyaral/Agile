@@ -38,27 +38,25 @@ class TracerMain {
 		}
 
 		System.out.println("Trace: ");
-		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], commandLineArgs[2]));
+		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], new RegexTraceMethodFilter(commandLineArgs[2])));
 	}
 }
 
 public class Tracer {
-	
+
 	/**
 	 * Generates a Trace of a given application.
-	 * 
+	 *
 	 * @param vmOptions The arguments passed into the Virtual Machine
 	 * @param mainClass The Main class of the given application
-	 * @param filterRegex A regex to filter the results by
+	 * @param methodFilter The method filter to use
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static String Trace(String vmOptions, String mainClass, String filterRegex) throws Exception
+	public static String Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter) throws Exception
 	{
 
 		StringBuilder sb = new StringBuilder();
-
-		TraceMethodFilter methodFilter = new RegexTraceMethodFilter(filterRegex);
 
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
