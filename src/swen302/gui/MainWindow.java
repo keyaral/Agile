@@ -242,6 +242,8 @@ public class MainWindow {
 
 			Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 
+			Trace.writeFile(trace, "debugLastTrace.txt");
+
 			VisualizationAlgorithm algo = new FieldBasedAlgorithm();
 			Graph graph = algo.generateGraph(trace);
 

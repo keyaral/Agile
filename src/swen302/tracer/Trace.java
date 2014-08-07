@@ -2,6 +2,7 @@ package swen302.tracer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -21,5 +22,12 @@ public class Trace {
 		Trace t = new Trace();
 		t.lines = lines;
 		return t;
+	}
+
+	public static void writeFile(Trace trace, String filename) throws IOException {
+		try (PrintWriter out = new PrintWriter(new File(filename))) {
+			for(String line : trace.lines)
+				out.println(line);
+		}
 	}
 }
