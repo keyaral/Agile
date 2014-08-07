@@ -19,7 +19,7 @@ import swen302.graph.Node;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class AutomatonBuilder2 implements VisualizationAlgorithm {
+public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.

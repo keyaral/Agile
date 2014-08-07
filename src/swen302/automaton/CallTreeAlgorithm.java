@@ -18,7 +18,7 @@ import swen302.tracer.Trace;
  *
  */
 
-public class Main implements VisualizationAlgorithm {
+public class CallTreeAlgorithm implements VisualizationAlgorithm {
 
 	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
 
@@ -171,7 +171,7 @@ public class Main implements VisualizationAlgorithm {
 		if(args.length != 1){
 			System.out.println("Program requires file name as argument.");
 		}else{
-			Graph g = new Main().generateGraph(Trace.readFile(args[0]));
+			Graph g = new CallTreeAlgorithm().generateGraph(Trace.readFile(args[0]));
 			System.out.println("Graph Complete");
 
 			GraphSaver.save(g, new File("test.txt"), new File("test.png"));
