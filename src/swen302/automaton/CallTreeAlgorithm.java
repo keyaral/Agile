@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
-
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.graph.Node;
@@ -67,14 +66,14 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 			}
 			else if(isMethod(line)){  // Reads an instance of a method call
 
-				Method m = new Method(getLongMethodName(line), getShortMethodName(line));
+				Method m = new Method(getLongMethodName(line), AutomatonGraphUtils.formatMethodLabel(getLongMethodName(line)));
 				stack.push(currentNode);
 				currentNode = new Node(String.format("%d", nodeCount++));
 				allNodes.add(currentNode);
 				stack.peek().addNode(m,currentNode);
 
 			}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-				Return r = new Return(getLongReturnName(line), getShortReturnName(line));
+				Return r = new Return(getLongReturnName(line), "Return");
 				Node temp = currentNode;
 				currentNode = stack.pop();
 				temp.addNode(r, currentNode);
@@ -97,16 +96,6 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 
 
 	/**
-	 * Returns a label for the return instance
-	 * ( Return methods are displayed as "return" )
-	 * @param line
-	 * @return
-	 */
-	private String getShortReturnName(String line) {
-		return "Return";
-	}
-
-	/**
 	 * Returns the long name of a return method call.
 	 * @param line
 	 * @return
@@ -116,25 +105,6 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 	}
 
 
-	/**
-	 * Returns a label for the return instance
-	 * ( Method calls are displayed as "a shortened version of the trace call" )
-	 *
-	 * @param line
-	 * @return
-	 */
-	private String getShortMethodName(String line) {
-		line = getLongMethodName(line);
-
-		String[] lineArrayS = line.split(" ");
-
-		String met = lineArrayS[1];
-
-		String[] lineArray = lineArrayS[0].split("\\.");
-
-
-		return lineArray[lineArray.length-1] + " " + met;
-	}
 	/**
 	 * Returns the long name for a method call
 	 * @param line
