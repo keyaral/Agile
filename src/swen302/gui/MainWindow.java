@@ -464,7 +464,7 @@ public class MainWindow {
 					public void itemStateChanged(ItemEvent e) {
 						if(stopCellEditing())
 							fireEditingStopped();
-						((MethodTreeItem)value).checked = ((JCheckBox)rv).isSelected();
+						((MethodTreeItem)value).checked = ((CheckBoxIconPanel)rv).checkBox.isSelected();
 						doTraceAndAnalysis();
 					}
 				});
