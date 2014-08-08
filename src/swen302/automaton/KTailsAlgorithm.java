@@ -22,7 +22,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 	private Graph finalGraph = new Graph();
 
-	private final int k = 3;
+	public static int k = 3;
 
 	/**
 	 * Constructs a new KTail algorithm, runs multiple traces using inputs as parameters
