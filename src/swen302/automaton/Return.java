@@ -1,6 +1,7 @@
 package swen302.automaton;
 
 import swen302.graph.Edge;
+import swen302.graph.Node;
 
 /**
  *Subclass to describe an return call transition
@@ -9,8 +10,8 @@ import swen302.graph.Edge;
  */
 public class Return extends Edge {
 
-	public Return(String longName, String shortName) {
-		super(longName, shortName);
+	public Return(String longName, String shortName, Node node1, Node node2) {
+		super(longName, shortName, node1, node2);
 	}
 
 }

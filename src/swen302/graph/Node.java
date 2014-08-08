@@ -1,6 +1,9 @@
 package swen302.graph;
-import java.util.HashMap;
-import java.util.Map;
+import java.awt.geom.Point2D;
+import java.util.HashSet;
+import java.util.Set;
+
+import swen302.vertexgraph.Vector2D;
 
 /**
  * Node class holds the transitions calls between states.
@@ -10,10 +13,15 @@ import java.util.Map;
  *
  */
 public class Node {
-	protected Map<Node,Edge> connections = new HashMap<Node,Edge>();
-	protected String id;
-	protected String state = "";
-
+	
+	private Set<Edge> outgoingEdges = new HashSet<>();
+	private String id;
+	private String state = "";
+	private String Ktailstate = ""; //A string for recording Ktail strings in Graph using Ktails
+	public Point2D.Double position;
+	public Vector2D velocity;
+	public double mass;
+	public double REPULSION = 2.0;
 
 	/**
 	 * Constructs a node with given label.
@@ -22,6 +30,8 @@ public class Node {
 	 */
 	public Node(String id){
 		this.id = id;
+		this.position = new Point2D.Double(0.0, 0.0);
+		this.velocity = new Vector2D(0.0, 0.0);
 	}
 
 	/**
@@ -29,8 +39,8 @@ public class Node {
 	 * @param trans
 	 * @param n
 	 */
-	public void addNode(Edge trans, Node n){
-		connections.put(n, trans);
+	public void addOutgoingEdge(Edge trans){
+		outgoingEdges.add(trans);
 	}
 
 
@@ -38,9 +48,22 @@ public class Node {
 	 * Returns the lists of connection from this node to other nodes
 	 * @return
 	 */
-	public Map<Node,Edge> getConnections(){
-		return connections;
+	public Set<Edge> getConnections(){
+		return outgoingEdges;
 	}
+
+	/**
+	 * Returns the String stored in state
+	 * @return
+	 */
+	public String getState(){
+		return state;
+	}
+
+	public String getKState(){
+		return Ktailstate;
+	}
+
 
 	/**
 	 * Sets the state of the node
@@ -49,13 +72,16 @@ public class Node {
 	public void setState(String state) {
 		this.state = state;
 	}
+	public void setKState(String state) {
+		this.Ktailstate = state;
+	}
 
 	/**
 	 * Returns the ID of the node with the state appended if one exists.
 	 * @return
 	 */
 	public String getLabel(){
-		return (id + (state.equals("")?"":": "+ state));
+		return (id + (state.equals("")?Ktailstate.equals("")?"":": "+Ktailstate:": "+ state));
 	}
 
 	/**
@@ -64,5 +90,9 @@ public class Node {
 	 */
 	public String getID(){
 		return id;
+	}
+	
+	public double kineticEnergy() {
+		return 0.5*(mass*(velocity.dotProduct(velocity)));
 	}
 }

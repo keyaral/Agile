@@ -21,3 +21,5 @@ test.png
 /*.cfg
 tempAnalysis.png
 
+debugLastTrace.txt
+output.png

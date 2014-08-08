@@ -6,15 +6,15 @@ import java.awt.Graphics2D;
 
 import javax.swing.JPanel;
 
+import swen302.graph.Graph;
 import swen302.gui.graphlayouts.EadesSpringEmbedder;
-import swen302.vertexgraph.VertexGraph;
 
 public class VertexGraphPane extends JPanel {
 	private static final long serialVersionUID = 1L;
 
 	public EadesSpringEmbedder graph;
 
-	public void setGraph(VertexGraph graph) {
+	public void setGraph(Graph graph) {
 		
 		this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight());
 
@@ -25,6 +25,8 @@ public class VertexGraphPane extends JPanel {
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2d = (Graphics2D)g;
+		
+		System.out.println(getWidth() + " - " + getHeight());
 		
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, getWidth(), getHeight());

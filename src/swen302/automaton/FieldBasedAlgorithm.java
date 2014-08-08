@@ -1,25 +1,19 @@
 package swen302.automaton;
-import java.io.FileNotFoundException;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Stack;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
-import swen302.graph.GraphSaver;
-import swen302.tracer.Trace;
-import swen302.tracer.Tracer;
 import swen302.graph.Node;
+import swen302.tracer.Trace;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class AutomatonBuilder2 implements VisualizationAlgorithm {
+public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.
@@ -34,7 +28,7 @@ public class AutomatonBuilder2 implements VisualizationAlgorithm {
 //
 //	}
 
-	private Collection<Node> allNodes = new HashSet<Node>(); // Graph of Nodes
+	private Graph graph = new Graph();
 	private Map<String, Node> states = new HashMap<String, Node>();
 
 	private int nodeCount = 0;
@@ -75,13 +69,13 @@ public class AutomatonBuilder2 implements VisualizationAlgorithm {
 			else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
 
 				Node finalState = stack.pop();
-				Node initState = stack.pop();
+				Node initialState = stack.pop();
 
-				if (finalState != null && initState != null) {
-					initState.addNode(new Edge(String.valueOf(nodeCount++), getLongReturnName(line)), finalState);
+				if (finalState != null && initialState != null) {
+					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(getLongReturnName(line)), initialState, finalState));
 
-					allNodes.add(finalState);
-					allNodes.add(initState);
+					graph.nodes.add(finalState);
+					graph.nodes.add(initialState);
 				}
 			}
 		}
@@ -99,51 +93,12 @@ public class AutomatonBuilder2 implements VisualizationAlgorithm {
 
 
 	/**
-	 * Returns a label for the return instance
-	 * ( Return methods are displayed as "return" )
-	 * @param line
-	 * @return
-	 */
-	private String getShortReturnName(String line) {
-		return "Return";
-	}
-
-	/**
 	 * Returns the long name of a return method call.
 	 * @param line
 	 * @return
 	 */
 	private String getLongReturnName(String line) {
 		return line.substring(7);
-	}
-
-
-	/**
-	 * Returns a label for the return instance
-	 * ( Method calls are displayed as "a shortened version of the trace call" )
-	 *
-	 * @param line
-	 * @return
-	 */
-	private String getShortMethodName(String line) {
-		line = getLongMethodName(line);
-
-		String[] lineArrayS = line.split(" ");
-
-		String met = lineArrayS[1];
-
-		String[] lineArray = lineArrayS[0].split("\\.");
-
-
-		return lineArray[lineArray.length-1] + " " + met;
-	}
-	/**
-	 * Returns the long name for a method call
-	 * @param line
-	 * @return
-	 */
-	private String getLongMethodName(String line) {
-		return line.substring(11);
 	}
 
 
@@ -166,18 +121,11 @@ public class AutomatonBuilder2 implements VisualizationAlgorithm {
 	}
 
 	@Override
-	public Graph generateGraph(Trace trace) {
+	public Graph generateGraph(Trace[] trace) {
 
-		buildGraph(trace);
+		buildGraph(trace[0]); //TODO implement for multiple traces?
 
-		Graph g = new Graph();
-		g.nodes.addAll(allNodes);
-		for(Node n : allNodes) {
-			g.edges.removeAll(n.getConnections().values());
-			g.edges.addAll(n.getConnections().values());
-		}
-
-		return g;
+		return graph;
 	}
 
 }

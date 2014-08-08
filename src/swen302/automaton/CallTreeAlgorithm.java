@@ -1,11 +1,9 @@
 package swen302.automaton;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
-
 
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
@@ -18,20 +16,14 @@ import swen302.tracer.Trace;
  *
  */
 
-public class Main implements VisualizationAlgorithm {
+public class CallTreeAlgorithm implements VisualizationAlgorithm {
 
-	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
+	private Graph graph;
 
 	@Override
-	public Graph generateGraph(Trace trace) {
-		allNodes.clear();
-		buildGraph(trace.lines);
-		Graph graph = new Graph();
-		graph.nodes.addAll(allNodes);
-		for(Node n : allNodes) {
-			graph.edges.removeAll(n.getConnections().values());
-			graph.edges.addAll(n.getConnections().values());
-		}
+	public Graph generateGraph(Trace[] trace) {
+		graph = new Graph();
+		buildGraph(trace[0].lines); //TODO implement for multiple traces?
 		return graph;
 	}
 
@@ -51,7 +43,7 @@ public class Main implements VisualizationAlgorithm {
 
 
 
-		allNodes.add(currentNode);
+		graph.nodes.add(currentNode);
 		Iterator<String> in = lines.iterator();
 		while(in.hasNext()){
 			String line = in.next();
@@ -67,17 +59,15 @@ public class Main implements VisualizationAlgorithm {
 			}
 			else if(isMethod(line)){  // Reads an instance of a method call
 
-				Method m = new Method(getLongMethodName(line), getShortMethodName(line));
 				stack.push(currentNode);
 				currentNode = new Node(String.format("%d", nodeCount++));
-				allNodes.add(currentNode);
-				stack.peek().addNode(m,currentNode);
+				graph.nodes.add(currentNode);
+				graph.addEdge(new Method(getLongMethodName(line), AutomatonGraphUtils.formatMethodLabel(getLongMethodName(line)), stack.peek(), currentNode));
 
 			}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-				Return r = new Return(getLongReturnName(line), getShortReturnName(line));
 				Node temp = currentNode;
 				currentNode = stack.pop();
-				temp.addNode(r, currentNode);
+				graph.addEdge(new Return(getLongReturnName(line), "Return", temp, currentNode));
 
 			}
 
@@ -97,16 +87,6 @@ public class Main implements VisualizationAlgorithm {
 
 
 	/**
-	 * Returns a label for the return instance
-	 * ( Return methods are displayed as "return" )
-	 * @param line
-	 * @return
-	 */
-	private String getShortReturnName(String line) {
-		return "Return";
-	}
-
-	/**
 	 * Returns the long name of a return method call.
 	 * @param line
 	 * @return
@@ -116,25 +96,6 @@ public class Main implements VisualizationAlgorithm {
 	}
 
 
-	/**
-	 * Returns a label for the return instance
-	 * ( Method calls are displayed as "a shortened version of the trace call" )
-	 *
-	 * @param line
-	 * @return
-	 */
-	private String getShortMethodName(String line) {
-		line = getLongMethodName(line);
-
-		String[] lineArrayS = line.split(" ");
-
-		String met = lineArrayS[1];
-
-		String[] lineArray = lineArrayS[0].split("\\.");
-
-
-		return lineArray[lineArray.length-1] + " " + met;
-	}
 	/**
 	 * Returns the long name for a method call
 	 * @param line
@@ -171,7 +132,7 @@ public class Main implements VisualizationAlgorithm {
 		if(args.length != 1){
 			System.out.println("Program requires file name as argument.");
 		}else{
-			Graph g = new Main().generateGraph(Trace.readFile(args[0]));
+			Graph g = new CallTreeAlgorithm().generateGraph(new Trace[]{Trace.readFile(args[0])}); //TODO fix
 			System.out.println("Graph Complete");
 
 			GraphSaver.save(g, new File("test.txt"), new File("test.png"));
