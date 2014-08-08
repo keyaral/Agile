@@ -10,13 +10,14 @@ import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.graph.Node;
+import swen302.tracer.Trace;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class KTails {
+public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 	private List<List<Node>> traces = new ArrayList<List<Node>>();
 	private String[] inputs = new String[]{"bcbca","aaabca","aabcbca","aaa","dcd","dcba","abcdabcd","efabc","fffffffffff","ccbbee","abcdef","cbafff"};
@@ -31,20 +32,20 @@ public class KTails {
 	 * Constructs a new KTail algorithm, runs multiple traces using inputs as parameters
 	 * Creates a Graph out of traces and saves as a GraphSaver image.
 	 */
-	public KTails(){
-		for(String input: inputs){
-			KTailsMain m = new KTailsMain(input);
-			traces.add(m.getNodes());
-		}
-		createEdgeSets();
-		try {
-			GraphSaver.save(Graph.createFromNodes(finalNodes),new File("output.png"));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+//	public KTails(){
+//		for(String input: inputs){
+//			KTailsMain m = new KTailsMain(input);
+//			traces.add(m.getNodes());
+//		}
+//		createEdgeSets();
+//		try {
+//			GraphSaver.save(Graph.createFromNodes(finalNodes),new File("output.png"));
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * Takes traces and creates connections between each Node ensuring nodes with equal values are not duplicated
@@ -186,7 +187,19 @@ public class KTails {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception{
-		new KTails();
+		new KTailsAlgorithm();
+	}
+
+	@Override
+	public Graph generateGraph(Trace[] trace) {
+		for(Trace input: trace){
+			KTailsProccessing m = new KTailsProccessing(input);
+			traces.add(m.getNodes());
+		}
+		createEdgeSets();
+		Graph g = new Graph();
+		g.nodes.addAll(finalNodes);
+		return g;
 	}
 
 }

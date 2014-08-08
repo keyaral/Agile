@@ -22,9 +22,9 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
 
 	@Override
-	public Graph generateGraph(Trace trace) {
+	public Graph generateGraph(Trace[] trace) {
 		allNodes.clear();
-		buildGraph(trace.lines);
+		buildGraph(trace[0].lines); //TODO implement for multiple traces?
 		Graph graph = new Graph();
 		graph.nodes.addAll(allNodes);
 		for(Node n : allNodes) {
@@ -141,7 +141,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 		if(args.length != 1){
 			System.out.println("Program requires file name as argument.");
 		}else{
-			Graph g = new CallTreeAlgorithm().generateGraph(Trace.readFile(args[0]));
+			Graph g = new CallTreeAlgorithm().generateGraph(new Trace[]{Trace.readFile(args[0])}); //TODO fix
 			System.out.println("Graph Complete");
 
 			GraphSaver.save(g, new File("test.txt"), new File("test.png"));

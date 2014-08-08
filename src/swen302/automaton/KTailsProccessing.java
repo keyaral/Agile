@@ -19,28 +19,28 @@ import swen302.tracer.Tracer;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class KTailsMain {
+public class KTailsProccessing {
 
 	/**
 	 * Calls the trace reader method, and then calls the graph drawer.
 	 * @param filename
 	 */
-	public KTailsMain(/*String filename*/){
-		buildGraph("abcd");
-		System.out.println("Graph Complete");
+//	public KTailsMain(/*String filename*/){
+//		buildGraph("abcd");
+//		System.out.println("Graph Complete");
+//
+//		try {
+//			GraphSaver.save(Graph.createFromNodes(allNodes),new File("output.png"));
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		System.out.println("Image Complete");
+//
+//	}
 
-		try {
-			GraphSaver.save(Graph.createFromNodes(allNodes),new File("output.png"));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.out.println("Image Complete");
-
-	}
-
-	public KTailsMain(String input){
+	public KTailsProccessing(Trace input){
 		System.out.println("Start Main");
 		buildGraph(input);
 		System.out.println("End Main");
@@ -59,7 +59,7 @@ public class KTailsMain {
 	 *
 	 * @param filename
 	 */
-	private void buildGraph(String input) {
+	private void buildGraph(Trace input) {
 		try {
 			//Scanner in = new Scanner(new File(filename));
 			//Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, "swen302\\.testprograms\\.StringParser.*"));
@@ -69,7 +69,7 @@ public class KTailsMain {
 
 
 			allNodes.add(currentNode);
-			for(String line : Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]")).lines){
+			for(String line : input.lines){//Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]")).lines){
 
 				if(isMethod(line)){  // Reads an instance of a method call
 
@@ -82,50 +82,15 @@ public class KTailsMain {
 					//}
 
 				}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-					Return r = new Return(getLongReturnName(line), getShortReturnName(line));
-					Node temp = currentNode;
 					currentNode = stack.pop();
-					//temp.addNode(r, currentNode);
 
 				}
 
 			}
 
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-
-	/**
-	 * Returns whether the line is a state call
-	 * @param line
-	 * @return
-	 */
-	private boolean isStateCall(String line) {
-		return line.startsWith("staticContext") || line.startsWith("objectState");
-	}
-
-
-	/**
-	 * Returns a label for the return instance
-	 * ( Return methods are displayed as "return" )
-	 * @param line
-	 * @return
-	 */
-	private String getShortReturnName(String line) {
-		return "Return";
-	}
-
-	/**
-	 * Returns the long name of a return method call.
-	 * @param line
-	 * @return
-	 */
-	private String getLongReturnName(String line) {
-		return line.substring(7);
 	}
 
 
@@ -145,8 +110,10 @@ public class KTailsMain {
 
 		String[] lineArray = lineArrayS[0].split("\\.");
 
+		String[] lineArrayMain = lineArray[lineArray.length-1].split("\\$");
 
-		return lineArray[lineArray.length-1] + " " + met;
+
+		return lineArrayMain[lineArrayMain.length-1] + " " + met;
 	}
 	/**
 	 * Returns the long name for a method call
@@ -174,18 +141,6 @@ public class KTailsMain {
 	 */
 	private boolean isMethod(String line) {
 		return line.startsWith("methodCall");
-	}
-
-	/**
-	 * Main method
-	 * @param args
-	 */
-	public static void main(String[] args){
-		//		if(args.length != 1){
-		//			System.out.println("Program requires file name as argument.");
-		//		}else{
-		new KTailsMain();//args[0]);
-		//}
 	}
 
 }

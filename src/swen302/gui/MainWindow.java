@@ -14,22 +14,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
-import java.util.zip.ZipEntry;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
@@ -52,11 +45,11 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
-import swen302.graph.Graph;
-import swen302.automaton.CallTreeAlgorithm;
-import swen302.automaton.FieldBasedAlgorithm;
+import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
+import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
+import swen302.tracer.RegexTraceMethodFilter;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceMethodFilter;
 import swen302.tracer.Tracer;
@@ -113,14 +106,14 @@ public class MainWindow {
 				lastJarDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            jarData = JarLoader.loadJarFile(fc.getSelectedFile());
+					jarData = JarLoader.loadJarFile(fc.getSelectedFile());
 
-		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(fc.getSelectedFile().getName());
+					DefaultMutableTreeNode top = new DefaultMutableTreeNode(fc.getSelectedFile().getName());
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
 
 					createNodes(top, jarData.data);
 					doTraceAndAnalysis();
-		        }
+				}
 			}
 		});
 
@@ -138,14 +131,14 @@ public class MainWindow {
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            TracerConfiguration conf = new TracerConfiguration();
-		            saveToConfiguration(conf);
-		            try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
-		            	out.writeObject(conf);
-		            } catch(IOException ex) {
-		            	ex.printStackTrace();
-		            }
-		        }
+					TracerConfiguration conf = new TracerConfiguration();
+					saveToConfiguration(conf);
+					try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+						out.writeObject(conf);
+					} catch(IOException ex) {
+						ex.printStackTrace();
+					}
+				}
 			}
 		});
 
@@ -161,14 +154,14 @@ public class MainWindow {
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
-		            	TracerConfiguration conf = (TracerConfiguration)in.readObject();
-		            	loadFromConfiguration(conf);
+					try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+						TracerConfiguration conf = (TracerConfiguration)in.readObject();
+						loadFromConfiguration(conf);
 
-		            } catch(IOException | ClassNotFoundException ex) {
-		            	ex.printStackTrace();
-		            }
-		        }
+					} catch(IOException | ClassNotFoundException ex) {
+						ex.printStackTrace();
+					}
+				}
 			}
 		});
 
@@ -178,9 +171,9 @@ public class MainWindow {
 		tree.setCellRenderer(new ClassTreeCellRenderer());
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
-        graphPane = new ImagePane();
+		graphPane = new ImagePane();
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
@@ -191,6 +184,7 @@ public class MainWindow {
 		window.setLocationRelativeTo(null);
 		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
+
 		// for testing
 		File testfile = new File("testprogs/CompassRotating.jar");
 		if(testfile.exists())
@@ -199,6 +193,7 @@ public class MainWindow {
 
 			doTraceAndAnalysis();
 		}
+
 	}
 
 	private void loadJarFile(File testfile) {
@@ -240,12 +235,18 @@ public class MainWindow {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
-			Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
+			int traceCount = 1;
+			Trace[] traces = new Trace[traceCount];
+			for(int i=0; i<traceCount; i++){
+				traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
+			}
 
-			Trace.writeFile(trace, "debugLastTrace.txt");
+			//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 
-			VisualizationAlgorithm algo = new FieldBasedAlgorithm();
-			Graph graph = algo.generateGraph(trace);
+			//Trace.writeFile(trace, "debugLastTrace.txt");
+
+			VisualizationAlgorithm algo = new KTailsAlgorithm();//new FieldBasedAlgorithm(); //TODO set which algorithm
+			Graph graph = algo.generateGraph(traces);
 
 			File pngfile = new File("tempAnalysis.png");
 			GraphSaver.save(graph, pngfile);
@@ -279,27 +280,27 @@ public class MainWindow {
 
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 
-    private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
-        DefaultMutableTreeNode category = null;
+	private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
+		DefaultMutableTreeNode category = null;
 
-        allMethodTreeItems.clear();
+		allMethodTreeItems.clear();
 
-        for (Class<?> data : classData)
-        {
-        	category = new DefaultMutableTreeNode(data.getName());
-            top.add(category);
+		for (Class<?> data : classData)
+		{
+			category = new DefaultMutableTreeNode(data.getName());
+			top.add(category);
 
-            for (Field field : data.getDeclaredFields()){
-            	category.add(new DefaultMutableTreeNode(field.getName()));
-            }
+			for (Field field : data.getDeclaredFields()){
+				category.add(new DefaultMutableTreeNode(field.getName()));
+			}
 
-            for (Method method : data.getDeclaredMethods()) {
-            	MethodTreeItem treeItem = new MethodTreeItem(new MethodKey(method));
-            	allMethodTreeItems.add(treeItem);
-            	category.add(new DefaultMutableTreeNode(treeItem));
-            }
-        }
-    }
+			for (Method method : data.getDeclaredMethods()) {
+				MethodTreeItem treeItem = new MethodTreeItem(new MethodKey(method));
+				allMethodTreeItems.add(treeItem);
+				category.add(new DefaultMutableTreeNode(treeItem));
+			}
+		}
+	}
 
 
 
@@ -315,7 +316,7 @@ public class MainWindow {
 		}
 	}
 
-    private class ClassTreeCellRenderer implements TreeCellRenderer {
+	private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
 		private JCheckBox checkBox = new JCheckBox();
@@ -337,7 +338,7 @@ public class MainWindow {
 				return null;
 			}
 		}
-    }
+	}
 
 	private class ClassTreeCellEditor extends AbstractCellEditor implements TreeCellEditor {
 		private static final long serialVersionUID = 1L;
