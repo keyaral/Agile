@@ -14,25 +14,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
-import java.util.zip.ZipEntry;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -40,6 +36,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -52,10 +49,9 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
-import swen302.graph.Graph;
-import swen302.automaton.CallTreeAlgorithm;
 import swen302.automaton.FieldBasedAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
+import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceMethodFilter;
@@ -315,20 +311,38 @@ public class MainWindow {
 		}
 	}
 
+
+
+	private class CheckBoxIconPanel extends JPanel {
+		JLabel label = new JLabel();
+		JCheckBox checkBox = new JCheckBox();
+
+		{
+			setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+			this.add(label);
+			this.add(checkBox);
+			this.setOpaque(false);
+		}
+	}
+
     private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
-		private JCheckBox checkBox = new JCheckBox();
+
+		private CheckBoxIconPanel checkBoxPanel = new CheckBoxIconPanel();
 
 		@Override
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			value = ((DefaultMutableTreeNode)value).getUserObject();
 			try {
+				Icon icon = new ImageIcon(MainWindow.class.getResource("eclipse-icons/annotation_obj.gif"));
 				if(value instanceof MethodTreeItem) {
-					checkBox.setSelected(((MethodTreeItem)value).checked);
-					checkBox.setText(value.toString());
-					return checkBox;
+					checkBoxPanel.label.setIcon(icon);
+					checkBoxPanel.checkBox.setSelected(((MethodTreeItem)value).checked);
+					checkBoxPanel.checkBox.setText(value.toString());
+					return checkBoxPanel;
 				} else {
+					label.setIcon(icon);
 					label.setText(value.toString());
 					return label;
 				}
@@ -353,8 +367,8 @@ public class MainWindow {
 		public Component getTreeCellEditorComponent(JTree tree, final Object value_, boolean selected, boolean expanded, boolean leaf, int row) {
 			final Component rv = new ClassTreeCellRenderer().getTreeCellRendererComponent(tree, value_, selected, expanded, leaf, row, true);
 			this.value = ((DefaultMutableTreeNode)value_).getUserObject();
-			if(rv instanceof JCheckBox) {
-				((JCheckBox)rv).addItemListener(new ItemListener() {
+			if(rv instanceof CheckBoxIconPanel) {
+				((CheckBoxIconPanel)rv).checkBox.addItemListener(new ItemListener() {
 					@Override
 					public void itemStateChanged(ItemEvent e) {
 						if(stopCellEditing())
