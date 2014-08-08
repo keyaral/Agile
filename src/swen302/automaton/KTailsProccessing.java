@@ -4,12 +4,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Stack;
 
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.graph.Node;
+import swen302.tracer.DefaultFieldFilter;
 import swen302.tracer.RegexTraceMethodFilter;
 import swen302.tracer.Trace;
 import swen302.tracer.Tracer;
@@ -69,7 +69,9 @@ public class KTailsProccessing {
 
 
 			allNodes.add(currentNode);
+
 			for(String line : input.lines){//Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]")).lines){
+
 
 				if(isMethod(line)){  // Reads an instance of a method call
 

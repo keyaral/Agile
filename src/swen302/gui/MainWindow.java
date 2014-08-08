@@ -61,6 +61,7 @@ import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
 import swen302.tracer.Trace;
+import swen302.tracer.TraceFieldFilter;
 import swen302.tracer.TraceMethodFilter;
 import swen302.tracer.Tracer;
 
@@ -68,6 +69,8 @@ public class MainWindow {
 
 	/** Whether methods are selected by default */
 	public static final boolean DEFAULT_METHOD_SELECTED = true;
+	/** Whether fields are selected by default */
+	public static final boolean DEFAULT_FIELD_SELECTED = true;
 
 	private JFrame window;
 
@@ -230,7 +233,7 @@ public class MainWindow {
 	}
 
 	private void doTraceAndAnalysis() {
-		TraceMethodFilter filter = new TraceMethodFilter() {
+		TraceMethodFilter methodFilter = new TraceMethodFilter() {
 			private Set<String> selectedMethods = new HashSet<String>();
 
 			{
@@ -246,15 +249,37 @@ public class MainWindow {
 
 		};
 
+		TraceFieldFilter fieldFilter = new TraceFieldFilter() {
+			private Set<String> selectedFields = new HashSet<String>();
+
+			{
+				for(FieldTreeItem i : allFieldTreeItems) {
+					if(i.checked) {
+						FieldKey fk = new FieldKey(i.field);
+						selectedFields.add(fk.className+"."+fk.name);
+					}
+				}
+			}
+
+			@Override
+			public boolean isFieldTraced(com.sun.jdi.Field f) {
+				return selectedFields.contains(f.declaringType().name()+"."+f.name());
+			}
+		};
+
 		try {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
+
 			int traceCount = 1;
 			Trace[] traces = new Trace[traceCount];
 			for(int i=0; i<traceCount; i++){
-				traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
+				traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass, methodFilter, fieldFilter);
 			}
+
+
+
 
 			//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 
@@ -279,6 +304,8 @@ public class MainWindow {
 		conf.jarFile = jarData.file;
 		for(MethodTreeItem mti : allMethodTreeItems)
 			conf.selectedMethods.put(mti.method, mti.checked);
+		for(FieldTreeItem fti : allFieldTreeItems)
+			conf.selectedFields.put(new FieldKey(fti.field), fti.checked);
 	}
 
 	public void loadFromConfiguration(TracerConfiguration conf) {
@@ -289,11 +316,17 @@ public class MainWindow {
 			mti.checked = (saved != null ? saved : DEFAULT_METHOD_SELECTED);
 		}
 
+		for(FieldTreeItem fti : allFieldTreeItems) {
+			Boolean saved = conf.selectedFields.get(new FieldKey(fti.field));
+			fti.checked = (saved != null ? saved : DEFAULT_FIELD_SELECTED);
+		}
+
 		doTraceAndAnalysis();
 	}
 
 
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
+	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
 
 
     private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
@@ -361,6 +394,7 @@ public class MainWindow {
         	FieldTreeItem fti = new FieldTreeItem(field);
         	if(field.isSynthetic() && !fti.isCheckable())
         		continue;
+        	allFieldTreeItems.add(fti);
         	category.add(new DefaultMutableTreeNode(fti));
         }
 

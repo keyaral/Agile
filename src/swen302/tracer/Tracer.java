@@ -35,7 +35,7 @@ class TracerMain {
 		}
 
 		System.out.println("Trace: ");
-		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], new RegexTraceMethodFilter(commandLineArgs[2])));
+		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], new RegexTraceMethodFilter(commandLineArgs[2]), new DefaultFieldFilter()));
 	}
 }
 
@@ -47,10 +47,11 @@ public class Tracer {
 	 * @param vmOptions The arguments passed into the Virtual Machine
 	 * @param mainClass The Main class of the given application
 	 * @param methodFilter The method filter to use
+	 * @param fieldFilter The field filter to use
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static Trace Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter) throws Exception
+	public static Trace Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter) throws Exception
 	{
 		Trace t = new Trace();
 
@@ -91,7 +92,7 @@ public class Tracer {
 						if(_this == null)
 							t.lines.add("staticContext");
 						else
-							t.lines.add("objectState "+valueToStateString(_this));
+							t.lines.add("objectState "+valueToStateString(fieldFilter, _this));
 
 						t.lines.add("methodCall "+getMethodNameInTraceFormat(event2.method()));
 
@@ -125,7 +126,7 @@ public class Tracer {
 						if(_this == null)
 							t.lines.add("staticContext");
 						else
-							t.lines.add("objectState "+valueToStateString(_this));
+							t.lines.add("objectState "+valueToStateString(fieldFilter, _this));
 
 						t.lines.add("return "+getMethodNameInTraceFormat(event2.method()));
 					}
@@ -144,7 +145,7 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static String objectToStateString(ObjectReference object) throws Exception {
+	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object) throws Exception {
 		if(object.type() instanceof ClassType) {
 
 			if(((ClassType)object.type()).isEnum()) {
@@ -173,13 +174,20 @@ public class Tracer {
 			//result.append(object.type().name());
 			result.append('{');
 
+			boolean first = true;
 			for(int k = 0; k < fields.size(); k++) {
-				if(k > 0) result.append(",");
 
 				Field f = fields.get(k);
+
+				if(!filter.isFieldTraced(f))
+					continue;
+
+				if(!first) result.append(",");
+				else first = false;
+
 				result.append(f.name());
 				result.append('=');
-				result.append(valueToStateString( object.getValue(f)));
+				result.append(valueToStateString(filter, object.getValue(f)));
 			}
 
 			result.append('}');
@@ -193,11 +201,11 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static String valueToStateString(Value value) throws Exception {
+	private static String valueToStateString(TraceFieldFilter filter, Value value) throws Exception {
 		if(value == null)
 			return "null";
 		if(value instanceof ObjectReference)
-			return objectToStateString((ObjectReference)value);
+			return objectToStateString(filter, (ObjectReference)value);
 		return value.toString();
 	}
 

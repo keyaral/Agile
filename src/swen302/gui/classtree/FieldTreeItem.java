@@ -5,10 +5,15 @@ import java.lang.reflect.Modifier;
 
 import javax.swing.Icon;
 
+import swen302.gui.MainWindow;
+
 public class FieldTreeItem extends AbstractTreeItem {
 	public Field field;
 	public FieldTreeItem(Field field) {
 		this.field = field;
+
+		if(isCheckable())
+			checked = MainWindow.DEFAULT_FIELD_SELECTED;
 	}
 
 	@Override
