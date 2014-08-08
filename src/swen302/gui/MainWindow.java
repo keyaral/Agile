@@ -60,6 +60,7 @@ import swen302.graph.GraphSaver;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceMethodFilter;
 import swen302.tracer.Tracer;
+import swen302.vertexgraph.VertexGraph;
 
 public class MainWindow {
 
@@ -72,7 +73,7 @@ public class MainWindow {
 	private JMenu fileMenu;
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
-	private ImagePane graphPane;
+	private VertexGraphPane graphPane;
 
 	private JarData jarData;
 
@@ -180,7 +181,7 @@ public class MainWindow {
 		tree.setEditable(true);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
-        graphPane = new ImagePane();
+        graphPane = new VertexGraphPane();
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
@@ -249,7 +250,8 @@ public class MainWindow {
 			GraphSaver.save(graph, pngfile);
 			BufferedImage image = ImageIO.read(pngfile);
 
-			graphPane.setImage(image);
+			graphPane.setGraph(new VertexGraph(graph));
+			//graphPane.setImage(image);
 
 		} catch (Exception e) {
 			e.printStackTrace();

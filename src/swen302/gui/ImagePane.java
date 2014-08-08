@@ -24,10 +24,8 @@ public class ImagePane extends JPanel {
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-
 		if(image == null)
 			return;
-
 		int cw = getWidth(), ch = getHeight();
 		int iw = image.getWidth(null), ih = image.getHeight(null);
 

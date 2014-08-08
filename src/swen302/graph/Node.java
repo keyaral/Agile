@@ -10,9 +10,9 @@ import java.util.Map;
  *
  */
 public class Node {
-	private Map<Node,Edge> connections = new HashMap<Node,Edge>();
-	private String id;
-	private String state = "";
+	protected Map<Node,Edge> connections = new HashMap<Node,Edge>();
+	protected String id;
+	protected String state = "";
 
 
 	/**

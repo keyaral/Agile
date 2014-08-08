@@ -10,7 +10,6 @@ public class Graph {
 	public List<Node> nodes = new ArrayList<Node>();
 	public List<Edge> edges = new ArrayList<Edge>();
 
-
 	public static Graph createFromNodes(Collection<? extends Node> nodes) {
 		Set<Edge> edges = new HashSet<Edge>();
 		for(Node n : nodes)
