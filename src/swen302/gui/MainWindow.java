@@ -53,7 +53,6 @@ import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
 import swen302.automaton.KTailsAlgorithm;

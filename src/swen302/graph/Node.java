@@ -1,6 +1,9 @@
 package swen302.graph;
+import java.awt.geom.Point2D;
 import java.util.HashSet;
 import java.util.Set;
+
+import swen302.vertexgraph.Vector2D;
 
 /**
  * Node class holds the transitions calls between states.
@@ -10,11 +13,15 @@ import java.util.Set;
  *
  */
 public class Node {
-	/**  */
+	
 	private Set<Edge> outgoingEdges = new HashSet<>();
 	private String id;
 	private String state = "";
 	private String Ktailstate = ""; //A string for recording Ktail strings in Graph using Ktails
+	public Point2D.Double position;
+	public Vector2D velocity;
+	public double mass;
+	public double REPULSION = 2.0;
 
 	/**
 	 * Constructs a node with given label.
@@ -23,6 +30,8 @@ public class Node {
 	 */
 	public Node(String id){
 		this.id = id;
+		this.position = new Point2D.Double(0.0, 0.0);
+		this.velocity = new Vector2D(0.0, 0.0);
 	}
 
 	/**
@@ -81,5 +90,9 @@ public class Node {
 	 */
 	public String getID(){
 		return id;
+	}
+	
+	public double kineticEnergy() {
+		return 0.5*(mass*(velocity.dotProduct(velocity)));
 	}
 }
