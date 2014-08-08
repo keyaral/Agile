@@ -16,4 +16,5 @@ public class TracerConfiguration implements Serializable {
 	public File jarFile;
 
 	public Map<MethodKey, Boolean> selectedMethods = new HashMap<>();
+	public Map<FieldKey, Boolean> selectedFields = new HashMap<>();
 }
