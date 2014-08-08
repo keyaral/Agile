@@ -53,8 +53,8 @@ import javax.swing.tree.TreeSelectionModel;
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
 import swen302.graph.Graph;
-import swen302.automaton.AutomatonBuilder2;
-import swen302.automaton.Main;
+import swen302.automaton.CallTreeAlgorithm;
+import swen302.automaton.FieldBasedAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.graph.GraphSaver;
 import swen302.tracer.Trace;
@@ -241,8 +241,10 @@ public class MainWindow {
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
 			Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
-			
-			VisualizationAlgorithm algo = new AutomatonBuilder2();
+
+			Trace.writeFile(trace, "debugLastTrace.txt");
+
+			VisualizationAlgorithm algo = new FieldBasedAlgorithm();
 			Graph graph = algo.generateGraph(trace);
 
 			File pngfile = new File("tempAnalysis.png");
