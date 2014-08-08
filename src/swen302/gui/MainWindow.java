@@ -386,6 +386,10 @@ public class MainWindow {
 			conf.selectedMethods.put(mti.method, mti.checked);
 		for(FieldTreeItem fti : allFieldTreeItems)
 			conf.selectedFields.put(new FieldKey(fti.field), fti.checked);
+
+		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem();
+		conf.algorithmName = algorithm.name;
+		conf.algorithmClassName = algorithm.algClass.getName();
 	}
 
 	public void loadFromConfiguration(TracerConfiguration conf) {
@@ -400,6 +404,27 @@ public class MainWindow {
 			Boolean saved = conf.selectedFields.get(new FieldKey(fti.field));
 			fti.checked = (saved != null ? saved : DEFAULT_FIELD_SELECTED);
 		}
+
+		boolean foundAlgorithm = false;
+		// Try to find an algorithm by class name first
+		for(int k = 0; k < cmbAlgorithm.getItemCount() && !foundAlgorithm; k++) {
+			AlgorithmComboBoxWrapper acbw = (AlgorithmComboBoxWrapper)cmbAlgorithm.getItemAt(k);
+			if(acbw.algClass.getName().equals(conf.algorithmClassName)) {
+				foundAlgorithm = true;
+				cmbAlgorithm.setSelectedIndex(k);
+			}
+		}
+		// then try the name if the class name fails (maybe because the class name was changed)
+		for(int k = 0; k < cmbAlgorithm.getItemCount() && !foundAlgorithm; k++) {
+			AlgorithmComboBoxWrapper acbw = (AlgorithmComboBoxWrapper)cmbAlgorithm.getItemAt(k);
+			if(acbw.name.equals(conf.algorithmName)) {
+				foundAlgorithm = true;
+				cmbAlgorithm.setSelectedIndex(k);
+			}
+		}
+		// If the algorithm the configuration was saved with is not available, just pick the first one.
+		if(!foundAlgorithm)
+			cmbAlgorithm.setSelectedIndex(0);
 
 		doTraceAndAnalysis();
 	}
