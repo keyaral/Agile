@@ -2,6 +2,7 @@ package swen302.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,9 +19,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
 
@@ -175,6 +179,7 @@ public class MainWindow {
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.setPreferredSize(new Dimension(300, 1));
 
         graphPane = new ImagePane();
 
@@ -280,17 +285,36 @@ public class MainWindow {
 
         allMethodTreeItems.clear();
 
+        Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
+
         for (Class<?> data : classData)
         {
-        	category = new DefaultMutableTreeNode(data.getName());
-            top.add(category);
+
+        	String className = data.getName();
+        	String packageName;
+        	if(className.contains("."))
+        		packageName = className.substring(0, className.lastIndexOf('.'));
+        	else
+        		packageName = "(default package)";
+
+        	DefaultMutableTreeNode packageNode = packages.get(packageName);
+        	if(packageNode == null) {
+        		packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
+        		packages.put(packageName, packageNode);
+        		top.add(packageNode);
+        	}
+
+        	ClassTreeItem classItem = new ClassTreeItem(data);
+
+        	category = new DefaultMutableTreeNode(classItem);
+        	packageNode.add(category);
 
             for (Field field : data.getDeclaredFields()){
             	category.add(new DefaultMutableTreeNode(field.getName()));
             }
 
             for (Method method : data.getDeclaredMethods()) {
-            	MethodTreeItem treeItem = new MethodTreeItem(new MethodKey(method));
+            	MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
             	allMethodTreeItems.add(treeItem);
             	category.add(new DefaultMutableTreeNode(treeItem));
             }
@@ -298,12 +322,41 @@ public class MainWindow {
     }
 
 
+    private class PackageTreeItem {
+    	String packageName;
+    	public PackageTreeItem(String packageName) {
+    		this.packageName = packageName;
+    	}
+    	@Override
+    	public String toString() {
+    		return packageName;
+    	}
+    }
+
+    private class ClassTreeItem {
+    	Class<?> clazz;
+    	String shortName;
+    	public ClassTreeItem(Class<?> clazz) {
+    		this.clazz = clazz;
+    		this.shortName = clazz.getName();
+    		if(shortName.contains("."))
+    			shortName = shortName.substring(shortName.lastIndexOf('.')+1);
+    	}
+    	@Override
+    	public String toString() {
+    		return shortName;
+    	}
+    }
 
 	private class MethodTreeItem {
+		ClassTreeItem clazz;
 		MethodKey method;
+		Method reflectionMethod;
 		boolean checked = DEFAULT_METHOD_SELECTED;
-		public MethodTreeItem(MethodKey method) {
+		public MethodTreeItem(ClassTreeItem clazz, MethodKey method, Method reflectionMethod) {
+			this.clazz = clazz;
 			this.method = method;
+			this.reflectionMethod = reflectionMethod;
 		}
 		@Override
 		public String toString() {
@@ -325,6 +378,21 @@ public class MainWindow {
 		}
 	}
 
+	private static Icon getIcon(String name) {
+		return new ImageIcon(MainWindow.class.getResource("icons/"+name+".gif"));
+	}
+	private static Icon classPublicIcon = getIcon("class_obj");
+	private static Icon classDefaultIcon = getIcon("class_default_obj");
+	private static Icon methodPublicIcon = getIcon("methpub_obj");
+	private static Icon methodPrivateIcon = getIcon("methpri_obj");
+	private static Icon methodDefaultIcon = getIcon("methdef_obj");
+	private static Icon methodProtectedIcon = getIcon("methpro_obj");
+	private static Icon interfacePublicIcon = getIcon("int_obj");
+	private static Icon interfaceDefaultIcon = getIcon("int_default_obj");
+	private static Icon enumPublicIcon = getIcon("enum_obj");
+	private static Icon enumDefaultIcon = getIcon("enum_default_obj");
+	private static Icon packageIcon = getIcon("package_obj");
+
     private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
@@ -335,8 +403,31 @@ public class MainWindow {
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			value = ((DefaultMutableTreeNode)value).getUserObject();
 			try {
-				Icon icon = new ImageIcon(MainWindow.class.getResource("eclipse-icons/annotation_obj.gif"));
+				Icon icon = null;
+				if(value instanceof PackageTreeItem) {
+					icon = packageIcon;
+				}
+				if(value instanceof ClassTreeItem) {
+					Class<?> clazz = ((ClassTreeItem)value).clazz;
+					boolean isPublic = (clazz.getModifiers() & Modifier.PUBLIC) != 0;
+					if(clazz.isInterface())
+						icon = isPublic ? interfacePublicIcon : interfaceDefaultIcon;
+					else if(clazz.isEnum())
+						icon = isPublic ? enumPublicIcon : enumDefaultIcon;
+					else
+						icon = isPublic ? classPublicIcon : classDefaultIcon;
+				}
 				if(value instanceof MethodTreeItem) {
+
+					int modifiers = ((MethodTreeItem)value).reflectionMethod.getModifiers();
+					icon = methodDefaultIcon;
+					if((modifiers & Modifier.PUBLIC) != 0)
+						icon = methodPublicIcon;
+					if((modifiers & Modifier.PROTECTED) != 0)
+						icon = methodProtectedIcon;
+					if((modifiers & Modifier.PRIVATE) != 0)
+						icon = methodPrivateIcon;
+
 					checkBoxPanel.label.setIcon(icon);
 					checkBoxPanel.checkBox.setSelected(((MethodTreeItem)value).checked);
 					checkBoxPanel.checkBox.setText(value.toString());
