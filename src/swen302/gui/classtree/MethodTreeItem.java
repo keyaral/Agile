@@ -17,7 +17,8 @@ public class MethodTreeItem extends AbstractTreeItem {
 		this.clazz = clazz;
 		this.method = method;
 		this.reflectionMethod = reflectionMethod;
-		this.checked = MainWindow.DEFAULT_METHOD_SELECTED;
+		if(isCheckable())
+			this.checked = MainWindow.DEFAULT_METHOD_SELECTED;
 	}
 
 	@Override
@@ -39,6 +40,10 @@ public class MethodTreeItem extends AbstractTreeItem {
 
 	@Override
 	public boolean isCheckable() {
+		int modifiers = reflectionMethod.getModifiers();
+		// can't analyze abstract, static or native methods
+		if((modifiers & (Modifier.ABSTRACT | Modifier.STATIC | Modifier.NATIVE)) != 0)
+			return false;
 		return true;
 	}
 }

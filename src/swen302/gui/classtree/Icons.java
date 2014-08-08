@@ -20,4 +20,9 @@ public class Icons {
 	public static Icon enumPublicIcon = getIcon("enum_obj");
 	public static Icon enumDefaultIcon = getIcon("enum_default_obj");
 	public static Icon packageIcon = getIcon("package_obj");
+	public static Icon fieldPublicIcon = getIcon("field_public_obj");
+	public static Icon fieldPrivateIcon = getIcon("field_private_obj");
+	public static Icon fieldDefaultIcon = getIcon("field_default_obj");
+	public static Icon fieldProtectedIcon = getIcon("field_protected_obj");
+
 }
