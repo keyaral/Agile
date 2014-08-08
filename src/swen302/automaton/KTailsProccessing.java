@@ -1,18 +1,11 @@
 package swen302.automaton;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 import swen302.graph.Graph;
-import swen302.graph.GraphSaver;
 import swen302.graph.Node;
-import swen302.tracer.DefaultFieldFilter;
-import swen302.tracer.RegexTraceMethodFilter;
 import swen302.tracer.Trace;
-import swen302.tracer.Tracer;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -30,7 +23,7 @@ public class KTailsProccessing {
 //		System.out.println("Graph Complete");
 //
 //		try {
-//			GraphSaver.save(Graph.createFromNodes(allNodes),new File("output.png"));
+//			GraphSaver.save(graph,new File("output.png"));
 //		} catch (InterruptedException e) {
 //			e.printStackTrace();
 //		} catch (IOException e) {
@@ -47,10 +40,10 @@ public class KTailsProccessing {
 	}
 
 	public List<Node> getNodes(){
-		return allNodes;
+		return new ArrayList<Node>(graph.nodes);
 	}
 
-	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
+	private Graph graph;
 
 
 
@@ -67,20 +60,18 @@ public class KTailsProccessing {
 			int nodeCount = 0;
 			Node currentNode = new Node(String.format("%d", nodeCount++));
 
-
-			allNodes.add(currentNode);
+			graph = new Graph();
+			graph.nodes.add(currentNode);
 
 			for(String line : input.lines){//Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]")).lines){
 
-
 				if(isMethod(line)){  // Reads an instance of a method call
 
-					Method m = new Method(getLongMethodName(line), getShortMethodName(line));
 					//if(m.shortname.contains("method")){
 						stack.push(currentNode);
 						currentNode = new Node(String.format("%d", nodeCount++));
-						allNodes.add(currentNode);
-						stack.peek().addNode(m,currentNode);
+						graph.nodes.add(currentNode);
+						graph.addEdge(new Method(getLongMethodName(line), getShortMethodName(line), stack.peek(), currentNode));
 					//}
 
 				}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.

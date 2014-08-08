@@ -1,14 +1,18 @@
 package swen302.tracer;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.sun.jdi.ArrayReference;
+import com.sun.jdi.ArrayType;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.Type;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
@@ -36,6 +40,19 @@ class TracerMain {
 
 		System.out.println("Trace: ");
 		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], new RegexTraceMethodFilter(commandLineArgs[2]), new DefaultFieldFilter()));
+	}
+}
+
+class ObjectReferenceGenerator {
+	private Map<Object, String> map = new HashMap<>();
+
+	public String get(Object obj) {
+		return map.get(obj);
+	}
+
+	private int nextID = 0;
+	public void put(Object obj) {
+		map.put(obj, "REF"+String.valueOf(nextID++));
 	}
 }
 
@@ -92,7 +109,7 @@ public class Tracer {
 						if(_this == null)
 							t.lines.add("staticContext");
 						else
-							t.lines.add("objectState "+valueToStateString(fieldFilter, _this));
+							t.lines.add("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
 
 						t.lines.add("methodCall "+getMethodNameInTraceFormat(event2.method()));
 
@@ -126,7 +143,7 @@ public class Tracer {
 						if(_this == null)
 							t.lines.add("staticContext");
 						else
-							t.lines.add("objectState "+valueToStateString(fieldFilter, _this));
+							t.lines.add("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
 
 						t.lines.add("return "+getMethodNameInTraceFormat(event2.method()));
 					}
@@ -145,8 +162,19 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object) throws Exception {
-		if(object.type() instanceof ClassType) {
+	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) throws Exception {
+
+		// Deal with circular references
+		{
+			String ref = refs.get(object);
+			if(ref != null)
+				return ref;
+			refs.put(object);
+		}
+
+
+		Type type = object.type();
+		if(type instanceof ClassType) {
 
 			if(((ClassType)object.type()).isEnum()) {
 				boolean fullyInitialized = true;
@@ -187,25 +215,39 @@ public class Tracer {
 
 				result.append(f.name());
 				result.append('=');
-				result.append(valueToStateString(filter, object.getValue(f)));
+				result.append(valueToStateString(filter, object.getValue(f), refs));
 			}
 
 			result.append('}');
 
 			return result.toString();
 
+		} else if(type instanceof ArrayType) {
+			List<Value> values = ((ArrayReference)object).getValues();
+
+			StringBuilder result = new StringBuilder();
+			result.append('[');
+			boolean first = true;
+			for(Value v : values) {
+				if(!first) result.append(',');
+				else first = false;
+				result.append(valueToStateString(filter, v, refs));
+			}
+			result.append(']');
+			return result.toString();
+
 		} else
-			return object.type().name();
+			throw new AssertionError("Unsupported type "+type.name());
 	}
 
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static String valueToStateString(TraceFieldFilter filter, Value value) throws Exception {
+	private static String valueToStateString(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) throws Exception {
 		if(value == null)
 			return "null";
 		if(value instanceof ObjectReference)
-			return objectToStateString(filter, (ObjectReference)value);
+			return objectToStateString(filter, (ObjectReference)value, refs);
 		return value.toString();
 	}
 

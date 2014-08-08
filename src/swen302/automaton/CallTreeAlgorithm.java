@@ -1,7 +1,6 @@
 package swen302.automaton;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
@@ -19,18 +18,12 @@ import swen302.tracer.Trace;
 
 public class CallTreeAlgorithm implements VisualizationAlgorithm {
 
-	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
+	private Graph graph;
 
 	@Override
 	public Graph generateGraph(Trace[] trace) {
-		allNodes.clear();
+		graph = new Graph();
 		buildGraph(trace[0].lines); //TODO implement for multiple traces?
-		Graph graph = new Graph();
-		graph.nodes.addAll(allNodes);
-		for(Node n : allNodes) {
-			graph.edges.removeAll(n.getConnections().values());
-			graph.edges.addAll(n.getConnections().values());
-		}
 		return graph;
 	}
 
@@ -50,7 +43,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 
 
 
-		allNodes.add(currentNode);
+		graph.nodes.add(currentNode);
 		Iterator<String> in = lines.iterator();
 		while(in.hasNext()){
 			String line = in.next();
@@ -66,17 +59,15 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 			}
 			else if(isMethod(line)){  // Reads an instance of a method call
 
-				Method m = new Method(getLongMethodName(line), AutomatonGraphUtils.formatMethodLabel(getLongMethodName(line)));
 				stack.push(currentNode);
 				currentNode = new Node(String.format("%d", nodeCount++));
-				allNodes.add(currentNode);
-				stack.peek().addNode(m,currentNode);
+				graph.nodes.add(currentNode);
+				graph.addEdge(new Method(getLongMethodName(line), AutomatonGraphUtils.formatMethodLabel(getLongMethodName(line)), stack.peek(), currentNode));
 
 			}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-				Return r = new Return(getLongReturnName(line), "Return");
 				Node temp = currentNode;
 				currentNode = stack.pop();
-				temp.addNode(r, currentNode);
+				graph.addEdge(new Return(getLongReturnName(line), "Return", temp, currentNode));
 
 			}
 
@@ -147,6 +138,13 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 			GraphSaver.save(g, new File("test.txt"), new File("test.png"));
 			System.out.println("Image Complete");
 		}
+	}
+
+
+
+	@Override
+	public String toString() {
+		return "Simple call tree (no merging)";
 	}
 
 }

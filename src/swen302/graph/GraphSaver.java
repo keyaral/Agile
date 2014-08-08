@@ -3,8 +3,7 @@ package swen302.graph;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  *Graph Drawer Class
@@ -27,16 +26,16 @@ public class GraphSaver {
 	 * @param nodes Nodes making up the graph.
 	 * @throws InterruptedException, IOException
 	 */
-	private static void save(List<Node> nodes, File dotfile, File pngfile) throws InterruptedException, IOException {
+	private static void save(Set<Node> nodes, File dotfile, File pngfile) throws InterruptedException, IOException {
 
 		try (PrintStream print = new PrintStream(dotfile)) {   //converting Nodes into dot language txt file
 
 			print.println("digraph g{");
 			for(Node n : nodes){
 				print.println(n.getID()+"[label=\""+n.getLabel()+"\"]"+";");
-				Map<Node,Edge> connections = n.getConnections();
-				for(Node n2 : connections.keySet()){
-					print.println(n.getID()+"->"+n2.getID()+" [label=\""+connections.get(n2).shortname+"\"];");
+				Set<Edge> connections = n.getConnections();
+				for(Edge e : connections){
+					print.println(n.getID()+"->"+e.getOtherNode(n).getID()+" [label=\""+e.shortname+"\"];");
 				}
 			}
 

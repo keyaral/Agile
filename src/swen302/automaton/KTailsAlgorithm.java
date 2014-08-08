@@ -1,14 +1,10 @@
 package swen302.automaton;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
-import swen302.graph.GraphSaver;
 import swen302.graph.Node;
 import swen302.tracer.Trace;
 
@@ -24,7 +20,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 	private List<Edge[]> Edges = new ArrayList<Edge[]>();
 
-	private List<Node> finalNodes = new ArrayList<Node>();
+	private Graph finalGraph = new Graph();
 
 	private final int k = 3;
 
@@ -39,7 +35,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 //		}
 //		createEdgeSets();
 //		try {
-//			GraphSaver.save(Graph.createFromNodes(finalNodes),new File("output.png"));
+//			GraphSaver.save(finalGraph,new File("output.png"));
 //		} catch (InterruptedException e) {
 //			e.printStackTrace();
 //		} catch (IOException e) {
@@ -69,7 +65,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 				// Check that that set of of method calls in the array doesn't already exist in the set of Nodes
 				boolean contains = false;
 				for(Edge[] trans : Edges ){
-					if(Arrays.equals(trans, array)){
+					if(equalNames(trans, array)){
 						contains = true;
 						break;
 					}
@@ -89,6 +85,13 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		}
 	}
 
+	private boolean equalNames(Edge[] trans, Edge[] array) {
+		for(int k = 0; k < trans.length; k++)
+			if(!trans[k].longname.equals(array[k].longname))
+				return false;
+		return true;
+	}
+
 	/**
 	 * Connects nodes to form the K-Tail automaton
 	 * @param prev	An array of the previous method call followed by the following k-1 calls in the trace
@@ -101,21 +104,21 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		if(prev==null && !newNode)return;
 
 		if(prev == null){ //New trace, and new original node
-			Node n = new Node(String.valueOf(finalNodes.size()));
+			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
 			n.setKState(getMethodStateString(next));
-			finalNodes.add(n);
+			finalGraph.nodes.add(n);
 
 		}else if(newNode){ // new node within a trace
-			Node newN = new Node(String.valueOf(finalNodes.size()));
+			Node newN = new Node(String.valueOf(finalGraph.nodes.size()));
 			newN.setKState(getMethodStateString(next));
-			finalNodes.add(newN);
+			finalGraph.nodes.add(newN);
 			Node prevNode = findNode(prev);
-			prevNode.addNode(prev[0], newN);
+			finalGraph.addEdge(new Edge(prev[0], prevNode, newN));
 		}else{
 			//find a node that matches prev and connect with next that is found //both exist
 			Node prevNode = findNode(prev);
 			Node nextNode = findNode(next);
-			prevNode.addNode(prev[0], nextNode);
+			finalGraph.addEdge(new Edge(prev[0], prevNode, nextNode));
 		}
 	}
 // Returns a string of the array of method calls
@@ -145,10 +148,9 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 			}
 		}*/
 		// iterate through nodes and returns a node if the states match.
-		for(int i=0; i<finalNodes.size(); i++ ){
-			if(finalNodes.get(i).getKState().equals(getMethodStateString(trans))){
-
-				return finalNodes.get(i);
+		for(Node node : finalGraph.nodes) {
+			if(node.getKState().equals(getMethodStateString(trans))){
+				return node;
 			}
 		}
 
@@ -172,9 +174,9 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 	private Edge[] getOrderedArray(List<Node> nodes){
 		Edge[] toReturn = new Edge[nodes.size()];
 		for(Node n : nodes){
-			Map<Node,Edge> trans = n.getConnections();
-			for(Node neigh : trans.keySet()){
-				toReturn[Integer.parseInt(neigh.getID())-1] = trans.get(neigh);
+			Set<Edge> trans = n.getConnections();
+			for(Edge edge : trans){
+				toReturn[Integer.parseInt(edge.getOtherNode(n).getID())-1] = edge;
 			}
 		}
 		return toReturn;
@@ -197,9 +199,13 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 			traces.add(m.getNodes());
 		}
 		createEdgeSets();
-		Graph g = new Graph();
-		g.nodes.addAll(finalNodes);
-		return g;
+		return finalGraph;
+	}
+
+
+	@Override
+	public String toString() {
+		return "K-Tails algorithm";
 	}
 
 }
