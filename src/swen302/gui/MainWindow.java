@@ -318,7 +318,6 @@ public class MainWindow {
         		parentNode = classNodes.get(enclosingClass);
         	}
 
-        	System.out.println("Add "+entry.getValue()+" to "+parentNode);
         	parentNode.add(entry.getValue());
         }
 
@@ -339,11 +338,16 @@ public class MainWindow {
     	DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
 
         for (Field field : data.getDeclaredFields()){
-        	category.add(new DefaultMutableTreeNode(new FieldTreeItem(field)));
+        	FieldTreeItem fti = new FieldTreeItem(field);
+        	if(field.isSynthetic() && !fti.isCheckable())
+        		continue;
+        	category.add(new DefaultMutableTreeNode(fti));
         }
 
         for (Method method : data.getDeclaredMethods()) {
         	MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
+        	if(method.isSynthetic() && !treeItem.isCheckable())
+        		continue;
         	allMethodTreeItems.add(treeItem);
         	category.add(new DefaultMutableTreeNode(treeItem));
         }
