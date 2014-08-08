@@ -38,8 +38,10 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -68,7 +70,7 @@ import swen302.tracer.Tracer;
 public class MainWindow {
 
 	/** Whether methods are selected by default */
-	public static final boolean DEFAULT_METHOD_SELECTED = true;
+	public static final boolean DEFAULT_METHOD_SELECTED = false;
 	/** Whether fields are selected by default */
 	public static final boolean DEFAULT_FIELD_SELECTED = true;
 
@@ -87,35 +89,35 @@ public class MainWindow {
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
 
-    /**
-     * Instances of this are used in the combo box's item list, as they implement toString.
-     * @author campbealex2
-     */
-    private static class AlgorithmComboBoxWrapper {
-    	Class<? extends VisualizationAlgorithm> algClass;
-    	String name;
-    	AlgorithmComboBoxWrapper(Class<? extends VisualizationAlgorithm> algClass) {
-    		this.algClass = algClass;
-    		try {
-    			name = algClass.newInstance().toString();
-    		} catch(Exception e) {
-    			throw new RuntimeException(e);
-    		}
-    	}
+	/**
+	 * Instances of this are used in the combo box's item list, as they implement toString.
+	 * @author campbealex2
+	 */
+	private static class AlgorithmComboBoxWrapper {
+		Class<? extends VisualizationAlgorithm> algClass;
+		String name;
+		AlgorithmComboBoxWrapper(Class<? extends VisualizationAlgorithm> algClass) {
+			this.algClass = algClass;
+			try {
+				name = algClass.newInstance().toString();
+			} catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 
-    	VisualizationAlgorithm createInstance() {
-    		try {
-    			return algClass.newInstance();
-    		} catch(Exception e) {
-    			throw new RuntimeException(e);
-    		}
-    	}
+		VisualizationAlgorithm createInstance() {
+			try {
+				return algClass.newInstance();
+			} catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 
-    	@Override
-    	public String toString() {
-    		return name;
-    	}
-    }
+		@Override
+		public String toString() {
+			return name;
+		}
+	}
 
 
 	public MainWindow() {
@@ -155,7 +157,7 @@ public class MainWindow {
 					jarData = JarLoader.loadJarFile(fc.getSelectedFile());
 
 
-		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(fc.getSelectedFile().getName()));
+					DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(fc.getSelectedFile().getName()));
 
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
 
@@ -220,14 +222,14 @@ public class MainWindow {
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
 
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        tree.setPreferredSize(new Dimension(300, 1));
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.setPreferredSize(new Dimension(300, 1));
 
-        cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
-        for(Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
-        	cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
-        }
-        cmbAlgorithm.addItemListener(new ItemListener() {
+		cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
+		for(Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
+			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
+		}
+		cmbAlgorithm.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				if(e.getStateChange() == e.SELECTED) {
@@ -236,10 +238,10 @@ public class MainWindow {
 			}
 		});
 
-        treePanel = new JPanel();
-        treePanel.setLayout(new BorderLayout());
-        treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
-        treePanel.add(cmbAlgorithm, BorderLayout.SOUTH);
+		treePanel = new JPanel();
+		treePanel.setLayout(new BorderLayout());
+		treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
+		treePanel.add(cmbAlgorithm, BorderLayout.SOUTH);
 
 		graphPane = new ImagePane();
 
@@ -254,13 +256,13 @@ public class MainWindow {
 
 
 		// for testing
-		File testfile = new File("testprogs/CompassRotating.jar");
-		if(testfile.exists())
-		{
-			loadJarFile(testfile);
-
-			doTraceAndAnalysis();
-		}
+		//		File testfile = new File("testprogs/StringParserTest.jar");
+		//		if(testfile.exists())
+		//		{
+		//			loadJarFile(testfile);
+		//
+		//			doTraceAndAnalysis();
+		//		}
 
 	}
 
@@ -324,27 +326,53 @@ public class MainWindow {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
-
-			int traceCount = 1;
-			Trace[] traces = new Trace[traceCount];
-			for(int i=0; i<traceCount; i++){
-				traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass, methodFilter, fieldFilter);
+/// This section brings up a dialog box for the number of traces
+			/// then creates that many fields for the user to imput the arguments for each trace.
+			//Get traceCount
+			boolean valid = false;
+			int traceCount = 0;
+			while(!valid){
+				try{
+					valid = true;
+					traceCount =  Integer.parseInt(JOptionPane.showInputDialog(null, "Enter number of traces to be run:", JOptionPane.PLAIN_MESSAGE));
+					if(traceCount < 0){valid = false;}
+				}catch(Exception e){
+					valid = false;
+				}
+			}
+			//Construct input gui
+			JTextField[] textfields = new JTextField[traceCount];
+			Object[] message = new Object[traceCount*2];
+			for(int i=0; i<message.length; i+=2){
+				message[i] = ("Argument "+(i/2+1)+":");
+				textfields[i/2] = new JTextField();
+				message[i+1] = textfields[i/2];
 			}
 
+			//display input gui
+			int option = JOptionPane.showConfirmDialog(null, message, "Enter Trace Arguments", JOptionPane.OK_CANCEL_OPTION);
 
+			//retrieve information
+			if(option  == JOptionPane.OK_OPTION){
+				Trace[] traces = new Trace[traceCount];
 
+				for(int i=0; i<traceCount; i++){
+					traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass+" "+textfields[i].getText(), methodFilter, fieldFilter);
+				}
+///////// End of the dialog box arguement multiple traces
 
-			//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
+				//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 
-			//Trace.writeFile(trace, "debugLastTrace.txt");
+				//Trace.writeFile(trace, "debugLastTrace.txt");
 
-			Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
+				Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
 
-			File pngfile = new File("tempAnalysis.png");
-			GraphSaver.save(graph, pngfile);
-			BufferedImage image = ImageIO.read(pngfile);
+				File pngfile = new File("tempAnalysis.png");
+				GraphSaver.save(graph, pngfile);
+				BufferedImage image = ImageIO.read(pngfile);
 
-			graphPane.setImage(image);
+				graphPane.setImage(image);
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -406,89 +434,89 @@ public class MainWindow {
 	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
 
 
-    private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
-        allMethodTreeItems.clear();
+	private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
+		allMethodTreeItems.clear();
 
-        Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
+		Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 
-        Map<Class<?>, DefaultMutableTreeNode> classNodes = new HashMap<Class<?>, DefaultMutableTreeNode>();
+		Map<Class<?>, DefaultMutableTreeNode> classNodes = new HashMap<Class<?>, DefaultMutableTreeNode>();
 
-        // For each class, generate the subtree corresponding to that class
-        for (Class<?> data : classData)
-        	classNodes.put(data, createClassNodes(data));
+		// For each class, generate the subtree corresponding to that class
+		for (Class<?> data : classData)
+			classNodes.put(data, createClassNodes(data));
 
-        // Then insert the subtrees at the right locations (under packages or other classes)
-        for(Map.Entry<Class<?>, DefaultMutableTreeNode> entry : classNodes.entrySet()) {
-        	Class<?> clazz = entry.getKey();
+		// Then insert the subtrees at the right locations (under packages or other classes)
+		for(Map.Entry<Class<?>, DefaultMutableTreeNode> entry : classNodes.entrySet()) {
+			Class<?> clazz = entry.getKey();
 
-        	DefaultMutableTreeNode parentNode;
+			DefaultMutableTreeNode parentNode;
 
-        	Class<?> enclosingClass = clazz.getEnclosingClass();
+			Class<?> enclosingClass = clazz.getEnclosingClass();
 
-        	if(enclosingClass == null) {
+			if(enclosingClass == null) {
 
-        		// Top-level class; insert under a package
-            	String packageName = getPackageName(clazz);
+				// Top-level class; insert under a package
+				String packageName = getPackageName(clazz);
 
-            	DefaultMutableTreeNode packageNode = packages.get(packageName);
-            	if(packageNode == null) {
-            		// If no node exists for this package, create one
-            		packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
-            		packages.put(packageName, packageNode);
-            		top.add(packageNode);
-            	}
+				DefaultMutableTreeNode packageNode = packages.get(packageName);
+				if(packageNode == null) {
+					// If no node exists for this package, create one
+					packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
+					packages.put(packageName, packageNode);
+					top.add(packageNode);
+				}
 
-            	parentNode = packageNode;
+				parentNode = packageNode;
 
-        	} else {
-        		// Nested class; insert under the enclosing class
-        		parentNode = classNodes.get(enclosingClass);
-        	}
+			} else {
+				// Nested class; insert under the enclosing class
+				parentNode = classNodes.get(enclosingClass);
+			}
 
-        	parentNode.add(entry.getValue());
-        }
-
-
-    }
+			parentNode.add(entry.getValue());
+		}
 
 
-    /** Returns the package name, as shown in the class tree - e.g. "swen302.testprograms" or "(default package)" */
-    private String getPackageName(Class<?> clazz) {
-    	String className = clazz.getName();
-    	if(className.contains("."))
-    		return className.substring(0, className.lastIndexOf('.'));
-    	else
-    		return "(default package)";
-    }
-
-    /** Creates a subtree of the class tree from one class. */
-    private DefaultMutableTreeNode createClassNodes(Class<?> data) {
-    	ClassTreeItem classItem = new ClassTreeItem(data);
-
-    	DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
-
-        for (Field field : data.getDeclaredFields()){
-        	FieldTreeItem fti = new FieldTreeItem(field);
-        	if(field.isSynthetic() && !fti.isCheckable())
-        		continue;
-        	allFieldTreeItems.add(fti);
-        	category.add(new DefaultMutableTreeNode(fti));
-        }
-
-        for (Method method : data.getDeclaredMethods()) {
-        	MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
-        	if(method.isSynthetic() && !treeItem.isCheckable())
-        		continue;
-        	allMethodTreeItems.add(treeItem);
-        	category.add(new DefaultMutableTreeNode(treeItem));
-        }
-        return category;
-    }
+	}
 
 
+	/** Returns the package name, as shown in the class tree - e.g. "swen302.testprograms" or "(default package)" */
+	private String getPackageName(Class<?> clazz) {
+		String className = clazz.getName();
+		if(className.contains("."))
+			return className.substring(0, className.lastIndexOf('.'));
+		else
+			return "(default package)";
+	}
+
+	/** Creates a subtree of the class tree from one class. */
+	private DefaultMutableTreeNode createClassNodes(Class<?> data) {
+		ClassTreeItem classItem = new ClassTreeItem(data);
+
+		DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
+
+		for (Field field : data.getDeclaredFields()){
+			FieldTreeItem fti = new FieldTreeItem(field);
+			if(field.isSynthetic() && !fti.isCheckable())
+				continue;
+			allFieldTreeItems.add(fti);
+			category.add(new DefaultMutableTreeNode(fti));
+		}
+
+		for (Method method : data.getDeclaredMethods()) {
+			MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
+			if(method.isSynthetic() && !treeItem.isCheckable())
+				continue;
+			allMethodTreeItems.add(treeItem);
+			category.add(new DefaultMutableTreeNode(treeItem));
+		}
+		return category;
+	}
 
 
-    private class CheckBoxIconPanel extends JPanel {
+
+
+	private class CheckBoxIconPanel extends JPanel {
 		private static final long serialVersionUID = 1L;
 
 		JLabel label = new JLabel();
@@ -505,7 +533,7 @@ public class MainWindow {
 
 
 
-    private class ClassTreeCellRenderer implements TreeCellRenderer {
+	private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
 
