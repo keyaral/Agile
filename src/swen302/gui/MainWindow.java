@@ -56,6 +56,8 @@ import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
+import swen302.gui.classtree.FieldTreeItem;
+import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
 import swen302.tracer.Trace;
@@ -116,7 +118,7 @@ public class MainWindow {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 		            jarData = JarLoader.loadJarFile(fc.getSelectedFile());
 
-		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(fc.getSelectedFile().getName());
+		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(fc.getSelectedFile().getName()));
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
 
 					createNodes(top, jarData.data);
@@ -175,7 +177,7 @@ public class MainWindow {
 
 		menuBar.add(fileMenu);
 
-		tree = new JTree(new DefaultMutableTreeNode("No file loaded"));
+		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem("No file loaded")));
 		tree.setCellRenderer(new ClassTreeCellRenderer());
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
@@ -206,7 +208,7 @@ public class MainWindow {
 	private void loadJarFile(File testfile) {
 		jarData = JarLoader.loadJarFile(testfile);
 
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(testfile.getName());
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(testfile.getName()));
 		((DefaultTreeModel)tree.getModel()).setRoot(top);
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -311,7 +313,7 @@ public class MainWindow {
         	packageNode.add(category);
 
             for (Field field : data.getDeclaredFields()){
-            	category.add(new DefaultMutableTreeNode(field.getName()));
+            	category.add(new DefaultMutableTreeNode(new FieldTreeItem(field)));
             }
 
             for (Method method : data.getDeclaredMethods()) {
