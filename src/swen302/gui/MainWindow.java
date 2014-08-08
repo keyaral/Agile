@@ -31,6 +31,7 @@ import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -50,7 +51,6 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
-import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
@@ -78,15 +78,48 @@ public class MainWindow {
 	private JMenu fileMenu;
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
+	private JPanel treePanel;
 	private ImagePane graphPane;
+	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 
 	private JarData jarData;
 
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
 
+    /**
+     * Instances of this are used in the combo box's item list, as they implement toString.
+     * @author campbealex2
+     */
+    private static class AlgorithmComboBoxWrapper {
+    	Class<? extends VisualizationAlgorithm> algClass;
+    	String name;
+    	AlgorithmComboBoxWrapper(Class<? extends VisualizationAlgorithm> algClass) {
+    		this.algClass = algClass;
+    		try {
+    			name = algClass.newInstance().toString();
+    		} catch(Exception e) {
+    			throw new RuntimeException(e);
+    		}
+    	}
+
+    	VisualizationAlgorithm createInstance() {
+    		try {
+    			return algClass.newInstance();
+    		} catch(Exception e) {
+    			throw new RuntimeException(e);
+    		}
+    	}
+
+    	@Override
+    	public String toString() {
+    		return name;
+    	}
+    }
+
+
 	public MainWindow() {
-		window = new JFrame("UltimaTracer 9000");
+		window = new JFrame("SWEN302 Program Tracer");
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		menuBar = new JMenuBar();
@@ -190,13 +223,30 @@ public class MainWindow {
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setPreferredSize(new Dimension(300, 1));
 
+        cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
+        for(Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
+        	cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
+        }
+        cmbAlgorithm.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if(e.getStateChange() == e.SELECTED) {
+					doTraceAndAnalysis();
+				}
+			}
+		});
+
+        treePanel = new JPanel();
+        treePanel.setLayout(new BorderLayout());
+        treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
+        treePanel.add(cmbAlgorithm, BorderLayout.SOUTH);
 
 		graphPane = new ImagePane();
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
 		window.add(graphPane, BorderLayout.CENTER);
-		window.add(new JScrollPane(tree), BorderLayout.WEST);
+		window.add(treePanel, BorderLayout.WEST);
 
 		window.pack();
 		window.setLocationRelativeTo(null);
@@ -233,6 +283,9 @@ public class MainWindow {
 	}
 
 	private void doTraceAndAnalysis() {
+		if(jarData == null)
+			return;
+
 		TraceMethodFilter methodFilter = new TraceMethodFilter() {
 			private Set<String> selectedMethods = new HashSet<String>();
 
@@ -285,8 +338,7 @@ public class MainWindow {
 
 			//Trace.writeFile(trace, "debugLastTrace.txt");
 
-			VisualizationAlgorithm algo = new KTailsAlgorithm();//new FieldBasedAlgorithm(); //TODO set which algorithm
-			Graph graph = algo.generateGraph(traces);
+			Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
 
 			File pngfile = new File("tempAnalysis.png");
 			GraphSaver.save(graph, pngfile);

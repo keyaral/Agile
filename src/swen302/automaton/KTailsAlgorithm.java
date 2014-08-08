@@ -202,4 +202,10 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		return finalGraph;
 	}
 
+
+	@Override
+	public String toString() {
+		return "K-Tails algorithm";
+	}
+
 }

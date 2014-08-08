@@ -128,4 +128,9 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 		return graph;
 	}
 
+	@Override
+	public String toString() {
+		return "Simple field-based algorithm";
+	}
+
 }
