@@ -2,6 +2,7 @@ package swen302.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
@@ -22,12 +23,14 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
+
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BoxLayout;
@@ -40,10 +43,8 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -52,11 +53,11 @@ import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
-import swen302.automaton.FieldBasedAlgorithm;
-import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
+import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
 import swen302.gui.classtree.AbstractTreeItem;
@@ -84,7 +85,7 @@ public class MainWindow {
 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
-	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
+	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
@@ -96,6 +97,8 @@ public class MainWindow {
 
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
+
+	private List<ExecutionData> executions = new ArrayList<>(Arrays.asList(new ExecutionData()));
 
 	/**
 	 * Instances of this are used in the combo box's item list, as they implement toString.
@@ -138,6 +141,8 @@ public class MainWindow {
 		fileLoadJAR = fileMenu.add("Load JAR...");
 		fileLoadAdvanced = fileMenu.add("Load Advanced...");
 		fileMenu.addSeparator();
+		fileEditExecutions = fileMenu.add("Edit Executions...");
+		fileMenu.addSeparator();
 		fileLoadConfig = fileMenu.add("Load Config...");
 		fileSaveConfig = fileMenu.add("Save Config...");
 		fileMenu.addSeparator();
@@ -171,6 +176,11 @@ public class MainWindow {
 
 					createNodes(top, jarData.data);
 
+
+					executions.clear();
+					executions.add(new ExecutionData());
+
+
 					if(AUTO_RUN)
 						doTraceAndAnalysis();
 					else
@@ -187,12 +197,13 @@ public class MainWindow {
 				int returnVal = fc.showSaveDialog(window);
 
 				File file = fc.getSelectedFile();
-				if(!fc.getFileFilter().accept(file))
-					file = new File(file.toString()+".cfg");
 
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					if(!fc.getFileFilter().accept(file))
+						file = new File(file.toString()+".cfg");
+
 					TracerConfiguration conf = new TracerConfiguration();
 					saveToConfiguration(conf);
 					try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
@@ -227,6 +238,16 @@ public class MainWindow {
 			}
 		});
 
+		fileEditExecutions.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				EditExecutionsDialog dlg = new EditExecutionsDialog(window, executions);
+				dlg.setModalityType(ModalityType.APPLICATION_MODAL);
+				dlg.setLocationRelativeTo(window);
+				dlg.setVisible(true);
+			}
+		});
+
 		menuBar.add(fileMenu);
 
 		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem("No file loaded")));
@@ -242,9 +263,10 @@ public class MainWindow {
 			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
 		}
 		cmbAlgorithm.addItemListener(new ItemListener() {
+			@SuppressWarnings("unused")
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				if(e.getStateChange() == e.SELECTED && AUTO_RUN) {
+				if(e.getStateChange() == ItemEvent.SELECTED && AUTO_RUN) {
 					doTraceAndAnalysis();
 				}
 			}
@@ -369,53 +391,23 @@ public class MainWindow {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
-/// This section brings up a dialog box for the number of traces
-			/// then creates that many fields for the user to imput the arguments for each trace.
-			//Get traceCount
-			boolean valid = false;
-			int traceCount = 0;
-			while(!valid){
-				try{
-					valid = true;
-					traceCount =  Integer.parseInt(JOptionPane.showInputDialog(null, "Enter number of traces to be run:", JOptionPane.PLAIN_MESSAGE));
-					if(traceCount < 0){valid = false;}
-				}catch(Exception e){
-					valid = false;
-				}
-			}
-			//Construct input gui
-			JTextField[] textfields = new JTextField[traceCount];
-			Object[] message = new Object[traceCount*2];
-			for(int i=0; i<message.length; i+=2){
-				message[i] = ("Argument "+(i/2+1)+":");
-				textfields[i/2] = new JTextField();
-				message[i+1] = textfields[i/2];
-			}
+			Trace[] traces = new Trace[executions.size()];
 
-			//display input gui
-			int option = JOptionPane.showConfirmDialog(null, message, "Enter Trace Arguments", JOptionPane.OK_CANCEL_OPTION);
+			for(int k = 0; k < executions.size(); k++) {
+				ExecutionData ed = executions.get(k);
 
-			//retrieve information
-			if(option  == JOptionPane.OK_OPTION){
-				Trace[] traces = new Trace[traceCount];
-
-				for(int i=0; i<traceCount; i++){
-					traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass+" "+textfields[i].getText(), methodFilter, fieldFilter);
-				}
-///////// End of the dialog box arguement multiple traces
-
-				//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
+				traces[k] = Tracer.Trace("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter);
 
 				//Trace.writeFile(trace, "debugLastTrace.txt");
-
-				Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
-
-				File pngfile = new File("tempAnalysis.png");
-				GraphSaver.save(graph, pngfile);
-				BufferedImage image = ImageIO.read(pngfile);
-
-				graphPane.setImage(image);
 			}
+
+			Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
+
+			File pngfile = new File("tempAnalysis.png");
+			GraphSaver.save(graph, pngfile);
+			BufferedImage image = ImageIO.read(pngfile);
+
+			graphPane.setImage(image);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -433,6 +425,8 @@ public class MainWindow {
 		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem();
 		conf.algorithmName = algorithm.name;
 		conf.algorithmClassName = algorithm.algClass.getName();
+
+		conf.executions = executions;
 	}
 
 	public void loadFromConfiguration(TracerConfiguration conf) {
@@ -468,6 +462,12 @@ public class MainWindow {
 		// If the algorithm the configuration was saved with is not available, just pick the first one.
 		if(!foundAlgorithm)
 			cmbAlgorithm.setSelectedIndex(0);
+
+
+		executions = new ArrayList<ExecutionData>(conf.executions);
+		if(executions.size() == 0)
+			executions.add(new ExecutionData());
+
 
 		if(AUTO_RUN)
 			doTraceAndAnalysis();

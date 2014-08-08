@@ -2,11 +2,15 @@ package swen302.gui;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import swen302.execution.ExecutionData;
+
 /**
- * All the information that is saved in a saved configuration.
+ * A saved configuration. A configuration file is just a serialized instance of this.
  *
  * @author Alex Campbell
  */
@@ -20,4 +24,6 @@ public class TracerConfiguration implements Serializable {
 
 	public String algorithmClassName;
 	public String algorithmName;
+
+	public List<ExecutionData> executions = new ArrayList<>();
 }
