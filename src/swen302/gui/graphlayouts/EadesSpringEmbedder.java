@@ -32,7 +32,7 @@ public class EadesSpringEmbedder {
 	}
 	
 	public void step(){
-		double totalEnergy = 0;
+		//double totalEnergy = 0;
 		
 		for (Node n : graph.nodes) {
 			Vector2D tempForce = new Vector2D(0.0, 0.0);
@@ -47,10 +47,10 @@ public class EadesSpringEmbedder {
 				}
 			}
 			
-			tempForce.plus(friction(v));
-			tempForce.plus(drag(v));
-			v.velocity.plus(tempForce);
-			totalEnergy += v.kineticEnergy();
+			//tempForce.plus(friction(n));
+			tempForce.plus(drag(n));
+			n.velocity.plus(tempForce);
+			//totalEnergy += n.kineticEnergy();
 			
 			//Stop calculating, will probably leave out.
 			//This is so the graph can be made interactive
@@ -58,11 +58,20 @@ public class EadesSpringEmbedder {
 	}
 	
 	private Vector2D drag(Node n) {
-		
+		return n.velocity
+				.componentwiseProduct(new Vector2D(n.mass, n.mass))
+				.componentwiseProduct(new Vector2D(0.25, 0.25));
 	}
 	
 	private Vector2D friction(Node n) {
-		
+		if(n.velocity.length() > 1.0) {
+			double friction = FRICTION_KINETIC * n.mass * GRAVITY;
+			return new Vector2D(friction, friction);
+		}
+		else {
+			double friction = FRICTION_STATIC * n.mass * GRAVITY;
+			return new Vector2D(friction, friction);
+		}
 	}
 	
 	private Vector2D coulombsLaw(Node n1, Node n2) {
