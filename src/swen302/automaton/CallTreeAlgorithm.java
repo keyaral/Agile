@@ -140,4 +140,11 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm {
 		}
 	}
 
+
+
+	@Override
+	public String toString() {
+		return "Simple call tree (no merging)";
+	}
+
 }

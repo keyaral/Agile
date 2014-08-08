@@ -11,17 +11,20 @@ import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.LaunchingConnector;
+import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.MethodEntryEvent;
 import com.sun.jdi.event.MethodExitEvent;
 import com.sun.jdi.event.VMDeathEvent;
+import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
@@ -74,16 +77,13 @@ public class Tracer {
 
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
+		// class -> does it have any traceable methods?
+		Map<ReferenceType, Boolean> knownTraceableClasses = new HashMap<>();
 
-		// When a method is entered, send an event to this tracer and suspend the thread that entered it
-		MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
-		entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-		entryRequest.enable();
-
-		// When a method is exited, send an event to this tracer
-		MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
-		exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-		exitRequest.enable();
+		// When a class is loaded, we need to add a MethodEntryRequest and MethodExitRequest if it's traceable.
+		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
+		classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+		classPrepareRequest.enable();
 
 		VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
 
@@ -97,6 +97,29 @@ public class Tracer {
 		while(true) {
 			EventSet events = vm.eventQueue().remove();
 			for(Event event : events) {
+				if(event instanceof ClassPrepareEvent) {
+					ClassPrepareEvent event2 = (ClassPrepareEvent)event;
+
+					ReferenceType type = event2.referenceType();
+					if(!knownTraceableClasses.containsKey(type)) {
+						boolean traceable = doesClassHaveTraceableMethods(methodFilter, type);
+						knownTraceableClasses.put(type, traceable);
+						if(traceable) {
+							MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
+							entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+							entryRequest.addClassFilter(type);
+							entryRequest.enable();
+
+							// When a method is exited, send an event to this tracer
+							MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
+							exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+							exitRequest.addClassFilter(type);
+							exitRequest.enable();
+						}
+					}
+
+					vm.resume();
+				}
 				if(event instanceof MethodEntryEvent) {
 					MethodEntryEvent event2 = (MethodEntryEvent)event;
 
@@ -157,6 +180,13 @@ public class Tracer {
 				}
 			}
 		}
+	}
+
+	private static boolean doesClassHaveTraceableMethods(TraceMethodFilter methodFilter, ReferenceType type) {
+		for(Method m : type.methods())
+			if(methodFilter.isMethodTraced(m))
+				return true;
+		return false;
 	}
 
 	/**

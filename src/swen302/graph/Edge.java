@@ -27,14 +27,14 @@ public class Edge {
 	public boolean equals(Object obj){
 		if(obj instanceof Edge){
 			Edge o = (Edge)obj;
-			return o.longname.equals(longname) && o.node1 == node1 && o.node2 == node2;
+			return o.shortname.equals(shortname) && o.node1 == node1 && o.node2 == node2;
 		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return longname.hashCode();
+		return shortname.hashCode();
 	}
 
 	public Node getOtherNode(Node n) {
