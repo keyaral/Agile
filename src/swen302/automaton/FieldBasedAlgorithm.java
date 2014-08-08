@@ -121,9 +121,9 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 	}
 
 	@Override
-	public Graph generateGraph(Trace trace) {
+	public Graph generateGraph(Trace[] trace) {
 
-		buildGraph(trace);
+		buildGraph(trace[0]); //TODO implement for multiple traces?
 
 		return graph;
 	}

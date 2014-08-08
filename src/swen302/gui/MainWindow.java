@@ -50,7 +50,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
-import swen302.automaton.FieldBasedAlgorithm;
+import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
@@ -119,14 +119,16 @@ public class MainWindow {
 				lastJarDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            jarData = JarLoader.loadJarFile(fc.getSelectedFile());
+					jarData = JarLoader.loadJarFile(fc.getSelectedFile());
+
 
 		            DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(fc.getSelectedFile().getName()));
+
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
 
 					createNodes(top, jarData.data);
 					doTraceAndAnalysis();
-		        }
+				}
 			}
 		});
 
@@ -144,14 +146,14 @@ public class MainWindow {
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            TracerConfiguration conf = new TracerConfiguration();
-		            saveToConfiguration(conf);
-		            try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
-		            	out.writeObject(conf);
-		            } catch(IOException ex) {
-		            	ex.printStackTrace();
-		            }
-		        }
+					TracerConfiguration conf = new TracerConfiguration();
+					saveToConfiguration(conf);
+					try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+						out.writeObject(conf);
+					} catch(IOException ex) {
+						ex.printStackTrace();
+					}
+				}
 			}
 		});
 
@@ -167,14 +169,14 @@ public class MainWindow {
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		            try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
-		            	TracerConfiguration conf = (TracerConfiguration)in.readObject();
-		            	loadFromConfiguration(conf);
+					try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+						TracerConfiguration conf = (TracerConfiguration)in.readObject();
+						loadFromConfiguration(conf);
 
-		            } catch(IOException | ClassNotFoundException ex) {
-		            	ex.printStackTrace();
-		            }
-		        }
+					} catch(IOException | ClassNotFoundException ex) {
+						ex.printStackTrace();
+					}
+				}
 			}
 		});
 
@@ -184,10 +186,12 @@ public class MainWindow {
 		tree.setCellRenderer(new ClassTreeCellRenderer());
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
+
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setPreferredSize(new Dimension(300, 1));
 
-        graphPane = new ImagePane();
+
+		graphPane = new ImagePane();
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
@@ -198,6 +202,7 @@ public class MainWindow {
 		window.setLocationRelativeTo(null);
 		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
+
 		// for testing
 		File testfile = new File("testprogs/CompassRotating.jar");
 		if(testfile.exists())
@@ -206,6 +211,7 @@ public class MainWindow {
 
 			doTraceAndAnalysis();
 		}
+
 	}
 
 	private void loadJarFile(File testfile) {
@@ -265,12 +271,22 @@ public class MainWindow {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
-			Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, methodFilter, fieldFilter);
 
-			Trace.writeFile(trace, "debugLastTrace.txt");
+			int traceCount = 1;
+			Trace[] traces = new Trace[traceCount];
+			for(int i=0; i<traceCount; i++){
+				traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass, methodFilter, fieldFilter);
+			}
 
-			VisualizationAlgorithm algo = new FieldBasedAlgorithm();
-			Graph graph = algo.generateGraph(trace);
+
+
+
+			//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
+
+			//Trace.writeFile(trace, "debugLastTrace.txt");
+
+			VisualizationAlgorithm algo = new KTailsAlgorithm();//new FieldBasedAlgorithm(); //TODO set which algorithm
+			Graph graph = algo.generateGraph(traces);
 
 			File pngfile = new File("tempAnalysis.png");
 			GraphSaver.save(graph, pngfile);
@@ -311,6 +327,7 @@ public class MainWindow {
 
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
+
 
     private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
         allMethodTreeItems.clear();
@@ -356,6 +373,7 @@ public class MainWindow {
 
 
     }
+
 
     /** Returns the package name, as shown in the class tree - e.g. "swen302.testprograms" or "(default package)" */
     private String getPackageName(Class<?> clazz) {
@@ -409,6 +427,7 @@ public class MainWindow {
 
 
 
+
     private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
@@ -435,7 +454,7 @@ public class MainWindow {
 				return null;
 			}
 		}
-    }
+	}
 
 	private class ClassTreeCellEditor extends AbstractCellEditor implements TreeCellEditor {
 		private static final long serialVersionUID = 1L;
