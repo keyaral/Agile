@@ -19,7 +19,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,8 +30,6 @@ import java.util.jar.Attributes.Name;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -57,6 +54,10 @@ import swen302.automaton.FieldBasedAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
+import swen302.gui.classtree.AbstractTreeItem;
+import swen302.gui.classtree.ClassTreeItem;
+import swen302.gui.classtree.MethodTreeItem;
+import swen302.gui.classtree.PackageTreeItem;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceMethodFilter;
 import swen302.tracer.Tracer;
@@ -64,7 +65,7 @@ import swen302.tracer.Tracer;
 public class MainWindow {
 
 	/** Whether methods are selected by default */
-	private static final boolean DEFAULT_METHOD_SELECTED = true;
+	public static final boolean DEFAULT_METHOD_SELECTED = true;
 
 	private JFrame window;
 
@@ -321,52 +322,9 @@ public class MainWindow {
         }
     }
 
+    private class CheckBoxIconPanel extends JPanel {
+		private static final long serialVersionUID = 1L;
 
-    private class PackageTreeItem {
-    	String packageName;
-    	public PackageTreeItem(String packageName) {
-    		this.packageName = packageName;
-    	}
-    	@Override
-    	public String toString() {
-    		return packageName;
-    	}
-    }
-
-    private class ClassTreeItem {
-    	Class<?> clazz;
-    	String shortName;
-    	public ClassTreeItem(Class<?> clazz) {
-    		this.clazz = clazz;
-    		this.shortName = clazz.getName();
-    		if(shortName.contains("."))
-    			shortName = shortName.substring(shortName.lastIndexOf('.')+1);
-    	}
-    	@Override
-    	public String toString() {
-    		return shortName;
-    	}
-    }
-
-	private class MethodTreeItem {
-		ClassTreeItem clazz;
-		MethodKey method;
-		Method reflectionMethod;
-		boolean checked = DEFAULT_METHOD_SELECTED;
-		public MethodTreeItem(ClassTreeItem clazz, MethodKey method, Method reflectionMethod) {
-			this.clazz = clazz;
-			this.method = method;
-			this.reflectionMethod = reflectionMethod;
-		}
-		@Override
-		public String toString() {
-			return method.name + "(" + method.getReadableArgs() + ")";
-		}
-	}
-
-
-
-	private class CheckBoxIconPanel extends JPanel {
 		JLabel label = new JLabel();
 		JCheckBox checkBox = new JCheckBox();
 
@@ -378,20 +336,7 @@ public class MainWindow {
 		}
 	}
 
-	private static Icon getIcon(String name) {
-		return new ImageIcon(MainWindow.class.getResource("icons/"+name+".gif"));
-	}
-	private static Icon classPublicIcon = getIcon("class_obj");
-	private static Icon classDefaultIcon = getIcon("class_default_obj");
-	private static Icon methodPublicIcon = getIcon("methpub_obj");
-	private static Icon methodPrivateIcon = getIcon("methpri_obj");
-	private static Icon methodDefaultIcon = getIcon("methdef_obj");
-	private static Icon methodProtectedIcon = getIcon("methpro_obj");
-	private static Icon interfacePublicIcon = getIcon("int_obj");
-	private static Icon interfaceDefaultIcon = getIcon("int_default_obj");
-	private static Icon enumPublicIcon = getIcon("enum_obj");
-	private static Icon enumDefaultIcon = getIcon("enum_default_obj");
-	private static Icon packageIcon = getIcon("package_obj");
+
 
     private class ClassTreeCellRenderer implements TreeCellRenderer {
 
@@ -403,37 +348,14 @@ public class MainWindow {
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			value = ((DefaultMutableTreeNode)value).getUserObject();
 			try {
-				Icon icon = null;
-				if(value instanceof PackageTreeItem) {
-					icon = packageIcon;
-				}
-				if(value instanceof ClassTreeItem) {
-					Class<?> clazz = ((ClassTreeItem)value).clazz;
-					boolean isPublic = (clazz.getModifiers() & Modifier.PUBLIC) != 0;
-					if(clazz.isInterface())
-						icon = isPublic ? interfacePublicIcon : interfaceDefaultIcon;
-					else if(clazz.isEnum())
-						icon = isPublic ? enumPublicIcon : enumDefaultIcon;
-					else
-						icon = isPublic ? classPublicIcon : classDefaultIcon;
-				}
-				if(value instanceof MethodTreeItem) {
-
-					int modifiers = ((MethodTreeItem)value).reflectionMethod.getModifiers();
-					icon = methodDefaultIcon;
-					if((modifiers & Modifier.PUBLIC) != 0)
-						icon = methodPublicIcon;
-					if((modifiers & Modifier.PROTECTED) != 0)
-						icon = methodProtectedIcon;
-					if((modifiers & Modifier.PRIVATE) != 0)
-						icon = methodPrivateIcon;
-
-					checkBoxPanel.label.setIcon(icon);
-					checkBoxPanel.checkBox.setSelected(((MethodTreeItem)value).checked);
+				AbstractTreeItem item = (AbstractTreeItem)value;
+				if(item.isCheckable()) {
+					checkBoxPanel.label.setIcon(item.getIcon());
+					checkBoxPanel.checkBox.setSelected(item.checked);
 					checkBoxPanel.checkBox.setText(value.toString());
 					return checkBoxPanel;
 				} else {
-					label.setIcon(icon);
+					label.setIcon(item.getIcon());
 					label.setText(value.toString());
 					return label;
 				}
