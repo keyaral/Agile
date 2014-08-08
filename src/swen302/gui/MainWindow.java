@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -30,6 +32,7 @@ import java.util.jar.Attributes.Name;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -74,6 +77,9 @@ public class MainWindow {
 	/** Whether fields are selected by default */
 	public static final boolean DEFAULT_FIELD_SELECTED = true;
 
+	/** Whether the tracing and analysis will be run whenever the filter is changed. */
+	public static final boolean AUTO_RUN = false;
+
 	private JFrame window;
 
 	private JMenuBar menuBar;
@@ -81,6 +87,8 @@ public class MainWindow {
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileLoadConfig, fileSaveConfig, fileExit;
 	private JTree tree;
 	private JPanel treePanel;
+	private JPanel configPanel;
+	private JButton runButton;
 	private ImagePane graphPane;
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 
@@ -162,7 +170,11 @@ public class MainWindow {
 					((DefaultTreeModel)tree.getModel()).setRoot(top);
 
 					createNodes(top, jarData.data);
-					doTraceAndAnalysis();
+
+					if(AUTO_RUN)
+						doTraceAndAnalysis();
+					else
+						graphPane.setImage(null);
 				}
 			}
 		});
@@ -232,16 +244,47 @@ public class MainWindow {
 		cmbAlgorithm.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				if(e.getStateChange() == e.SELECTED) {
+				if(e.getStateChange() == e.SELECTED && AUTO_RUN) {
 					doTraceAndAnalysis();
 				}
 			}
 		});
 
+		runButton = new JButton("Run");
+		runButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doTraceAndAnalysis();
+			}
+		});
+
+		configPanel = new JPanel();
+		configPanel.setLayout(new GridBagLayout());
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.gridheight = gbc.gridwidth = 1;
+			gbc.gridx = gbc.gridy = 0;
+			gbc.weightx = gbc.weighty = 1;
+
+			gbc.anchor = GridBagConstraints.EAST;
+			gbc.fill = GridBagConstraints.VERTICAL;
+			configPanel.add(new JLabel("Algorithm:"), gbc);
+			gbc.gridx = 1;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.fill = GridBagConstraints.BOTH;
+			configPanel.add(cmbAlgorithm, gbc);
+
+
+			gbc.gridx = 0;
+			gbc.gridy++; gbc.gridwidth = 2;
+			configPanel.add(runButton, gbc);
+		}
+
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
 		treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
-		treePanel.add(cmbAlgorithm, BorderLayout.SOUTH);
+		treePanel.add(configPanel, BorderLayout.SOUTH);
 
 		graphPane = new ImagePane();
 
@@ -426,7 +469,8 @@ public class MainWindow {
 		if(!foundAlgorithm)
 			cmbAlgorithm.setSelectedIndex(0);
 
-		doTraceAndAnalysis();
+		if(AUTO_RUN)
+			doTraceAndAnalysis();
 	}
 
 
@@ -582,7 +626,8 @@ public class MainWindow {
 						if(stopCellEditing())
 							fireEditingStopped();
 						((AbstractTreeItem)value).checked = ((CheckBoxIconPanel)rv).checkBox.isSelected();
-						doTraceAndAnalysis();
+						if(AUTO_RUN)
+							doTraceAndAnalysis();
 					}
 				});
 			}
