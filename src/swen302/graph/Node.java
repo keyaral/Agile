@@ -1,6 +1,6 @@
 package swen302.graph;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Node class holds the transitions calls between states.
@@ -10,7 +10,8 @@ import java.util.Map;
  *
  */
 public class Node {
-	private Map<Node,Edge> connections = new HashMap<Node,Edge>();
+	/**  */
+	private Set<Edge> outgoingEdges = new HashSet<>();
 	private String id;
 	private String state = "";
 	private String Ktailstate = ""; //A string for recording Ktail strings in Graph using Ktails
@@ -29,8 +30,8 @@ public class Node {
 	 * @param trans
 	 * @param n
 	 */
-	public void addNode(Edge trans, Node n){
-		connections.put(n, trans);
+	public void addOutgoingEdge(Edge trans){
+		outgoingEdges.add(trans);
 	}
 
 
@@ -38,8 +39,8 @@ public class Node {
 	 * Returns the lists of connection from this node to other nodes
 	 * @return
 	 */
-	public Map<Node,Edge> getConnections(){
-		return connections;
+	public Set<Edge> getConnections(){
+		return outgoingEdges;
 	}
 
 	/**

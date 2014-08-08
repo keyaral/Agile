@@ -29,7 +29,7 @@ public class KTailsMain {
 		System.out.println("Graph Complete");
 
 		try {
-			GraphSaver.save(Graph.createFromNodes(allNodes),new File("output.png"));
+			GraphSaver.save(graph,new File("output.png"));
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -46,10 +46,10 @@ public class KTailsMain {
 	}
 
 	public List<Node> getNodes(){
-		return allNodes;
+		return new ArrayList<Node>(graph.nodes);
 	}
 
-	private List<Node> allNodes = new ArrayList<Node>(); // Graph of Nodes
+	private Graph graph;
 
 
 
@@ -66,23 +66,22 @@ public class KTailsMain {
 			int nodeCount = 0;
 			Node currentNode = new Node(String.format("%d", nodeCount++));
 
-
-			allNodes.add(currentNode);
+			graph = new Graph();
+			graph.nodes.add(currentNode);
 			for(String line : Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]"), new DefaultFieldFilter()).lines){
 
 				if(isMethod(line)){  // Reads an instance of a method call
 
-					Method m = new Method(getLongMethodName(line), getShortMethodName(line));
 					//if(m.shortname.contains("method")){
 						stack.push(currentNode);
 						currentNode = new Node(String.format("%d", nodeCount++));
-						allNodes.add(currentNode);
-						stack.peek().addNode(m,currentNode);
+						graph.nodes.add(currentNode);
+						graph.addEdge(new Method(getLongMethodName(line), getShortMethodName(line), stack.peek(), currentNode));
 					//}
 
 				}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-					Return r = new Return(getLongReturnName(line), getShortReturnName(line));
-					Node temp = currentNode;
+					//Return r = new Return(getLongReturnName(line), getShortReturnName(line));
+					//Node temp = currentNode;
 					currentNode = stack.pop();
 					//temp.addNode(r, currentNode);
 

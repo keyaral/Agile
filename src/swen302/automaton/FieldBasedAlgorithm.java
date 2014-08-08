@@ -1,7 +1,5 @@
 package swen302.automaton;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Stack;
 
@@ -30,7 +28,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 //
 //	}
 
-	private Collection<Node> allNodes = new HashSet<Node>(); // Graph of Nodes
+	private Graph graph = new Graph();
 	private Map<String, Node> states = new HashMap<String, Node>();
 
 	private int nodeCount = 0;
@@ -71,13 +69,13 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 			else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
 
 				Node finalState = stack.pop();
-				Node initState = stack.pop();
+				Node initialState = stack.pop();
 
-				if (finalState != null && initState != null) {
-					initState.addNode(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(getLongReturnName(line))), finalState);
+				if (finalState != null && initialState != null) {
+					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(getLongReturnName(line)), initialState, finalState));
 
-					allNodes.add(finalState);
-					allNodes.add(initState);
+					graph.nodes.add(finalState);
+					graph.nodes.add(initialState);
 				}
 			}
 		}
@@ -127,14 +125,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 
 		buildGraph(trace);
 
-		Graph g = new Graph();
-		g.nodes.addAll(allNodes);
-		for(Node n : allNodes) {
-			g.edges.removeAll(n.getConnections().values());
-			g.edges.addAll(n.getConnections().values());
-		}
-
-		return g;
+		return graph;
 	}
 
 }
