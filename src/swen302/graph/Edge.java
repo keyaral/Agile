@@ -15,4 +15,17 @@ public class Edge {
 		this.longname = longName;
 		this.shortname = shortName;
 	}
+
+	@Override
+	public boolean equals(Object obj){
+		if(obj instanceof Edge){
+			return ((Edge)obj).longname.equals(longname);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return longname.hashCode();
+	}
 }

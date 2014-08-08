@@ -13,7 +13,7 @@ public class Node {
 	private Map<Node,Edge> connections = new HashMap<Node,Edge>();
 	private String id;
 	private String state = "";
-
+	private String Ktailstate = ""; //A string for recording Ktail strings in Graph using Ktails
 
 	/**
 	 * Constructs a node with given label.
@@ -43,11 +43,27 @@ public class Node {
 	}
 
 	/**
+	 * Returns the String stored in state
+	 * @return
+	 */
+	public String getState(){
+		return state;
+	}
+
+	public String getKState(){
+		return Ktailstate;
+	}
+
+
+	/**
 	 * Sets the state of the node
 	 * @param state
 	 */
 	public void setState(String state) {
 		this.state = state;
+	}
+	public void setKState(String state) {
+		this.Ktailstate = state;
 	}
 
 	/**
@@ -55,7 +71,7 @@ public class Node {
 	 * @return
 	 */
 	public String getLabel(){
-		return (id + (state.equals("")?"":": "+ state));
+		return (id + (state.equals("")?Ktailstate.equals("")?"":": "+Ktailstate:": "+ state));
 	}
 
 	/**

@@ -69,7 +69,7 @@ public class KTailsMain {
 
 
 			allNodes.add(currentNode);
-			for(String line : Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.*")).lines){
+			for(String line : Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]")).lines){
 
 				if(isMethod(line)){  // Reads an instance of a method call
 
