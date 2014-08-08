@@ -290,39 +290,68 @@ public class MainWindow {
 
         Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 
+        Map<Class<?>, DefaultMutableTreeNode> classNodes = new HashMap<Class<?>, DefaultMutableTreeNode>();
+
         for (Class<?> data : classData)
-        {
+        	classNodes.put(data, createClassNodes(packages, top, data));
 
-        	String className = data.getName();
-        	String packageName;
-        	if(className.contains("."))
-        		packageName = className.substring(0, className.lastIndexOf('.'));
-        	else
-        		packageName = "(default package)";
+        for(Map.Entry<Class<?>, DefaultMutableTreeNode> entry : classNodes.entrySet()) {
+        	Class<?> clazz = entry.getKey();
 
-        	DefaultMutableTreeNode packageNode = packages.get(packageName);
-        	if(packageNode == null) {
-        		packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
-        		packages.put(packageName, packageNode);
-        		top.add(packageNode);
+        	DefaultMutableTreeNode parentNode;
+
+        	Class<?> enclosingClass = clazz.getEnclosingClass();
+
+        	if(enclosingClass == null) {
+            	String packageName = getPackageName(clazz);
+
+            	DefaultMutableTreeNode packageNode = packages.get(packageName);
+            	if(packageNode == null) {
+            		packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
+            		packages.put(packageName, packageNode);
+            		top.add(packageNode);
+            	}
+
+            	parentNode = packageNode;
+
+        	} else {
+        		parentNode = classNodes.get(enclosingClass);
         	}
 
-        	ClassTreeItem classItem = new ClassTreeItem(data);
-
-        	category = new DefaultMutableTreeNode(classItem);
-        	packageNode.add(category);
-
-            for (Field field : data.getDeclaredFields()){
-            	category.add(new DefaultMutableTreeNode(new FieldTreeItem(field)));
-            }
-
-            for (Method method : data.getDeclaredMethods()) {
-            	MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
-            	allMethodTreeItems.add(treeItem);
-            	category.add(new DefaultMutableTreeNode(treeItem));
-            }
+        	System.out.println("Add "+entry.getValue()+" to "+parentNode);
+        	parentNode.add(entry.getValue());
         }
+
+
     }
+
+    private String getPackageName(Class<?> clazz) {
+    	String className = clazz.getName();
+    	if(className.contains("."))
+    		return className.substring(0, className.lastIndexOf('.'));
+    	else
+    		return "(default package)";
+    }
+
+    private DefaultMutableTreeNode createClassNodes(Map<String, DefaultMutableTreeNode> packages, DefaultMutableTreeNode top, Class<?> data) {
+    	ClassTreeItem classItem = new ClassTreeItem(data);
+
+    	DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
+
+        for (Field field : data.getDeclaredFields()){
+        	category.add(new DefaultMutableTreeNode(new FieldTreeItem(field)));
+        }
+
+        for (Method method : data.getDeclaredMethods()) {
+        	MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
+        	allMethodTreeItems.add(treeItem);
+        	category.add(new DefaultMutableTreeNode(treeItem));
+        }
+        return category;
+    }
+
+
+
 
     private class CheckBoxIconPanel extends JPanel {
 		private static final long serialVersionUID = 1L;

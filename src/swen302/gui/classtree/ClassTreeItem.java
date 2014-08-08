@@ -6,16 +6,14 @@ import javax.swing.Icon;
 
 public class ClassTreeItem extends AbstractTreeItem {
 	Class<?> clazz;
-	String shortName;
+
 	public ClassTreeItem(Class<?> clazz) {
 		this.clazz = clazz;
-		this.shortName = clazz.getName();
-		if(shortName.contains("."))
-			shortName = shortName.substring(shortName.lastIndexOf('.')+1);
 	}
+
 	@Override
 	public String toString() {
-		return shortName;
+		return clazz.getSimpleName();
 	}
 
 	@Override
