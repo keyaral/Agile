@@ -4,6 +4,7 @@ public class StringParser {
 
 
 	public StringParser(String line){
+		if(line == null)return;
 		for(char c : line.toCharArray()){
 			//currentC = c;
 			switch(c){
