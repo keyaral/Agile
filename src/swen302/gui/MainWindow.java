@@ -190,6 +190,9 @@ public class MainWindow {
 				JFileChooser fc = new JFileChooser(lastConfigDirectory);
 				fc.setFileFilter(new FileNameExtensionFilter("Configuration files", "cfg"));
 				int returnVal = fc.showSaveDialog(window);
+				if(returnVal == JFileChooser.CANCEL_OPTION){
+					return;
+				}
 
 				File file = fc.getSelectedFile();
 				if(!fc.getFileFilter().accept(file))

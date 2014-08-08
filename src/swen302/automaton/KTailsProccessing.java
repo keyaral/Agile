@@ -14,31 +14,21 @@ import swen302.tracer.Trace;
  */
 public class KTailsProccessing {
 
-	/**
-	 * Calls the trace reader method, and then calls the graph drawer.
-	 * @param filename
-	 */
-//	public KTailsMain(/*String filename*/){
-//		buildGraph("abcd");
-//		System.out.println("Graph Complete");
-//
-//		try {
-//			GraphSaver.save(graph,new File("output.png"));
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		System.out.println("Image Complete");
-//
-//	}
 
+
+	/**
+	 * Builkds a graph from a given trace
+	 * @param input
+	 */
 	public KTailsProccessing(Trace input){
-		System.out.println("Start Main");
 		buildGraph(input);
-		System.out.println("End Main");
+
 	}
 
+	/**
+	 * Returns all the nodes created from a trace
+	 * @return
+	 */
 	public List<Node> getNodes(){
 		return new ArrayList<Node>(graph.nodes);
 	}
@@ -54,8 +44,6 @@ public class KTailsProccessing {
 	 */
 	private void buildGraph(Trace input) {
 		try {
-			//Scanner in = new Scanner(new File(filename));
-			//Scanner in = new Scanner(Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, "swen302\\.testprograms\\.StringParser.*"));
 			Stack<Node> stack = new Stack<Node>();
 			int nodeCount = 0;
 			Node currentNode = new Node(String.format("%d", nodeCount++));
@@ -63,18 +51,18 @@ public class KTailsProccessing {
 			graph = new Graph();
 			graph.nodes.add(currentNode);
 
-			for(String line : input.lines){//Tracer.Trace("-cp bin", "swen302.testprograms.StringParser "+input, new RegexTraceMethodFilter("swen302\\.testprograms\\.StringParser.method[A-Z]")).lines){
-
+			for(String line : input.lines){
 				if(isMethod(line)){  // Reads an instance of a method call
 
-					//if(m.shortname.contains("method")){
-						stack.push(currentNode);
-						currentNode = new Node(String.format("%d", nodeCount++));
-						graph.nodes.add(currentNode);
-						graph.addEdge(new Method(getLongMethodName(line), getShortMethodName(line), stack.peek(), currentNode));
-					//}
+					stack.push(currentNode);
+					currentNode = new Node(String.format("%d", nodeCount++));
+					graph.nodes.add(currentNode);
+					graph.addEdge(new Method(getLongMethodName(line), getShortMethodName(line), stack.peek(), currentNode));
+
 
 				}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
+					Return r = new Return(getLongReturnName(line), getShortReturnName(line),stack.peek(),currentNode);
+					Node temp = currentNode;
 					currentNode = stack.pop();
 
 				}
@@ -84,6 +72,25 @@ public class KTailsProccessing {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Returns a label for the return instance
+	 * ( Return methods are displayed as "return" )
+	 * @param line
+	 * @return
+	 */
+	private String getShortReturnName(String line) {
+		return "Return";
+	}
+
+	/**
+	 * Returns the long name of a return method call.
+	 * @param line
+	 * @return
+	 */
+	private String getLongReturnName(String line) {
+		return line.substring(7);
 	}
 
 

@@ -16,32 +16,12 @@ import swen302.tracer.Trace;
 public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 	private List<List<Node>> traces = new ArrayList<List<Node>>();
-	private String[] inputs = new String[]{"bcbca","aaabca","aabcbca","aaa","dcd","dcba","abcdabcd","efabc","fffffffffff","ccbbee","abcdef","cbafff"};
-
-	private List<Edge[]> Edges = new ArrayList<Edge[]>();
-
+	private List<Edge[]> edges = new ArrayList<Edge[]>();
 	private Graph finalGraph = new Graph();
 
 	public static int k = 3;
 
-	/**
-	 * Constructs a new KTail algorithm, runs multiple traces using inputs as parameters
-	 * Creates a Graph out of traces and saves as a GraphSaver image.
-	 */
-//	public KTails(){
-//		for(String input: inputs){
-//			KTailsMain m = new KTailsMain(input);
-//			traces.add(m.getNodes());
-//		}
-//		createEdgeSets();
-//		try {
-//			GraphSaver.save(finalGraph,new File("output.png"));
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//	}
+
 
 	/**
 	 * Takes traces and creates connections between each Node ensuring nodes with equal values are not duplicated
@@ -64,7 +44,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 				// Check that that set of of method calls in the array doesn't already exist in the set of Nodes
 				boolean contains = false;
-				for(Edge[] trans : Edges ){
+				for(Edge[] trans : edges ){
 					if(equalNames(trans, array)){
 						contains = true;
 						break;
@@ -74,7 +54,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 // if it isn't contained already then add it to the list of edges to be recorded
 
 				if(!contains){
-					Edges.add(array);
+					edges.add(array);
 				}
 
 
@@ -129,6 +109,9 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 				toReturn += e.shortname+",";
 			}
 		}
+		if(toReturn.length() > 0){
+			toReturn = toReturn.substring(0, toReturn.length()-1);
+		}
 		return toReturn;
 	}
 
@@ -138,15 +121,6 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 	 * @return Node if one is found that matches, else returns null
 	 */
 	private Node findNode(Edge[] trans){
-		/*for(int i=0; i<Edges.size(); i++ ){
-			if(Arrays.equals(Edges.get(i), trans)){
-				for(Node n : finalNodes){
-					if(n.getID().equals(String.valueOf(i))){
-						return n;
-					}
-				}
-			}
-		}*/
 		// iterate through nodes and returns a node if the states match.
 		for(Node node : finalGraph.nodes) {
 			if(node.getKState().equals(getMethodStateString(trans))){
@@ -155,15 +129,6 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		}
 
 		return null;
-	}
-
-// Print all nodes as thier short names
-	private void printNodes(Edge[] trans){
-		for(Edge t : trans){
-			if(t != null){
-				System.out.println(t.shortname);
-			}
-		}
 	}
 
 	/**
@@ -182,15 +147,6 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		return toReturn;
 	}
 
-
-
-	/**
-	 * Main method
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception{
-		new KTailsAlgorithm();
-	}
 
 	@Override
 	public Graph generateGraph(Trace[] trace) {
