@@ -284,17 +284,17 @@ public class MainWindow {
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 
     private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
-        DefaultMutableTreeNode category = null;
-
         allMethodTreeItems.clear();
 
         Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 
         Map<Class<?>, DefaultMutableTreeNode> classNodes = new HashMap<Class<?>, DefaultMutableTreeNode>();
 
+        // For each class, generate the subtree corresponding to that class
         for (Class<?> data : classData)
-        	classNodes.put(data, createClassNodes(packages, top, data));
+        	classNodes.put(data, createClassNodes(data));
 
+        // Then insert the subtrees at the right locations (under packages or other classes)
         for(Map.Entry<Class<?>, DefaultMutableTreeNode> entry : classNodes.entrySet()) {
         	Class<?> clazz = entry.getKey();
 
@@ -303,10 +303,13 @@ public class MainWindow {
         	Class<?> enclosingClass = clazz.getEnclosingClass();
 
         	if(enclosingClass == null) {
+
+        		// Top-level class; insert under a package
             	String packageName = getPackageName(clazz);
 
             	DefaultMutableTreeNode packageNode = packages.get(packageName);
             	if(packageNode == null) {
+            		// If no node exists for this package, create one
             		packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
             		packages.put(packageName, packageNode);
             		top.add(packageNode);
@@ -315,6 +318,7 @@ public class MainWindow {
             	parentNode = packageNode;
 
         	} else {
+        		// Nested class; insert under the enclosing class
         		parentNode = classNodes.get(enclosingClass);
         	}
 
@@ -324,6 +328,7 @@ public class MainWindow {
 
     }
 
+    /** Returns the package name, as shown in the class tree - e.g. "swen302.testprograms" or "(default package)" */
     private String getPackageName(Class<?> clazz) {
     	String className = clazz.getName();
     	if(className.contains("."))
@@ -332,7 +337,8 @@ public class MainWindow {
     		return "(default package)";
     }
 
-    private DefaultMutableTreeNode createClassNodes(Map<String, DefaultMutableTreeNode> packages, DefaultMutableTreeNode top, Class<?> data) {
+    /** Creates a subtree of the class tree from one class. */
+    private DefaultMutableTreeNode createClassNodes(Class<?> data) {
     	ClassTreeItem classItem = new ClassTreeItem(data);
 
     	DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
@@ -421,7 +427,7 @@ public class MainWindow {
 					public void itemStateChanged(ItemEvent e) {
 						if(stopCellEditing())
 							fireEditingStopped();
-						((MethodTreeItem)value).checked = ((CheckBoxIconPanel)rv).checkBox.isSelected();
+						((AbstractTreeItem)value).checked = ((CheckBoxIconPanel)rv).checkBox.isSelected();
 						doTraceAndAnalysis();
 					}
 				});
