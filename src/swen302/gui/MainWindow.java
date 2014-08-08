@@ -43,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -56,6 +57,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
+import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
@@ -85,7 +87,7 @@ public class MainWindow {
 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
-	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit;
+	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit, fileChangeK;
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
@@ -146,6 +148,8 @@ public class MainWindow {
 		fileLoadConfig = fileMenu.add("Load Config...");
 		fileSaveConfig = fileMenu.add("Save Config...");
 		fileMenu.addSeparator();
+		fileChangeK = fileMenu.add("Change K Value...");
+		fileMenu.addSeparator();
 		fileExit = fileMenu.add("Exit");
 
 		fileLoadAdvanced.setEnabled(false); // not implemented
@@ -195,6 +199,9 @@ public class MainWindow {
 				JFileChooser fc = new JFileChooser(lastConfigDirectory);
 				fc.setFileFilter(new FileNameExtensionFilter("Configuration files", "cfg"));
 				int returnVal = fc.showSaveDialog(window);
+				if(returnVal == JFileChooser.CANCEL_OPTION){
+					return;
+				}
 
 				File file = fc.getSelectedFile();
 
@@ -245,6 +252,24 @@ public class MainWindow {
 				dlg.setModalityType(ModalityType.APPLICATION_MODAL);
 				dlg.setLocationRelativeTo(window);
 				dlg.setVisible(true);
+			}
+		});
+
+		fileChangeK.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				boolean valid = false;
+				while(!valid){
+					try{
+						int k = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter K value:", "Set K", JOptionPane.PLAIN_MESSAGE));
+						if(k>0){
+							valid = true;
+							KTailsAlgorithm.k = k;
+						}
+					}catch(Exception ex){
+						valid = false;
+					}
+				}
 			}
 		});
 
