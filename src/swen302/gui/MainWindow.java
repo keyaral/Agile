@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -88,6 +89,9 @@ public class MainWindow {
 
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
+
+	private int traceCount = -1;
+	private JTextField[] argumentTextFields;
 
 	/**
 	 * Instances of this are used in the combo box's item list, as they implement toString.
@@ -326,40 +330,50 @@ public class MainWindow {
 			String path = jarData.file.getAbsolutePath();
 			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
-/// This section brings up a dialog box for the number of traces
+			/// This section brings up a dialog box for the number of traces
 			/// then creates that many fields for the user to imput the arguments for each trace.
-			//Get traceCount
-			boolean valid = false;
-			int traceCount = 0;
-			while(!valid){
-				try{
-					valid = true;
-					traceCount =  Integer.parseInt(JOptionPane.showInputDialog(null, "Enter number of traces to be run:", JOptionPane.PLAIN_MESSAGE));
-					if(traceCount < 0){valid = false;}
-				}catch(Exception e){
-					valid = false;
+			boolean newArgs = true;
+			int option = JOptionPane.OK_OPTION;
+			if(traceCount >= 0){
+				int reply = JOptionPane.showConfirmDialog(null, "Use previous arguments?", "Enter Trace Arguments", JOptionPane.YES_NO_OPTION);
+				newArgs = reply==JOptionPane.NO_OPTION;
+			}
+			if(newArgs){
+				//Get traceCount
+				boolean valid = false;
+				traceCount = 0;
+				while(!valid){
+					try{
+						valid = true;
+						traceCount =  Integer.parseInt(JOptionPane.showInputDialog(null, "Enter number of traces to be run:", JOptionPane.PLAIN_MESSAGE));
+						if(traceCount < 0){valid = false;}
+					}catch(Exception e){
+						valid = false;
+					}
 				}
-			}
-			//Construct input gui
-			JTextField[] textfields = new JTextField[traceCount];
-			Object[] message = new Object[traceCount*2];
-			for(int i=0; i<message.length; i+=2){
-				message[i] = ("Argument "+(i/2+1)+":");
-				textfields[i/2] = new JTextField();
-				message[i+1] = textfields[i/2];
-			}
+				//Construct input gui
+				JTextField[] textfields = new JTextField[traceCount];
+				Object[] message = new Object[traceCount*2];
+				for(int i=0; i<message.length; i+=2){
+					message[i] = ("Argument "+(i/2+1)+":");
+					textfields[i/2] = new JTextField();
+					message[i+1] = textfields[i/2];
+				}
 
-			//display input gui
-			int option = JOptionPane.showConfirmDialog(null, message, "Enter Trace Arguments", JOptionPane.OK_CANCEL_OPTION);
+				argumentTextFields = textfields;
+
+				//display input gui
+				option = JOptionPane.showConfirmDialog(null, message, "Enter Trace Arguments", JOptionPane.OK_CANCEL_OPTION);
+			}
 
 			//retrieve information
 			if(option  == JOptionPane.OK_OPTION){
 				Trace[] traces = new Trace[traceCount];
 
 				for(int i=0; i<traceCount; i++){
-					traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass+" "+textfields[i].getText(), methodFilter, fieldFilter);
+					traces[i] = Tracer.Trace("-cp \"" + path + "\"", mainClass+" "+argumentTextFields[i].getText(), methodFilter, fieldFilter);
 				}
-///////// End of the dialog box arguement multiple traces
+				///////// End of the dialog box arguement multiple traces
 
 				//Trace trace = Tracer.Trace("-cp \"" + path + "\"", mainClass, filter);
 
