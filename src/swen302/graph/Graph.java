@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 public class Graph {
 	public Set<Node> nodes = new HashSet<Node>();
 	public Set<Edge> edges = new HashSet<Edge>();
@@ -30,14 +32,8 @@ public class Graph {
 		Random rand = new Random();
 		
 		for (Node n : nodes) {
-			int x = (int)Math.floor(rand.nextDouble()*width);
-			int y = (int)Math.floor(rand.nextDouble()*height);
-			
-			System.out.println(x + " - " + y);
-			n.position.setLocation(x, y);
+			n.randPosition(rand);
 			n.mass = 1.0f;
-			n.velocity.x = 0.0;
-			n.velocity.y = 0.0;
 		}
 		
 	}

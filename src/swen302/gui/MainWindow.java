@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
+
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BoxLayout;
@@ -45,6 +46,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -52,6 +54,7 @@ import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
 import swen302.automaton.FieldBasedAlgorithm;
@@ -89,9 +92,8 @@ public class MainWindow {
 	private JPanel treePanel;
 	private JPanel configPanel;
 	private JButton runButton;
-	private ImagePane graphPane;
+	private VertexGraphPane graphPane;
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
-
 	private JarData jarData;
 
 	private File lastJarDirectory = new File(".");
@@ -174,7 +176,7 @@ public class MainWindow {
 					if(AUTO_RUN)
 						doTraceAndAnalysis();
 					else
-						graphPane.setImage(null);
+						graphPane.setGraph(null);
 				}
 			}
 		});
@@ -286,7 +288,7 @@ public class MainWindow {
 		treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
 		treePanel.add(configPanel, BorderLayout.SOUTH);
 
-		graphPane = new ImagePane();
+		graphPane = new VertexGraphPane();
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
@@ -414,7 +416,7 @@ public class MainWindow {
 				GraphSaver.save(graph, pngfile);
 				BufferedImage image = ImageIO.read(pngfile);
 
-				graphPane.setImage(image);
+				graphPane.setGraph(graph);
 			}
 
 		} catch (Exception e) {
