@@ -25,6 +25,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -50,6 +51,7 @@ public class EditExecutionsDialog extends JDialog {
 	private JButton okButton, cancelButton;
 	private JButton addButton, removeButton;
 	private JTextField argumentsField;
+	private JScrollPane argumentScroller;
 
 	private ListModel listModel;
 
@@ -95,8 +97,12 @@ public class EditExecutionsDialog extends JDialog {
 		listModel = new ListModel();
 		listControl = new JList<>(listModel);
 		listControl.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+		listControl.setVisibleRowCount(15);
+		argumentScroller = new JScrollPane(listControl);
+		argumentScroller.setPreferredSize(new Dimension(250,500));
 
-		listControl.setPreferredSize(new Dimension(250, 500));
+
+
 
 		addButton = new JButton("Add");
 		removeButton = new JButton("Remove");
@@ -105,7 +111,7 @@ public class EditExecutionsDialog extends JDialog {
 
 		listPanel = new JPanel();
 		listPanel.setLayout(new GridBagLayout());
-		listPanel.add(listControl, new GridBagConstraints(0, 0, 2, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+		listPanel.add(argumentScroller, new GridBagConstraints(0, 0, 2, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
 		listPanel.add(addButton, new GridBagConstraints(0, 1, 1, 1, 1, 0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
 		listPanel.add(removeButton, new GridBagConstraints(1, 1, 1, 1, 1, 0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
 
