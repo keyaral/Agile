@@ -1,7 +1,9 @@
 package swen302.automaton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
@@ -13,98 +15,100 @@ import swen302.tracer.Trace;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class KTailsAlgorithm implements VisualizationAlgorithm {
+public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisualizationAlgorithm {
 
 	private List<Trace> traces = new ArrayList<>();
-	private List<String[]> edges = new ArrayList<>();
 	private Graph finalGraph = new Graph();
 	private int nextEdgeID = 0;
+	private Map<String, Node> nodes = new HashMap<>();
 
 	public static int k = 3;
 
 
+	private String[] prev;
+
+	private void startTrace() {
+		prev = new String[k];
+	}
+
+	@Override
+	public Graph getCurrentGraph() {
+		return finalGraph;
+	}
+
+	@Override
+	public void startIncremental() {
+		startTrace();
+	}
+
+	private void processCall(String methodIdentifier) {
+		String[] old = Arrays.copyOf(prev, k);
+
+		for(int i = 1; i < k; i++)
+			prev[i-1] = prev[i];
+		prev[k-1] = methodIdentifier;
+		if(prev[0] == null)
+			return;
+
+		connect(old[0] == null ? null : old, prev);
+	}
+
+
+	@Override
+	public boolean processLine(String line) {
+		if(line.startsWith("methodCall ")) {
+			processCall(line.substring(11));
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Takes traces and creates connections between each Node ensuring nodes with equal values are not duplicated
 	 */
 	private void createEdgeSets(){
-
-		// Goes through a trace and orders them in the order the methods were called
-
 		for(Trace n : traces){
-			String[] prev = null;
-			List<String> calls = new ArrayList<>();
+			startTrace();
 			for(String line : n.lines)
-				if(line.startsWith("methodCall "))
-					calls.add(line.substring(11));
-			String[] t = calls.toArray(new String[calls.size()]);
-
-			// Then splits up the trace into k sized array of the method calls.
-			//(each array is different by removing the first and adding the next method from the trace)
-			for(int i=0; i<t.length-k; i++){
-				String[] array = new String[k];
-				for(int j=0; j<k; j++){
-					array[j] = t[i+j];
-				}
-
-				// Check that that set of of method calls in the array doesn't already exist in the set of Nodes
-				boolean contains = false;
-				for(String[] trans : edges ){
-					if(Arrays.equals(trans, array)) {
-						contains = true;
-						break;
-					}
-				}
-
-// if it isn't contained already then add it to the list of edges to be recorded
-
-				if(!contains){
-					edges.add(array);
-				}
-
-
-	// Calls connect using that array, a previous array if defined and the boolean of if it already exists.
-				connect(prev, array, !contains);
-				prev = array; // Makes the current array previous to be reference by other arrays in the trace.
-			}
+				processLine(line);
 		}
 	}
 
 	/**
-	 * Connects nodes to form the K-Tail automaton
+	 * Connects the node corresponding to <var>prev</var> to the node corresponding to <var>next</var>.
+	 * If <var>prev</var> is null, creates a new start node.
 	 * @param prev	An array of the previous method call followed by the following k-1 calls in the trace
 	 * @param next	An array of the current method call followed by k-1 calls in the trace
 	 * @param newNode	Boolean defining if the current node does not already exist
 	 */
-	private void connect(String[] prev, String[] next, boolean newNode){
-
-		// Node already exist, and is the first array in the trace
-		if(prev==null && !newNode)return;
+	private void connect(String[] prev, String[] next){
 
 		if(prev == null){ //New trace, and new original node
 			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
-			n.setKState(getMethodStateString(next));
+			nodes.put(getMethodStateString(next, false), n);
+			n.setKState(getMethodStateString(next, true));
 			finalGraph.nodes.add(n);
 
-		}else if(newNode){ // new node within a trace
-			Node newN = new Node(String.valueOf(finalGraph.nodes.size()));
-			newN.setKState(getMethodStateString(next));
-			finalGraph.nodes.add(newN);
-			Node prevNode = findNode(prev);
-			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), prev[0], prevNode, newN));
-		}else{
-			//find a node that matches prev and connect with next that is found //both exist
-			Node prevNode = findNode(prev);
+		} else {
 			Node nextNode = findNode(next);
-			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), prev[0], prevNode, nextNode));
+			Node prevNode = findNode(prev);
+
+			if(nextNode == null) { // new node within a trace
+				nextNode = new Node(String.valueOf(finalGraph.nodes.size()));
+				nodes.put(getMethodStateString(next, false), nextNode);
+				nextNode.setKState(getMethodStateString(next, true));
+				finalGraph.nodes.add(nextNode);
+			}
+
+			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.formatMethodLabel(prev[0]), prevNode, nextNode));
 		}
 	}
 // Returns a string of the array of method calls
-	private String getMethodStateString(String[] edges){
+	private String getMethodStateString(String[] edges, boolean formatted){
 		String toReturn = "";
 		for(String e : edges){
 			if(e != null){
-				toReturn += AutomatonGraphUtils.formatMethodLabel(e)+",";
+				toReturn += (formatted ? AutomatonGraphUtils.formatMethodLabel(e) : e)+",";
 			}
 		}
 		if(toReturn.length() > 0){
@@ -119,14 +123,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 	 * @return Node if one is found that matches, else returns null
 	 */
 	private Node findNode(String[] trans){
-		// iterate through nodes and returns a node if the states match.
-		for(Node node : finalGraph.nodes) {
-			if(node.getKState().equals(getMethodStateString(trans))){
-				return node;
-			}
-		}
-
-		return null;
+		return nodes.get(getMethodStateString(trans, false));
 	}
 
 
@@ -140,7 +137,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 	@Override
 	public String toString() {
-		return "K-Tails algorithm";
+		return "K-Tails";
 	}
 
 }

@@ -12,7 +12,7 @@ public interface VisualizationAlgorithm {
 	/** Returns the name of the algorithm. */
 	public String toString();
 
-	public static final List<Class<? extends VisualizationAlgorithm>> ALGORITHMS = Arrays.asList(
+	public static final List<Class<? extends VisualizationAlgorithm>> ALGORITHMS = Arrays.<Class<? extends VisualizationAlgorithm>>asList(
 		CallTreeAlgorithm.class,
 		FieldBasedAlgorithm.class,
 		KTailsAlgorithm.class);
