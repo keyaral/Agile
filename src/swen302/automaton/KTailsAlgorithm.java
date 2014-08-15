@@ -1,5 +1,6 @@
 package swen302.automaton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -15,9 +16,10 @@ import swen302.tracer.Trace;
  */
 public class KTailsAlgorithm implements VisualizationAlgorithm {
 
-	private List<List<Node>> traces = new ArrayList<List<Node>>();
-	private List<Edge[]> edges = new ArrayList<Edge[]>();
+	private List<Trace> traces = new ArrayList<>();
+	private List<String[]> edges = new ArrayList<>();
 	private Graph finalGraph = new Graph();
+	private int nextEdgeID = 0;
 
 	public static int k = 3;
 
@@ -30,22 +32,26 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 		// Goes through a trace and orders them in the order the methods were called
 
-		for(List<Node> n : traces){
-			Edge[] prev = null;
-			Edge[] t = getOrderedArray(n);
+		for(Trace n : traces){
+			String[] prev = null;
+			List<String> calls = new ArrayList<>();
+			for(String line : n.lines)
+				if(line.startsWith("methodCall "))
+					calls.add(line.substring(11));
+			String[] t = calls.toArray(new String[calls.size()]);
 
 			// Then splits up the trace into k sized array of the method calls.
 			//(each array is different by removing the first and adding the next method from the trace)
 			for(int i=0; i<t.length-k; i++){
-				Edge[] array = new Edge[k];
+				String[] array = new String[k];
 				for(int j=0; j<k; j++){
 					array[j] = t[i+j];
 				}
 
 				// Check that that set of of method calls in the array doesn't already exist in the set of Nodes
 				boolean contains = false;
-				for(Edge[] trans : edges ){
-					if(equalNames(trans, array)){
+				for(String[] trans : edges ){
+					if(Arrays.equals(trans, array)) {
 						contains = true;
 						break;
 					}
@@ -78,7 +84,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 	 * @param next	An array of the current method call followed by k-1 calls in the trace
 	 * @param newNode	Boolean defining if the current node does not already exist
 	 */
-	private void connect(Edge[] prev, Edge[] next, boolean newNode){
+	private void connect(String[] prev, String[] next, boolean newNode){
 
 		// Node already exist, and is the first array in the trace
 		if(prev==null && !newNode)return;
@@ -93,20 +99,20 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 			newN.setKState(getMethodStateString(next));
 			finalGraph.nodes.add(newN);
 			Node prevNode = findNode(prev);
-			finalGraph.addEdge(new Edge(prev[0], prevNode, newN));
+			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), prev[0], prevNode, newN));
 		}else{
 			//find a node that matches prev and connect with next that is found //both exist
 			Node prevNode = findNode(prev);
 			Node nextNode = findNode(next);
-			finalGraph.addEdge(new Edge(prev[0], prevNode, nextNode));
+			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), prev[0], prevNode, nextNode));
 		}
 	}
 // Returns a string of the array of method calls
-	private String getMethodStateString(Edge[] edges){
+	private String getMethodStateString(String[] edges){
 		String toReturn = "";
-		for(Edge e : edges){
+		for(String e : edges){
 			if(e != null){
-				toReturn += e.label+",";
+				toReturn += AutomatonGraphUtils.formatMethodLabel(e)+",";
 			}
 		}
 		if(toReturn.length() > 0){
@@ -120,7 +126,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 	 * @param trans	Array of method calls
 	 * @return Node if one is found that matches, else returns null
 	 */
-	private Node findNode(Edge[] trans){
+	private Node findNode(String[] trans){
 		// iterate through nodes and returns a node if the states match.
 		for(Node node : finalGraph.nodes) {
 			if(node.getKState().equals(getMethodStateString(trans))){
@@ -149,11 +155,8 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 
 	@Override
-	public Graph generateGraph(Trace[] trace) {
-		for(Trace input: trace){
-			KTailsProccessing m = new KTailsProccessing(input);
-			traces.add(m.getNodes());
-		}
+	public Graph generateGraph(Trace[] traces) {
+		this.traces.addAll(Arrays.asList(traces));
 		createEdgeSets();
 		return finalGraph;
 	}
