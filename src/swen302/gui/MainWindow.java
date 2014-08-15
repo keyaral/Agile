@@ -36,6 +36,7 @@ import javax.swing.AbstractCellEditor;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -88,6 +89,8 @@ public class MainWindow {
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
 	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit, fileChangeK;
+	private JMenu displayMenu;
+	private JCheckBoxMenuItem displayID, displayState, displayClass, displayMethod, displayParams;
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
@@ -151,6 +154,59 @@ public class MainWindow {
 		fileChangeK = fileMenu.add("Change K Value...");
 		fileMenu.addSeparator();
 		fileExit = fileMenu.add("Exit");
+
+		displayMenu = new JMenu("Display");
+
+		displayID = new JCheckBoxMenuItem("ID",true);
+		displayMenu.add(displayID);
+		displayState = new JCheckBoxMenuItem("State",true);
+		displayMenu.add(displayState);
+		displayClass = new JCheckBoxMenuItem("Class",true);
+		displayMenu.add(displayClass);
+		displayMethod = new JCheckBoxMenuItem("Method",true);
+		displayMenu.add(displayMethod);
+		displayParams = new JCheckBoxMenuItem("Parameters",true);
+		displayMenu.add(displayParams);
+
+		displayID.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GraphSaver.displayID = !GraphSaver.displayID;
+			}
+		});
+
+		displayState.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GraphSaver.displayState = !GraphSaver.displayState;
+			}
+		});
+
+		displayClass.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GraphSaver.displayClass = !GraphSaver.displayClass;
+			}
+		});
+
+		displayMethod.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GraphSaver.displayMethod = !GraphSaver.displayMethod;
+			}
+		});
+
+		displayParams.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GraphSaver.displayParams = !GraphSaver.displayMethod;
+			}
+		});
 
 		fileLoadAdvanced.setEnabled(false); // not implemented
 
@@ -274,6 +330,7 @@ public class MainWindow {
 		});
 
 		menuBar.add(fileMenu);
+		menuBar.add(displayMenu);
 
 		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem("No file loaded")));
 		tree.setCellRenderer(new ClassTreeCellRenderer());

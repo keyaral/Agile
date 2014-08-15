@@ -72,7 +72,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 				Node initialState = stack.pop();
 
 				if (finalState != null && initialState != null) {
-					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(getLongReturnName(line)), initialState, finalState));
+					graph.addEdge(new Edge(String.valueOf(nodeCount++), initialState, finalState));
 
 					graph.nodes.add(finalState);
 					graph.nodes.add(initialState);

@@ -1,5 +1,7 @@
 package swen302.graph;
 
+import swen302.automaton.AutomatonGraphUtils;
+
 /**
  *SuperClass to describe the relation between two nodes to represent a trace call
  *
@@ -12,15 +14,15 @@ public class Edge {
 	public String longname,shortname;
 	public final Node node1, node2;
 
-	public Edge(String longName, String shortName, Node node1, Node node2){
+	public Edge(String longName, Node node1, Node node2){
 		this.longname = longName;
-		this.shortname = shortName;
+		this.shortname = AutomatonGraphUtils.formatMethodLabel(longName);
 		this.node1 = node1;
 		this.node2 = node2;
 	}
 
 	public Edge(Edge copyFrom, Node node1, Node node2) {
-		this(copyFrom.longname, copyFrom.shortname, node1, node2);
+		this(copyFrom.longname, node1, node2);
 	}
 
 	@Override
