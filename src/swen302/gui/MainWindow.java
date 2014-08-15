@@ -378,7 +378,7 @@ public class MainWindow {
 		if(jarData == null)
 			return;
 
-		TraceMethodFilter methodFilter = new TraceMethodFilter() {
+		final TraceMethodFilter methodFilter = new TraceMethodFilter() {
 			private Set<String> selectedMethods = new HashSet<String>();
 
 			{
@@ -394,7 +394,7 @@ public class MainWindow {
 
 		};
 
-		TraceFieldFilter fieldFilter = new TraceFieldFilter() {
+		final TraceFieldFilter fieldFilter = new TraceFieldFilter() {
 			private Set<String> selectedFields = new HashSet<String>();
 
 			{
@@ -412,31 +412,48 @@ public class MainWindow {
 			}
 		};
 
-		try {
-			String path = jarData.file.getAbsolutePath();
-			String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
+		final String path = jarData.file.getAbsolutePath();
+		final String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
-			Trace[] traces = new Trace[executions.size()];
+		final ExecutionData[] executionsArray = executions.toArray(new ExecutionData[executions.size()]);
 
-			for(int k = 0; k < executions.size(); k++) {
-				ExecutionData ed = executions.get(k);
+		Thread thread = new Thread() {
 
-				traces[k] = Tracer.Trace("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter);
+			@Override
+			public void run() {
 
-				//Trace.writeFile(trace, "debugLastTrace.txt");
+				try {
+					Trace[] traces = new Trace[executionsArray.length];
+
+					for(int k = 0; k < executions.size(); k++) {
+						ExecutionData ed = executions.get(k);
+
+						traces[k] = Tracer.launchAndTrace("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter);
+
+						//Trace.writeFile(trace, "debugLastTrace.txt");
+					}
+
+					Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
+
+					File pngfile = new File("tempAnalysis.png");
+					GraphSaver.save(graph, pngfile);
+					final BufferedImage image = ImageIO.read(pngfile);
+
+					EventQueue.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							graphPane.setImage(image);
+						}
+					});
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
 			}
+		};
 
-			Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
-
-			File pngfile = new File("tempAnalysis.png");
-			GraphSaver.save(graph, pngfile);
-			BufferedImage image = ImageIO.read(pngfile);
-
-			graphPane.setImage(image);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		thread.setName("MainWindow tracer thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 
 
