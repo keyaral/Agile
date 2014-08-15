@@ -3,7 +3,6 @@ package swen302.tracer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
@@ -52,51 +51,22 @@ class ObjectReferenceGenerator {
 public class Tracer {
 
 	/**
-	 * Starts a program and executes it.
+	 * Starts a program and traces it, asynchronously.
+	 * This method returns once the program is running.
 	 *
 	 * @param vmOptions The arguments passed into the Virtual Machine
 	 * @param mainClass The Main class of the given application
 	 * @param methodFilter The method filter to use
 	 * @param fieldFilter The field filter to use
+	 * @param consumer The trace consumer
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static Trace launchAndTrace(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter) throws Exception
+	public static void launchAndTraceAsync(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter, RealtimeTraceConsumer consumer) throws Exception
 	{
-		final Trace t = new Trace();
-
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
-		final AtomicBoolean finished = new AtomicBoolean();
-
-		RealtimeTraceConsumer consumer = new RealtimeTraceConsumer() {
-			@Override
-			public void onTraceLine(String line) {
-				t.lines.add(line);
-			}
-
-			@Override
-			public void onTraceFinish() {
-				synchronized(finished) {
-					finished.set(true);
-					finished.notifyAll();
-				}
-			}
-
-			@Override
-			public void onTracerCrash(Throwable t) {
-				t.printStackTrace();
-			}
-		};
-
 		TraceAsync(vm, methodFilter, fieldFilter, consumer);
-
-		synchronized(finished) {
-			while(!finished.get())
-				finished.wait();
-		}
-
-		return t;
 	}
 
 	/**

@@ -17,7 +17,7 @@ public class KTailsProccessing {
 
 
 	/**
-	 * Builkds a graph from a given trace
+	 * Builds a graph from a given trace
 	 * @param input
 	 */
 	public KTailsProccessing(Trace input){
