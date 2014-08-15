@@ -21,11 +21,11 @@ public class EadesSpringEmbedder {
 	public Graph graph;
 	public Graphics graphics;
 	
-	public double MAGNETIC_STRENGTH = 200.0;
-	public double SPRING_STRENGTH = -2.0;
+	public double MAGNETIC_STRENGTH = 200000.0;
+	public double SPRING_STRENGTH = -20.0;
 	public double FRICTION_STATIC = 0.3;
 	public double FRICTION_KINETIC = 0.1;
-	public double GRAVITY = -0.98; // =) Jst liek IRL!
+	public double GRAVITY = -0.98; // =) Jst liek IRL! =D
 	
 	public EadesSpringEmbedder(Graph graph, int width, int height){
 		this.graph = graph;
@@ -51,26 +51,26 @@ public class EadesSpringEmbedder {
 			}
 			
 			//Pull towards center
+			//TODO: Actual center
 			Vector2D centerGravity = new Vector2D(300, 400);
 			
 			double distance = n.getPosition().distance(centerGravity);
-			double force = (1000)/distance;
+			double force = distance;
 			
 			Vector2D vecResult = n.getPosition().subtract(centerGravity);
 			vecResult = vecResult.normalize();
 			vecResult = vecResult.scalarMultiply(force);
 			vecResult = vecResult.negate();
+			
+			
+			
 			tempForce = tempForce.add(vecResult);
-			
-			//Reduce the effect of the force
-			
-			tempForce = tempForce.scalarMultiply(0.4);
 			tempForce = tempForce.subtract(drag(n.getVelocity()));
 			
-			tempForce = tempForce.scalarMultiply(timeStep);
-			
-			n.force = n.force.add(tempForce);
-			n.updatePosition();
+			n.force = tempForce;
+		}
+		for (Node n : graph.nodes) {
+			n.updatePosition(timeStep);
 			//Stop calculating, will probably leave out.
 			//This is so the graph can be made interactive
 		}
@@ -82,46 +82,32 @@ public class EadesSpringEmbedder {
 	 */
 	private Vector2D coulombsLaw(Node n1, Node n2) {
 		double distance = n1.getPosition().distance(n2.getPosition());
-		double force = (this.MAGNETIC_STRENGTH*1*1)/distance;
+		
+		double force = (this.MAGNETIC_STRENGTH*1*1)/(Math.pow(distance, 2));
 		
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		vecResult = vecResult.normalize();
+			
 		vecResult = vecResult.scalarMultiply(force);
 		
 		return vecResult;
 	}
 	
 	private Vector2D drag(Vector2D velocity) {
-		
-		if(velocity.getX()  == 0 && velocity.getY() == 0) {
-			return new Vector2D(0.0, 0.0);
-		}
-		
-		double magnitude = velocity.distance(new Vector2D(0.0, 0.0));
-		
-		Vector2D vUnit = velocity.normalize();
-		vUnit = vUnit.scalarMultiply(100*Math.pow(magnitude, 2) + 1);
-		
-		return vUnit;
+		double force = 0.25*1*velocity.getNorm();
+		return velocity.scalarMultiply(force);
 	}
 	
 	private Vector2D hookesLaw(Node n1, Node n2) {
 		// F = -K(x-N)
 		
-		//double distance = n1.getPosition().distance(n2.getPosition());
-		//distance = distance * 0.5; //Only want half the length
-		//distance = distance - 40; //We are only interested 
-		
 		double length = 40.0;
 		
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition()); //The vector between the two nodes
-		
 		Vector2D springLength = vecResult.normalize();
 		
 		springLength = springLength.scalarMultiply(length);
-		
 		vecResult = vecResult.subtract(springLength);
-		
 		vecResult = vecResult.scalarMultiply(SPRING_STRENGTH);
 		
 		return vecResult;

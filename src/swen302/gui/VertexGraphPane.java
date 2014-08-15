@@ -26,7 +26,7 @@ public class VertexGraphPane extends JPanel {
 		timer = new Timer(10, new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent ae) {
-		        graph.step(0.0005);
+		        graph.step(0.1);
 
 		        repaint();
 		    }

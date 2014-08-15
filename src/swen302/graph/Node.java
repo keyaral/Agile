@@ -26,7 +26,11 @@ public class Node {
 	public Vector2D force;
 	public double mass;
 	public double REPULSION = 2.0;
-
+	
+	public static final double uStatic = 10;//1.0;
+	public static final double uKinetic = 5;//0.8;
+	public static final double gravity = -9.8;
+	
 	/**
 	 * Constructs a node with given label.
 	 *
@@ -40,11 +44,51 @@ public class Node {
 		this.force = new Vector2D(0.0, 0.0);
 	}
 	
-	public void updatePosition(){
+	public void updatePosition(double timestep){
+		//Apply friction
+		double friction;
+		
+		if(this.velocity.getNorm() < 0.1) {
+			friction = uStatic*mass*gravity;
+		}
+		else {
+			friction = uKinetic*mass*gravity;
+		}
+		
+		System.out.println("One -> " + this.force + " - " + friction);
+		
+		//Friction force should oppose the force
+		Vector2D frictionForce = new Vector2D(0.0, 0.0);
+		if (this.force.getNorm() > 0) {
+			frictionForce = this.force.normalize().scalarMultiply(friction).negate();
+		}
+		if (this.force.getNorm() < friction) {
+			//Make it so that it doesn't move if the force isn't strong enough to overcome friction
+			frictionForce = this.force.normalize().scalarMultiply(this.force.getNorm()).negate();
+		}
+		
+		this.force = this.force.subtract(frictionForce);
+		
+		System.out.println("One -> " + this.force + " - " + frictionForce);
+		
 		//F = m*a
 		this.acceleration = this.force.scalarMultiply(mass);
-		this.velocity = this.acceleration.add(acceleration);
-		this.position = this.position.add(velocity);
+		
+		//Max Acceleration
+		if(this.acceleration.getNorm() > 100)
+			this.acceleration = this.acceleration.normalize().scalarMultiply(100);
+		
+		//Displacement
+		// d = v*t + 0.5*a*t^2
+		double tsq = Math.pow(timestep, 2);
+		Vector2D displacement1 = this.velocity.scalarMultiply(timestep);
+		Vector2D displacement2 = this.acceleration.scalarMultiply(tsq);
+		
+		displacement2.scalarMultiply(0.5);
+		
+		Vector2D finalDisplacement = displacement1.add(displacement2);
+		
+		this.position = this.position.add(finalDisplacement);
 	}
 	
 	public Vector2D getVelocity(){ return velocity; }
