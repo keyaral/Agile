@@ -710,10 +710,15 @@ public class MainWindow {
 
 		//Set display settings
 		GraphSaver.displayID = conf.displayID;
+		displayID.setState(GraphSaver.displayID);
 		GraphSaver.displayState = conf.displayState;
+		displayState.setState(GraphSaver.displayState);
 		GraphSaver.displayClass = conf.displayClass;
+		displayClass.setState(GraphSaver.displayClass);
 		GraphSaver.displayMethod = conf.displayMethod;
+		displayMethod.setState(GraphSaver.displayMethod);
 		GraphSaver.displayParams = conf.displayParams;
+		displayParams.setState(GraphSaver.displayParams);
 
 		KTailsAlgorithm.k = conf.k;
 
