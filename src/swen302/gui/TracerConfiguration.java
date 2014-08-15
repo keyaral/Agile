@@ -27,5 +27,9 @@ public class TracerConfiguration implements Serializable {
 
 	public List<ExecutionData> executions = new ArrayList<>();
 
+	public boolean displayID,displayState,displayClass,displayMethod,displayParams;
+
 	public boolean continuousUpdating = false;
+
+	public int k;
 }
