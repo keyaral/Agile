@@ -1,5 +1,7 @@
 package swen302.graph;
 
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
@@ -28,11 +30,14 @@ public class Graph {
 		edge.node1.addOutgoingEdge(edge);
 	}
 	
-	public void generateInitialLayout(int width, int height) {
+	public void generateInitialLayout(int width, int height, Graphics graphics) {
 		Random rand = new Random();
 		
 		for (Node n : nodes) {
 			n.randPosition(rand);
+			FontMetrics fm = graphics.getFontMetrics();
+			n.setLabel(fm.getStringBounds(n.getLabel(), graphics));
+			
 			n.mass = 1.0f;
 		}
 		

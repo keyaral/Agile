@@ -1,6 +1,7 @@
 package swen302.graph;
 
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -27,9 +28,11 @@ public class Node {
 	public double mass;
 	public double REPULSION = 2.0;
 	
-	public static final double uStatic = 10;//1.0;
-	public static final double uKinetic = 5;//0.8;
+	public static final double uStatic = 20;//1.0;
+	public static final double uKinetic = 14;//0.8;
 	public static final double gravity = -9.8;
+	
+	public Rectangle2D labelBounds;
 	
 	/**
 	 * Constructs a node with given label.
@@ -44,6 +47,18 @@ public class Node {
 		this.force = new Vector2D(0.0, 0.0);
 	}
 	
+	public Node(Vector2D position){
+		this.id = null;
+		this.position = position;
+		this.velocity = new Vector2D(0.0, 0.0);
+		this.acceleration = new Vector2D(0.0, 0.0);
+		this.force = new Vector2D(0.0, 0.0);
+	}
+	
+	public int getCharge() {
+		return this.outgoingEdges.size();
+	}
+	
 	public void updatePosition(double timestep){
 		//Apply friction
 		double friction;
@@ -54,8 +69,6 @@ public class Node {
 		else {
 			friction = uKinetic*mass*gravity;
 		}
-		
-		System.out.println("One -> " + this.force + " - " + friction);
 		
 		//Friction force should oppose the force
 		Vector2D frictionForce = new Vector2D(0.0, 0.0);
@@ -68,8 +81,6 @@ public class Node {
 		}
 		
 		this.force = this.force.subtract(frictionForce);
-		
-		System.out.println("One -> " + this.force + " - " + frictionForce);
 		
 		//F = m*a
 		this.acceleration = this.force.scalarMultiply(mass);
@@ -88,7 +99,9 @@ public class Node {
 		
 		Vector2D finalDisplacement = displacement1.add(displacement2);
 		
-		this.position = this.position.add(finalDisplacement);
+		if (finalDisplacement.getNorm() > 0.5) {
+			this.position = this.position.add(finalDisplacement);
+		}
 	}
 	
 	public Vector2D getVelocity(){ return velocity; }
@@ -124,6 +137,9 @@ public class Node {
 		return Ktailstate;
 	}
 
+	public void setPosition(Vector2D newPos) {
+		this.position = newPos;
+	}
 
 	/**
 	 * Sets the state of the node
@@ -161,5 +177,9 @@ public class Node {
 		int y = (int)Math.floor(rand.nextDouble() * 600);
 		this.position = new Vector2D(x,y);
 		
+	}
+
+	public void setLabel(Rectangle2D stringBounds) {
+		this.labelBounds = stringBounds;
 	}
 }

@@ -3,15 +3,8 @@ package swen302.gui.graphlayouts;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.geom.Point2D;
-import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import java.awt.geom.Rectangle2D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-
 import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.Node;
@@ -21,20 +14,23 @@ public class EadesSpringEmbedder {
 	public Graph graph;
 	public Graphics graphics;
 	
-	public double MAGNETIC_STRENGTH = 200000.0;
-	public double SPRING_STRENGTH = -20.0;
-	public double FRICTION_STATIC = 0.3;
-	public double FRICTION_KINETIC = 0.1;
-	public double GRAVITY = -0.98; // =) Jst liek IRL! =D
+	public double MAGNETIC_STRENGTH = 600000.0;
+	public double SPRING_STRENGTH = -200.0;
+	private boolean mouseForce;
+	private int mouseX;
+	private int mouseY;
+	private boolean mouseAttractive;
 	
-	public EadesSpringEmbedder(Graph graph, int width, int height){
+	public EadesSpringEmbedder(Graph graph, int width, int height, Graphics g){
 		this.graph = graph;
-		
-		graph.generateInitialLayout(800, 600);
+		graphics = g;
+		graph.generateInitialLayout(800, 600, g);
 	}
 	
-	public void step(double timeStep){
-		//double totalEnergy = 0;
+	public void step(double timeStep, int mouseX, int mouseY){
+		
+		this.mouseX = mouseX;
+		this.mouseY = mouseY;
 		
 		for (Node n : graph.nodes) {
 			Vector2D tempForce = new Vector2D(0.0, 0.0);
@@ -47,24 +43,27 @@ public class EadesSpringEmbedder {
 			for (Node m : graph.nodes) {
 				if (n != m) {
 					tempForce = tempForce.add(coulombsLaw(n, m));
+					
+					double x = m.labelBounds.getCenterX();
+					double y = m.labelBounds.getCenterY();
+					
+					Vector2D label = new Vector2D(x, y);
+					tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
 				}
 			}
 			
-			//Pull towards center
-			//TODO: Actual center
-			Vector2D centerGravity = new Vector2D(300, 400);
+			//User interaction
+			if (mouseForce) {
+				Vector2D vecResult = n.getPosition().subtract(new Vector2D(mouseX, mouseY));
+				
+				vecResult = vecResult.scalarMultiply(100000);
+				
+				if(mouseAttractive)
+					vecResult = vecResult.negate();
+				
+				tempForce = tempForce.add(vecResult);
+			}
 			
-			double distance = n.getPosition().distance(centerGravity);
-			double force = distance;
-			
-			Vector2D vecResult = n.getPosition().subtract(centerGravity);
-			vecResult = vecResult.normalize();
-			vecResult = vecResult.scalarMultiply(force);
-			vecResult = vecResult.negate();
-			
-			
-			
-			tempForce = tempForce.add(vecResult);
 			tempForce = tempForce.subtract(drag(n.getVelocity()));
 			
 			n.force = tempForce;
@@ -74,6 +73,23 @@ public class EadesSpringEmbedder {
 			//Stop calculating, will probably leave out.
 			//This is so the graph can be made interactive
 		}
+		
+		mouseForce = false;
+	}
+	
+	private Node pointInNode(int x, int y){
+		
+		for(Node n : graph.nodes) {
+			double xPos = n.getPosition().getX();
+			double yPos = n.getPosition().getY();
+			
+			Vector2D nCenter = new Vector2D(xPos, yPos);
+			
+			if (nCenter.distance(new Vector2D(x, y)) < 10)
+				return n;
+		}
+		
+		return null;
 	}
 	
 	/*
@@ -83,7 +99,7 @@ public class EadesSpringEmbedder {
 	private Vector2D coulombsLaw(Node n1, Node n2) {
 		double distance = n1.getPosition().distance(n2.getPosition());
 		
-		double force = (this.MAGNETIC_STRENGTH*1*1)/(Math.pow(distance, 2));
+		double force = (this.MAGNETIC_STRENGTH*n1.getCharge()*n2.getCharge())/(Math.pow(distance, 2));
 		
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		vecResult = vecResult.normalize();
@@ -101,7 +117,7 @@ public class EadesSpringEmbedder {
 	private Vector2D hookesLaw(Node n1, Node n2) {
 		// F = -K(x-N)
 		
-		double length = 40.0;
+		double length = 100.0;
 		
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition()); //The vector between the two nodes
 		Vector2D springLength = vecResult.normalize();
@@ -132,11 +148,53 @@ public class EadesSpringEmbedder {
 		}
 		
 		for (Node n : graph.nodes) {
-			graphics.setColor(Color.LIGHT_GRAY);
+			
+			double xPos = n.getPosition().getX();
+			double yPos = n.getPosition().getY();
+			
+			Vector2D nCenter = new Vector2D(xPos, yPos);
+			
+			System.out.println(nCenter + " - " + new Vector2D(mouseX, mouseY));
+			
+			if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
+				graphics.setColor(Color.BLUE);
+			else
+				graphics.setColor(Color.LIGHT_GRAY);
+			
 			graphics.fillOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
 			graphics.setColor(Color.BLACK);
 			graphics.drawOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
+			
+			Rectangle2D stringBounds = n.labelBounds;
+			
+			graphics.setColor(new Color(200, 240, 240, 100));
+			graphics.fillRect((int)n.getPosition().getX()+10, (int)n.getPosition().getY()-20,
+					(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
+			graphics.setColor(Color.black);
+			graphics.drawString(n.getLabel(), (int)n.getPosition().getX()+10, (int)n.getPosition().getY()-10);
+			
 		}
+		//Lol variable name
+		Node npm = this.pointInNode(mouseX, mouseY);
+		if (npm != null) {
+			Rectangle2D stringBounds = npm.labelBounds;
+			
+			graphics.setColor(new Color(100, 215, 215));
+			graphics.fillRect((int)npm.getPosition().getX()+8, (int)npm.getPosition().getY()-22,
+					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
+			graphics.setColor(Color.black);
+			graphics.drawString(npm.getLabel(), (int)npm.getPosition().getX()+8, (int)npm.getPosition().getY()-8);
+			graphics.drawRect((int)npm.getPosition().getX()+8, (int)npm.getPosition().getY()-22,
+					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
+		}
+		
+	}
+
+	public void addForce(int mouseX, int mouseY, boolean mouseAttractive) {
+		mouseForce= true;
+		this.mouseX = mouseX;
+		this.mouseY = mouseY;
+		this.mouseAttractive = mouseAttractive;
 	}
 
 }

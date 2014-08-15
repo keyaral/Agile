@@ -3,10 +3,15 @@ package swen302.gui;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import swen302.graph.Graph;
@@ -16,18 +21,52 @@ public class VertexGraphPane extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private Timer timer; 
 	private boolean doAnimation;   // for starting and stoping animation
+	private boolean mouseDown;
+	private int mouseX;
+	private int mouseY;
+	private boolean mouseAttractive;
 	public EadesSpringEmbedder graph;
 	
 	public VertexGraphPane(){
 		super();
 		
 		doAnimation = true;
+		mouseDown = false;
+		
+		MouseAdapter ma = new MouseAdapter() {
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				mouseDown = false;
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				mouseAttractive = SwingUtilities.isLeftMouseButton(e);
+				mouseDown = true;
+				mouseX = e.getX();
+				mouseY = e.getY();
+			}
+			
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				mouseDown = false;
+				mouseX = e.getX();
+				mouseY = e.getY();
+			}
+		};
+		
+		this.addMouseListener(ma);
+		this.addMouseMotionListener(ma);
 		
 		timer = new Timer(10, new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent ae) {
-		        graph.step(0.1);
-
+		    	if (mouseDown) {
+		        	graph.addForce(mouseX, mouseY, mouseAttractive);
+		        }
+		    	
+		        graph.step(0.1, mouseX, mouseY);
+		        
 		        repaint();
 		    }
 		});
@@ -36,7 +75,7 @@ public class VertexGraphPane extends JPanel {
 	public void setGraph(Graph graph) {
 		
 		if(graph != null){
-			this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight());
+			this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight(), this.getGraphics());
 			timer.start();
 		}
 	}
