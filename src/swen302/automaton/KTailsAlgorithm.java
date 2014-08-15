@@ -67,7 +67,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 
 	private boolean equalNames(Edge[] trans, Edge[] array) {
 		for(int k = 0; k < trans.length; k++)
-			if(!trans[k].longname.equals(array[k].longname))
+			if(!trans[k].id.equals(array[k].id))
 				return false;
 		return true;
 	}
@@ -106,7 +106,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		String toReturn = "";
 		for(Edge e : edges){
 			if(e != null){
-				toReturn += e.shortname+",";
+				toReturn += e.label+",";
 			}
 		}
 		if(toReturn.length() > 0){

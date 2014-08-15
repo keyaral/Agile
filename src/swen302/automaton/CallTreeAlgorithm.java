@@ -1,8 +1,6 @@
 package swen302.automaton;
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Stack;
 
 import swen302.graph.Graph;
@@ -16,63 +14,76 @@ import swen302.tracer.Trace;
  *
  */
 
-public class CallTreeAlgorithm implements VisualizationAlgorithm {
+public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVisualizationAlgorithm {
 
 	private Graph graph;
 
 	@Override
 	public Graph generateGraph(Trace[] trace) {
+		startIncremental();
+		//TODO implement for multiple traces?
+		for(String line : trace[0].lines)
+			processLine(line);
+		return getCurrentGraph();
+	}
+
+
+	@Override
+	public void startIncremental() {
 		graph = new Graph();
-		buildGraph(trace[0].lines); //TODO implement for multiple traces?
+		nodeCount = 0;
+		stack = new Stack<Node>();
+		currentNode = new Node(String.format("%d", nodeCount++));
+		graph.nodes.add(currentNode);
+	}
+
+	@Override
+	public Graph getCurrentGraph() {
 		return graph;
 	}
 
 
-
-
-	/**
-	 * Build Graph reads a trace file to construct the graph of Nodes
-	 *
-	 * @param filename
-	 */
-
-	private void buildGraph(List<String> lines) {
-		Stack<Node> stack = new Stack<Node>();
-		int nodeCount = 0;
-		Node currentNode = new Node(String.format("%d", nodeCount++));
+	Stack<Node> stack;
+	int nodeCount;
+	Node currentNode;
 
 
 
-		graph.nodes.add(currentNode);
-		Iterator<String> in = lines.iterator();
-		while(in.hasNext()){
-			String line = in.next();
 
-			if (isStateCall(line) ) { //Updates state of next node
-				if (line.startsWith("staticContext")) {
+	@Override
+	public boolean processLine(String line) {
 
-				}else{
-					currentNode.setState(line.substring(12) );
-				}
-
-
+		if (isStateCall(line) ) { //Updates state of next node
+			if (line.startsWith("staticContext")) {
+				return false;
+			}else{
+				currentNode.setState(line.substring(12) );
+				return true;
 			}
-			else if(isMethod(line)){  // Reads an instance of a method call
 
-				stack.push(currentNode);
-				currentNode = new Node(String.format("%d", nodeCount++));
-				graph.nodes.add(currentNode);
-				graph.addEdge(new Method(getLongMethodName(line), AutomatonGraphUtils.formatMethodLabel(getLongMethodName(line)), stack.peek(), currentNode));
-
-			}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
-				Node temp = currentNode;
-				currentNode = stack.pop();
-				graph.addEdge(new Return(getLongReturnName(line), "Return", temp, currentNode));
-
-			}
 
 
 		}
+		else if(isMethod(line)){  // Reads an instance of a method call
+
+			stack.push(currentNode);
+			currentNode = new Node(String.format("%d", nodeCount++));
+			graph.nodes.add(currentNode);
+			graph.addEdge(new Method(getLongMethodName(line), AutomatonGraphUtils.formatMethodLabel(getLongMethodName(line)), stack.peek(), currentNode));
+
+			return true;
+
+		}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
+			Node temp = currentNode;
+			currentNode = stack.pop();
+			graph.addEdge(new Return(getLongReturnName(line), "Return", temp, currentNode));
+
+			return true;
+
+		}
+
+		return false;
+
 	}
 
 

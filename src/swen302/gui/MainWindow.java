@@ -64,6 +64,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
+import swen302.automaton.IncrementalVisualizationAlgorithm;
 import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
@@ -75,6 +76,8 @@ import swen302.gui.classtree.FieldTreeItem;
 import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
+import swen302.tracer.FutureTraceConsumer;
+import swen302.tracer.RealtimeTraceConsumer;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceFieldFilter;
 import swen302.tracer.TraceMethodFilter;
@@ -105,6 +108,7 @@ public class MainWindow {
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect;
+	private JCheckBox chkContinuousUpdating;
 
 	private JarData jarData;
 
@@ -400,14 +404,21 @@ public class MainWindow {
 			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
 		}
 		cmbAlgorithm.addItemListener(new ItemListener() {
-			@SuppressWarnings("unused")
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				if(e.getStateChange() == ItemEvent.SELECTED && AUTO_RUN) {
+				if(e.getStateChange() != ItemEvent.SELECTED)
+					return;
+
+				boolean supportsIncremental = IncrementalVisualizationAlgorithm.class.isAssignableFrom(getSelectedAlgorithmClass());
+				chkContinuousUpdating.setEnabled(supportsIncremental);
+
+				if(AUTO_RUN)
 					doTraceAndAnalysis();
-				}
 			}
 		});
+
+		chkContinuousUpdating = new JCheckBox("Continuously update");
+
 
 		runButton = new JButton("Run");
 		runButton.addActionListener(new ActionListener() {
@@ -434,6 +445,9 @@ public class MainWindow {
 			gbc.fill = GridBagConstraints.BOTH;
 			configPanel.add(cmbAlgorithm, gbc);
 
+			gbc.gridx = 0;
+			gbc.gridy++; gbc.gridwidth = 2;
+			configPanel.add(chkContinuousUpdating, gbc);
 
 			gbc.gridx = 0;
 			gbc.gridy++; gbc.gridwidth = 2;
@@ -479,6 +493,10 @@ public class MainWindow {
 			}
 		}
 		tree.repaint();
+	}
+
+	private Class<? extends VisualizationAlgorithm> getSelectedAlgorithmClass() {
+		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).algClass;
 	}
 
 	private void loadJarFile(File testfile) {
@@ -542,34 +560,84 @@ public class MainWindow {
 
 		final ExecutionData[] executionsArray = executions.toArray(new ExecutionData[executions.size()]);
 
+		final VisualizationAlgorithm algorithm = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance();
+
+		final boolean useIncrementalUpdating = chkContinuousUpdating.isSelected();
+
 		Thread thread = new Thread() {
 
 			@Override
 			public void run() {
 
 				try {
-					Trace[] traces = new Trace[executionsArray.length];
 
-					for(int k = 0; k < executions.size(); k++) {
-						ExecutionData ed = executions.get(k);
+					if(useIncrementalUpdating && algorithm instanceof IncrementalVisualizationAlgorithm && executionsArray.length == 1) {
 
-						traces[k] = Tracer.launchAndTrace("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter);
+						ExecutionData ed = executionsArray[0];
 
-						//Trace.writeFile(trace, "debugLastTrace.txt");
-					}
+						final IncrementalVisualizationAlgorithm iva = (IncrementalVisualizationAlgorithm)algorithm;
 
-					Graph graph = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance().generateGraph(traces);
+						iva.startIncremental();
 
-					File pngfile = new File("tempAnalysis.png");
-					GraphSaver.save(graph, pngfile);
-					final BufferedImage image = ImageIO.read(pngfile);
+						Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter, new RealtimeTraceConsumer() {
 
-					EventQueue.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							graphPane.setImage(image);
+							@Override
+							public void onTracerCrash(Throwable t) {
+								t.printStackTrace();
+							}
+
+							@Override
+							public void onTraceLine(String line) {
+								if(iva.processLine(line)) {
+									Graph graph = iva.getCurrentGraph();
+
+									try {
+										File pngfile = new File("tempAnalysis.png");
+										GraphSaver.save(graph, pngfile);
+										final BufferedImage image = ImageIO.read(pngfile);
+
+										EventQueue.invokeLater(new Runnable() {
+											@Override
+											public void run() {
+												graphPane.setImage(image);
+											}
+										});
+									} catch(Exception e) {
+										e.printStackTrace();
+									}
+								}
+							}
+
+							@Override
+							public void onTraceFinish() {
+
+							}
+						});
+
+					} else {
+						Trace[] traces = new Trace[executionsArray.length];
+
+						for(int k = 0; k < executions.size(); k++) {
+							ExecutionData ed = executions.get(k);
+
+							FutureTraceConsumer future = new FutureTraceConsumer();
+							Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter, future);
+							traces[k] = future.get();
 						}
-					});
+
+						Graph graph = algorithm.generateGraph(traces);
+
+						File pngfile = new File("tempAnalysis.png");
+						GraphSaver.save(graph, pngfile);
+						final BufferedImage image = ImageIO.read(pngfile);
+
+						EventQueue.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								graphPane.setImage(image);
+							}
+						});
+					}
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -600,6 +668,7 @@ public class MainWindow {
 		conf.displayMethod = GraphSaver.displayMethod;
 		conf.displayParams = GraphSaver.displayParams;
 
+		conf.continuousUpdating = chkContinuousUpdating.isSelected();
 	}
 
 	public void loadFromConfiguration(TracerConfiguration conf) {
@@ -648,6 +717,7 @@ public class MainWindow {
 		if(executions.size() == 0)
 			executions.add(new ExecutionData());
 
+		chkContinuousUpdating.setSelected(conf.continuousUpdating);
 
 		if(AUTO_RUN)
 			doTraceAndAnalysis();
