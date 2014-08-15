@@ -26,4 +26,6 @@ public class TracerConfiguration implements Serializable {
 	public String algorithmName;
 
 	public List<ExecutionData> executions = new ArrayList<>();
+
+	public boolean displayID,displayState,displayClass,displayMethod,displayParams;
 }

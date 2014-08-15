@@ -11,6 +11,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -24,6 +27,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +50,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -53,6 +58,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellEditor;
 import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -97,11 +103,15 @@ public class MainWindow {
 	private JButton runButton;
 	private ImagePane graphPane;
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
+	private JPopupMenu treePopup;
+	private JMenuItem popupSelect, popupDeselect;
 
 	private JarData jarData;
 
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
+
+	private TreePath selectedPath;
 
 	private List<ExecutionData> executions = new ArrayList<>(Arrays.asList(new ExecutionData()));
 
@@ -167,6 +177,26 @@ public class MainWindow {
 		displayMenu.add(displayMethod);
 		displayParams = new JCheckBoxMenuItem("Parameters",true);
 		displayMenu.add(displayParams);
+
+		treePopup = new JPopupMenu();
+		popupSelect = treePopup.add("Select All");
+		popupDeselect = treePopup.add("Deselect All");
+
+		popupSelect.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				checkAllBoxes(selectedPath, true);
+			}
+		});
+
+		popupDeselect.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				checkAllBoxes(selectedPath, false);
+			}
+		});
 
 		displayID.addActionListener(new ActionListener() {
 
@@ -340,6 +370,31 @@ public class MainWindow {
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setPreferredSize(new Dimension(300, 1));
 
+		MouseListener ml = new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				int selRow = tree.getRowForLocation(e.getX(), e.getY());
+				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+				selectedPath = selPath;
+				if(selRow != -1) {
+					if(e.getClickCount() == 1) {
+						if(e.getButton() == MouseEvent.BUTTON3){
+							treePopup.show(tree, e.getX(), e.getY());
+						}
+					}
+					else if(e.getClickCount() == 2) {
+						if(e.getButton() == MouseEvent.BUTTON1){
+							if(tree.isCollapsed(selPath)){
+								tree.expandPath(selPath);
+							}else{
+								tree.collapsePath(selPath);
+							}
+						}
+					}
+				}
+			}
+		};
+		tree.addMouseListener(ml);
+
 		cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
 		for(Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
 			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
@@ -411,6 +466,19 @@ public class MainWindow {
 		//			doTraceAndAnalysis();
 		//		}
 
+	}
+
+	private void checkAllBoxes(TreePath selPath, boolean check){
+		Enumeration<TreeNode> children = ((DefaultMutableTreeNode)selPath.getLastPathComponent()).breadthFirstEnumeration();
+		while (children.hasMoreElements()) {
+			TreeNode child = children.nextElement();
+			Object currentNode = ((DefaultMutableTreeNode) child).getUserObject();
+			//cast your currentNode to the check box and set selected or unselected.
+			if(currentNode instanceof AbstractTreeItem && ((AbstractTreeItem)currentNode).isCheckable()){
+				((AbstractTreeItem)currentNode).checked = check;
+			}
+		}
+		tree.repaint();
 	}
 
 	private void loadJarFile(File testfile) {
@@ -526,6 +594,12 @@ public class MainWindow {
 		conf.algorithmClassName = algorithm.algClass.getName();
 
 		conf.executions = executions;
+		conf.displayID = GraphSaver.displayID;
+		conf.displayState = GraphSaver.displayState;
+		conf.displayClass = GraphSaver.displayClass;
+		conf.displayMethod = GraphSaver.displayMethod;
+		conf.displayParams = GraphSaver.displayParams;
+
 	}
 
 	public void loadFromConfiguration(TracerConfiguration conf) {
@@ -562,6 +636,13 @@ public class MainWindow {
 		if(!foundAlgorithm)
 			cmbAlgorithm.setSelectedIndex(0);
 
+
+		//Set display settings
+		GraphSaver.displayID = conf.displayID;
+		GraphSaver.displayState = conf.displayState;
+		GraphSaver.displayClass = conf.displayClass;
+		GraphSaver.displayMethod = conf.displayMethod;
+		GraphSaver.displayParams = conf.displayParams;
 
 		executions = new ArrayList<ExecutionData>(conf.executions);
 		if(executions.size() == 0)
