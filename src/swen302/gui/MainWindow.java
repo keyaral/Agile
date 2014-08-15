@@ -100,6 +100,7 @@ public class MainWindow {
 	private JButton runButton;
 	private ImagePane graphPane;
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
+	private JCheckBox chkContinuousUpdating;
 
 	private JarData jarData;
 
@@ -348,14 +349,21 @@ public class MainWindow {
 			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
 		}
 		cmbAlgorithm.addItemListener(new ItemListener() {
-			@SuppressWarnings("unused")
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				if(e.getStateChange() == ItemEvent.SELECTED && AUTO_RUN) {
+				if(e.getStateChange() != ItemEvent.SELECTED)
+					return;
+
+				boolean supportsIncremental = IncrementalVisualizationAlgorithm.class.isAssignableFrom(getSelectedAlgorithmClass());
+				chkContinuousUpdating.setEnabled(supportsIncremental);
+
+				if(AUTO_RUN)
 					doTraceAndAnalysis();
-				}
 			}
 		});
+
+		chkContinuousUpdating = new JCheckBox("Continuously update");
+
 
 		runButton = new JButton("Run");
 		runButton.addActionListener(new ActionListener() {
@@ -382,6 +390,9 @@ public class MainWindow {
 			gbc.fill = GridBagConstraints.BOTH;
 			configPanel.add(cmbAlgorithm, gbc);
 
+			gbc.gridx = 0;
+			gbc.gridy++; gbc.gridwidth = 2;
+			configPanel.add(chkContinuousUpdating, gbc);
 
 			gbc.gridx = 0;
 			gbc.gridy++; gbc.gridwidth = 2;
@@ -414,6 +425,10 @@ public class MainWindow {
 		//			doTraceAndAnalysis();
 		//		}
 
+	}
+
+	private Class<? extends VisualizationAlgorithm> getSelectedAlgorithmClass() {
+		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).algClass;
 	}
 
 	private void loadJarFile(File testfile) {
@@ -479,6 +494,8 @@ public class MainWindow {
 
 		final VisualizationAlgorithm algorithm = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance();
 
+		final boolean useIncrementalUpdating = chkContinuousUpdating.isSelected();
+
 		Thread thread = new Thread() {
 
 			@Override
@@ -486,7 +503,7 @@ public class MainWindow {
 
 				try {
 
-					if(algorithm instanceof IncrementalVisualizationAlgorithm && executionsArray.length == 1) {
+					if(useIncrementalUpdating && algorithm instanceof IncrementalVisualizationAlgorithm && executionsArray.length == 1) {
 
 						ExecutionData ed = executionsArray[0];
 
@@ -577,6 +594,8 @@ public class MainWindow {
 		conf.algorithmClassName = algorithm.algClass.getName();
 
 		conf.executions = executions;
+
+		conf.continuousUpdating = chkContinuousUpdating.isSelected();
 	}
 
 	public void loadFromConfiguration(TracerConfiguration conf) {
@@ -618,6 +637,7 @@ public class MainWindow {
 		if(executions.size() == 0)
 			executions.add(new ExecutionData());
 
+		chkContinuousUpdating.setSelected(conf.continuousUpdating);
 
 		if(AUTO_RUN)
 			doTraceAndAnalysis();
