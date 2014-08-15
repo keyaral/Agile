@@ -1,6 +1,5 @@
 package swen302.graph;
 
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Random;
@@ -16,7 +15,7 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
  *
  */
 public class Node {
-	
+
 	private Set<Edge> outgoingEdges = new HashSet<>();
 	private String id;
 	private String state = "";
@@ -27,13 +26,13 @@ public class Node {
 	public Vector2D force;
 	public double mass;
 	public double REPULSION = 2.0;
-	
-	public static final double uStatic = 20;//1.0;
-	public static final double uKinetic = 14;//0.8;
+
+	public static double uStatic = 1;//20;
+	public static double uKinetic = 0.8;//14;
 	public static final double gravity = -9.8;
-	
+
 	public Rectangle2D labelBounds;
-	
+
 	/**
 	 * Constructs a node with given label.
 	 *
@@ -46,7 +45,7 @@ public class Node {
 		this.acceleration = new Vector2D(0.0, 0.0);
 		this.force = new Vector2D(0.0, 0.0);
 	}
-	
+
 	public Node(Vector2D position){
 		this.id = null;
 		this.position = position;
@@ -54,59 +53,64 @@ public class Node {
 		this.acceleration = new Vector2D(0.0, 0.0);
 		this.force = new Vector2D(0.0, 0.0);
 	}
-	
+
 	public int getCharge() {
-		return this.outgoingEdges.size();
+		return this.outgoingEdges.size()+1;
 	}
-	
+
 	public void updatePosition(double timestep){
 		//Apply friction
 		double friction;
-		
-		if(this.velocity.getNorm() < 0.1) {
-			friction = uStatic*mass*gravity;
+
+		if(this.velocity.getNorm() < 100000) {
+			friction = uStatic;//*mass*gravity;
 		}
 		else {
-			friction = uKinetic*mass*gravity;
+			friction = uKinetic;//*mass*gravity;
 		}
-		
+
+		// increasing this only has the effect of slowing down everything's movement
+		uStatic = 0.99999;
+		uKinetic = 0.99;
+
 		//Friction force should oppose the force
 		Vector2D frictionForce = new Vector2D(0.0, 0.0);
 		if (this.force.getNorm() > 0) {
-			frictionForce = this.force.normalize().scalarMultiply(friction).negate();
+			frictionForce = this.force./*normalize().*/scalarMultiply(friction);
 		}
 		if (this.force.getNorm() < friction) {
 			//Make it so that it doesn't move if the force isn't strong enough to overcome friction
-			frictionForce = this.force.normalize().scalarMultiply(this.force.getNorm()).negate();
+			frictionForce = this.force;
 		}
-		
+
+		//System.out.println("F "+force+" "+frictionForce+" "+friction);
 		this.force = this.force.subtract(frictionForce);
-		
+
 		//F = m*a
 		this.acceleration = this.force.scalarMultiply(mass);
-		
+
 		//Max Acceleration
-		if(this.acceleration.getNorm() > 100)
-			this.acceleration = this.acceleration.normalize().scalarMultiply(100);
-		
+		if(this.acceleration.getNorm() > 2000)
+			this.acceleration = this.acceleration.normalize().scalarMultiply(2000);
+
 		//Displacement
 		// d = v*t + 0.5*a*t^2
 		double tsq = Math.pow(timestep, 2);
 		Vector2D displacement1 = this.velocity.scalarMultiply(timestep);
-		Vector2D displacement2 = this.acceleration.scalarMultiply(tsq);
-		
-		displacement2.scalarMultiply(0.5);
-		
+		Vector2D displacement2 = this.acceleration.scalarMultiply(tsq*0.5);
+
+		velocity = velocity.add(acceleration.scalarMultiply(timestep));
+
 		Vector2D finalDisplacement = displacement1.add(displacement2);
-		
-		if (finalDisplacement.getNorm() > 0.5) {
+
+		//if (finalDisplacement.getNorm() > 0.5) {
 			this.position = this.position.add(finalDisplacement);
-		}
+		//}
 	}
-	
+
 	public Vector2D getVelocity(){ return velocity; }
 	public Vector2D getPosition(){ return position; }
-	
+
 	/**
 	 * Adds connection from this nodes to another node specifying the transition between.
 	 * @param trans
@@ -167,7 +171,7 @@ public class Node {
 	public String getID(){
 		return id;
 	}
-	
+
 	public double kineticEnergy() {
 		return 0.5*(mass*(velocity.dotProduct(velocity)));
 	}
@@ -176,7 +180,7 @@ public class Node {
 		int x = (int)Math.floor(rand.nextDouble() * 600);
 		int y = (int)Math.floor(rand.nextDouble() * 600);
 		this.position = new Vector2D(x,y);
-		
+
 	}
 
 	public void setLabel(Rectangle2D stringBounds) {
