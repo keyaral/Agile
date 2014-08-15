@@ -3,6 +3,7 @@ package swen302.tracer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
@@ -31,20 +32,6 @@ import com.sun.jdi.request.MethodExitRequest;
 import com.sun.jdi.request.VMDeathRequest;
 
 
-class TracerMain {
-	public static void main(String[] commandLineArgs) throws Exception {
-		if(commandLineArgs.length != 3) {
-			System.err.println("Requires 3 arguments:");
-			System.err.println(" 1. VM options (remember to quote the entire string)");
-			System.err.println(" 2. Main class name");
-			System.err.println(" 3. Filter regex");
-			System.exit(1);
-		}
-
-		System.out.println("Trace: ");
-		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], new RegexTraceMethodFilter(commandLineArgs[2]), new DefaultFieldFilter()));
-	}
-}
 
 class ObjectReferenceGenerator {
 	private Map<Object, String> map = new HashMap<>();
@@ -59,10 +46,13 @@ class ObjectReferenceGenerator {
 	}
 }
 
+/**
+ * Main interface class for the tracing subsystem.
+ */
 public class Tracer {
 
 	/**
-	 * Generates a Trace of a given application.
+	 * Starts a program and executes it.
 	 *
 	 * @param vmOptions The arguments passed into the Virtual Machine
 	 * @param mainClass The Main class of the given application
@@ -71,115 +61,173 @@ public class Tracer {
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static Trace Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter) throws Exception
+	public static Trace launchAndTrace(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter) throws Exception
 	{
-		Trace t = new Trace();
+		final Trace t = new Trace();
 
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
-		// class -> does it have any traceable methods?
-		Map<ReferenceType, Boolean> knownTraceableClasses = new HashMap<>();
+		final AtomicBoolean finished = new AtomicBoolean();
 
-		// When a class is loaded, we need to add a MethodEntryRequest and MethodExitRequest if it's traceable.
-		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-		classPrepareRequest.enable();
+		RealtimeTraceConsumer consumer = new RealtimeTraceConsumer() {
+			@Override
+			public void onTraceLine(String line) {
+				t.lines.add(line);
+			}
 
-		VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
-
-		deathRequest.enable();
-
-
-		// Resume the program (AFTER setting up event requests)
-		vm.resume();
-
-
-		while(true) {
-			EventSet events = vm.eventQueue().remove();
-			for(Event event : events) {
-				if(event instanceof ClassPrepareEvent) {
-					ClassPrepareEvent event2 = (ClassPrepareEvent)event;
-
-					ReferenceType type = event2.referenceType();
-					if(!knownTraceableClasses.containsKey(type)) {
-						boolean traceable = doesClassHaveTraceableMethods(methodFilter, type);
-						knownTraceableClasses.put(type, traceable);
-						if(traceable) {
-							MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
-							entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-							entryRequest.addClassFilter(type);
-							entryRequest.enable();
-
-							// When a method is exited, send an event to this tracer
-							MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
-							exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-							exitRequest.addClassFilter(type);
-							exitRequest.enable();
-						}
-					}
-
-					vm.resume();
-				}
-				if(event instanceof MethodEntryEvent) {
-					MethodEntryEvent event2 = (MethodEntryEvent)event;
-
-					if(methodFilter.isMethodTraced(event2.method())) {
-
-						// Handle a method entry
-						StackFrame frame = event2.thread().frame(0);
-						ObjectReference _this = frame.thisObject();
-
-						if(_this == null)
-							t.lines.add("staticContext");
-						else
-							t.lines.add("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
-
-						t.lines.add("methodCall "+getMethodNameInTraceFormat(event2.method()));
-
-						/*try {
-							for(Value v : frame.getArgumentValues()) {
-								System.out.println("   argument: "+v);
-							}
-							if(_this != null && _this.type() instanceof ClassType) {
-								for(Field f : ((ClassType)_this.type()).allFields()) {
-									System.out.println("   field "+f.name()+": "+_this.getValue(f));
-								}
-							}
-						} catch(InternalException e) {
-							// Java bug; InternalException is thrown if getting arguments from a native method
-							// see http://bugs.java.com/view_bug.do?bug_id=6810565
-							//System.out.println("   (unable to get arguments)");
-						}*/
-					}
-
-					event2.thread().resume();
-
-				} else if(event instanceof MethodExitEvent) {
-
-					// Handle a method return
-					MethodExitEvent event2 = (MethodExitEvent)event;
-
-					if(methodFilter.isMethodTraced(event2.method())) {
-						StackFrame frame = event2.thread().frame(0);
-						ObjectReference _this = frame.thisObject();
-
-						if(_this == null)
-							t.lines.add("staticContext");
-						else
-							t.lines.add("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
-
-						t.lines.add("return "+getMethodNameInTraceFormat(event2.method()));
-					}
-
-					event2.thread().resume();
-
-				}
-				else if(event instanceof VMDeathEvent)
-				{
-					return t;
+			@Override
+			public void onTraceFinish() {
+				synchronized(finished) {
+					finished.set(true);
+					finished.notifyAll();
 				}
 			}
+
+			@Override
+			public void onTracerCrash(Throwable t) {
+				t.printStackTrace();
+			}
+		};
+
+		TraceAsync(vm, methodFilter, fieldFilter, consumer);
+
+		synchronized(finished) {
+			while(!finished.get())
+				finished.wait();
 		}
+
+		return t;
+	}
+
+	/**
+	 * Starts tracing the given VM in a separate thread.
+	 *
+	 * This method traces asynchronously. Trace lines are delivered to the given consumer.
+	 *
+	 * @param vm The VM to trace.
+	 * @param methodFilter The method filter to use.
+	 * @param fieldFilter The field filter to use.
+	 * @param consumer The consumer that trace lines will be sent to.
+	 */
+	public static void TraceAsync(final VirtualMachine vm, final TraceMethodFilter methodFilter, final TraceFieldFilter fieldFilter, final RealtimeTraceConsumer consumer) {
+		Thread thread = new Thread() {
+			@Override
+			public void run() {
+				try {
+					// class -> does it have any traceable methods?
+					Map<ReferenceType, Boolean> knownTraceableClasses = new HashMap<>();
+
+					// When a class is loaded, we need to add a MethodEntryRequest and MethodExitRequest if it's traceable.
+					ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
+					classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+					classPrepareRequest.enable();
+
+					VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
+
+					deathRequest.enable();
+
+
+					// Resume the program (AFTER setting up event requests)
+					vm.resume();
+
+
+					while(true) {
+						EventSet events = vm.eventQueue().remove();
+						for(Event event : events) {
+							if(event instanceof ClassPrepareEvent) {
+								ClassPrepareEvent event2 = (ClassPrepareEvent)event;
+
+								ReferenceType type = event2.referenceType();
+								if(!knownTraceableClasses.containsKey(type)) {
+									boolean traceable = doesClassHaveTraceableMethods(methodFilter, type);
+									knownTraceableClasses.put(type, traceable);
+									if(traceable) {
+										MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
+										entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+										entryRequest.addClassFilter(type);
+										entryRequest.enable();
+
+										// When a method is exited, send an event to this tracer
+										MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
+										exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+										exitRequest.addClassFilter(type);
+										exitRequest.enable();
+									}
+								}
+
+								vm.resume();
+							}
+							if(event instanceof MethodEntryEvent) {
+								MethodEntryEvent event2 = (MethodEntryEvent)event;
+
+								if(methodFilter.isMethodTraced(event2.method())) {
+
+									// Handle a method entry
+									StackFrame frame = event2.thread().frame(0);
+									ObjectReference _this = frame.thisObject();
+
+									if(_this == null)
+										consumer.onTraceLine("staticContext");
+									else
+										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+
+									consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
+
+									/*try {
+										for(Value v : frame.getArgumentValues()) {
+											System.out.println("   argument: "+v);
+										}
+										if(_this != null && _this.type() instanceof ClassType) {
+											for(Field f : ((ClassType)_this.type()).allFields()) {
+												System.out.println("   field "+f.name()+": "+_this.getValue(f));
+											}
+										}
+									} catch(InternalException e) {
+										// Java bug; InternalException is thrown if getting arguments from a native method
+										// see http://bugs.java.com/view_bug.do?bug_id=6810565
+										//System.out.println("   (unable to get arguments)");
+									}*/
+								}
+
+								event2.thread().resume();
+
+							} else if(event instanceof MethodExitEvent) {
+
+								// Handle a method return
+								MethodExitEvent event2 = (MethodExitEvent)event;
+
+								if(methodFilter.isMethodTraced(event2.method())) {
+									StackFrame frame = event2.thread().frame(0);
+									ObjectReference _this = frame.thisObject();
+
+									if(_this == null)
+										consumer.onTraceLine("staticContext");
+									else
+										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+
+									consumer.onTraceLine("return "+getMethodNameInTraceFormat(event2.method()));
+								}
+
+								event2.thread().resume();
+
+							}
+							else if(event instanceof VMDeathEvent)
+							{
+								return;
+							}
+						}
+					}
+				} catch(Exception t) {
+					consumer.onTracerCrash(t);
+				} finally {
+					consumer.onTraceFinish();
+				}
+			}
+		};
+
+		thread.setName("Tracer thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 
 	private static boolean doesClassHaveTraceableMethods(TraceMethodFilter methodFilter, ReferenceType type) {
