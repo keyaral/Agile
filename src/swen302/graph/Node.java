@@ -13,7 +13,7 @@ import swen302.vertexgraph.Vector2D;
  *
  */
 public class Node {
-	
+
 	private Set<Edge> outgoingEdges = new HashSet<>();
 	private String id;
 	private String state = "";
@@ -81,7 +81,7 @@ public class Node {
 	 * @return
 	 */
 	public String getLabel(){
-		return (id + (state.equals("")?Ktailstate.equals("")?"":": "+Ktailstate:": "+ state));
+		return ((GraphSaver.displayID?id:"") + (GraphSaver.displayState?(state.equals("")?Ktailstate.equals("")?"":(GraphSaver.displayID?": ":"")+Ktailstate:(GraphSaver.displayID?": ":"")+ state):""));
 	}
 
 	/**
@@ -91,7 +91,7 @@ public class Node {
 	public String getID(){
 		return id;
 	}
-	
+
 	public double kineticEnergy() {
 		return 0.5*(mass*(velocity.dotProduct(velocity)));
 	}

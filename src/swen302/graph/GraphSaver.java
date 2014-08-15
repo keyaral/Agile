@@ -17,6 +17,8 @@ import java.util.Set;
  */
 public class GraphSaver {
 
+	public static boolean displayID=true,displayState=true,displayClass=true,displayMethod=true,displayParams=true;
+
 	public static void save(Graph graph, File dotfile, File pngfile) throws InterruptedException, IOException {
 		save(graph.nodes, dotfile, pngfile);
 	}

@@ -11,7 +11,7 @@ import swen302.graph.Node;
 public class Return extends Edge {
 
 	public Return(String longName, String shortName, Node node1, Node node2) {
-		super(longName, shortName, node1, node2);
+		super(longName, node1, node2);
 	}
 
 }
