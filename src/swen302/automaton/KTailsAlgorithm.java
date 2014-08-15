@@ -2,7 +2,6 @@ package swen302.automaton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
@@ -71,13 +70,6 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		}
 	}
 
-	private boolean equalNames(Edge[] trans, Edge[] array) {
-		for(int k = 0; k < trans.length; k++)
-			if(!trans[k].id.equals(array[k].id))
-				return false;
-		return true;
-	}
-
 	/**
 	 * Connects nodes to form the K-Tail automaton
 	 * @param prev	An array of the previous method call followed by the following k-1 calls in the trace
@@ -135,22 +127,6 @@ public class KTailsAlgorithm implements VisualizationAlgorithm {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Returns an arraylist of method calls in the order that they were called in the trace.
-	 * @param nodes
-	 * @return
-	 */
-	private Edge[] getOrderedArray(List<Node> nodes){
-		Edge[] toReturn = new Edge[nodes.size()];
-		for(Node n : nodes){
-			Set<Edge> trans = n.getConnections();
-			for(Edge edge : trans){
-				toReturn[Integer.parseInt(edge.getOtherNode(n).getID())-1] = edge;
-			}
-		}
-		return toReturn;
 	}
 
 
