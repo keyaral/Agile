@@ -183,6 +183,7 @@ public class Tracer {
 							}
 							else if(event instanceof VMDeathEvent)
 							{
+								vm.dispose();
 								return;
 							}
 						}
