@@ -13,25 +13,26 @@ import swen302.tracer.Trace;
  * @author Oliver Greenaway, Marian Clements
  *
  */
-public class FieldBasedAlgorithm implements VisualizationAlgorithm {
+public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalVisualizationAlgorithm {
 
-	/**
-	 * Calls the trace reader method, and then calls the graph drawer.
-	 * @param filename
-	 */
-//	public AutomatonBuilder2(String filename) throws Exception{
-//		buildGraph(filename);
-//		System.out.println("Graph Complete");
-//
-//		new Graph().save(allNodes);
-//		System.out.println("Image Complete");
-//
-//	}
+	private Graph graph;
+	private Map<String, Node> states;
+	private Stack<Node> stack;
 
-	private Graph graph = new Graph();
-	private Map<String, Node> states = new HashMap<String, Node>();
+	private int nodeCount;
 
-	private int nodeCount = 0;
+	@Override
+	public void startIncremental() {
+		graph = new Graph();
+		states = new HashMap<String, Node>();
+		nodeCount = 0;
+		stack = new Stack<Node>();
+	}
+
+	@Override
+	public Graph getCurrentGraph() {
+		return graph;
+	}
 
 	private Node getStateNode(String state) {
 		if(!states.containsKey(state)){
@@ -40,45 +41,35 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 			states.put(state, n);
 		}
 		return states.get(state);
-
 	}
 
-	/**
-	 * Build Graph reads a trace file to construct the graph of Nodes
-	 *
-	 * @param filename
-	 */
+	@Override
+	public boolean processLine(String line) {
 
-	private void buildGraph(Trace trace) {
-		Stack<Node> stack = new Stack<Node>();
-		int nodeCount = 0;
-
-		for (String line : trace.lines) {
-
-			if (isStateCall(line) ) { //Updates state of next node
-				if (line.startsWith("staticContext")) {
-					stack.push(null);
-				}else{
-					stack.push(getStateNode(line.substring(12)));
-				}
-
+		if (isStateCall(line) ) { //Updates state of next node
+			if (line.startsWith("staticContext")) {
+				stack.push(null);
+			}else{
+				stack.push(getStateNode(line.substring(12)));
 			}
-			else if(isMethod(line)){  // Reads an instance of a method call
 
-			}
-			else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
-
-				Node finalState = stack.pop();
-				Node initialState = stack.pop();
-
-				if (finalState != null && initialState != null) {
-					graph.addEdge(new Edge(String.valueOf(nodeCount++), initialState, finalState));
-
-					graph.nodes.add(finalState);
-					graph.nodes.add(initialState);
-				}
-			}
 		}
+		else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
+
+			Node finalState = stack.pop();
+			Node initialState = stack.pop();
+
+			if (finalState != null && initialState != null) {
+				graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(line.substring(7)), initialState, finalState));
+
+				graph.nodes.add(finalState);
+				graph.nodes.add(initialState);
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 
@@ -93,16 +84,6 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 
 
 	/**
-	 * Returns the long name of a return method call.
-	 * @param line
-	 * @return
-	 */
-	private String getLongReturnName(String line) {
-		return line.substring(7);
-	}
-
-
-	/**
 	 * Boolean to assert line is a return call
 	 * @param line
 	 * @return
@@ -111,21 +92,16 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm {
 		return line.startsWith("return");
 	}
 
-	/***
-	 * Boolean to assert line is a method call
-	 * @param line
-	 * @return
-	 */
-	private boolean isMethod(String line) {
-		return line.startsWith("methodCall");
-	}
-
 	@Override
 	public Graph generateGraph(Trace[] trace) {
+		startIncremental();
 
-		buildGraph(trace[0]); //TODO implement for multiple traces?
+		// can just concatenate multiple traces with this algorithm
+		for(Trace t : trace)
+			for(String l : t.lines)
+				processLine(l);
 
-		return graph;
+		return getCurrentGraph();
 	}
 
 	@Override

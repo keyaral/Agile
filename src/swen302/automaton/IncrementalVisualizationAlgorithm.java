@@ -16,5 +16,9 @@ public interface IncrementalVisualizationAlgorithm {
 	 */
 	public boolean processLine(String line);
 
+	/**
+	 * @return The current state of the graph. This might be a static copy of the graph,
+	 *         or it might be a graph that's updated by processLine.
+	 */
 	public Graph getCurrentGraph();
 }

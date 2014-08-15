@@ -37,7 +37,7 @@ public class GraphSaver {
 				print.println(n.getID()+"[label=\""+n.getLabel()+"\"]"+";");
 				Set<Edge> connections = n.getConnections();
 				for(Edge e : connections){
-					print.println(n.getID()+"->"+e.getOtherNode(n).getID()+" [label=\""+e.shortname+"\"];");
+					print.println(n.getID()+"->"+e.getOtherNode(n).getID()+" [label=\""+e.label+"\"];");
 				}
 			}
 
