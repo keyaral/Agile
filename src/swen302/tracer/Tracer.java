@@ -9,6 +9,7 @@ import com.sun.jdi.ArrayType;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
@@ -132,31 +133,39 @@ public class Tracer {
 
 								if(methodFilter.isMethodTraced(event2.method())) {
 
-									// Handle a method entry
-									StackFrame frame = event2.thread().frame(0);
-									ObjectReference _this = frame.thisObject();
+									try {
 
-									if(_this == null)
-										consumer.onTraceLine("staticContext");
-									else
-										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+										// Handle a method entry
+										StackFrame frame = event2.thread().frame(0);
+										ObjectReference _this = frame.thisObject();
 
-									consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
+										if(_this == null)
+											consumer.onTraceLine("staticContext");
+										else
+											consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
 
-									/*try {
-										for(Value v : frame.getArgumentValues()) {
-											System.out.println("   argument: "+v);
-										}
-										if(_this != null && _this.type() instanceof ClassType) {
-											for(Field f : ((ClassType)_this.type()).allFields()) {
-												System.out.println("   field "+f.name()+": "+_this.getValue(f));
+										consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
+
+										/*try {
+											for(Value v : frame.getArgumentValues()) {
+												System.out.println("   argument: "+v);
 											}
-										}
-									} catch(InternalException e) {
-										// Java bug; InternalException is thrown if getting arguments from a native method
-										// see http://bugs.java.com/view_bug.do?bug_id=6810565
-										//System.out.println("   (unable to get arguments)");
-									}*/
+											if(_this != null && _this.type() instanceof ClassType) {
+												for(Field f : ((ClassType)_this.type()).allFields()) {
+													System.out.println("   field "+f.name()+": "+_this.getValue(f));
+												}
+											}
+										} catch(InternalException e) {
+											// Java bug; InternalException is thrown if getting arguments from a native method
+											// see http://bugs.java.com/view_bug.do?bug_id=6810565
+											//System.out.println("   (unable to get arguments)");
+										}*/
+									} catch(IncompatibleThreadStateException e) {
+										consumer.onTraceLine("staticContext");
+										consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
+										System.err.println("Error processing MethodExitEvent for "+getMethodNameInTraceFormat(event2.method()));
+										e.printStackTrace();
+									}
 								}
 
 								event2.thread().resume();
@@ -167,14 +176,20 @@ public class Tracer {
 								MethodExitEvent event2 = (MethodExitEvent)event;
 
 								if(methodFilter.isMethodTraced(event2.method())) {
-									StackFrame frame = event2.thread().frame(0);
-									ObjectReference _this = frame.thisObject();
+									try {
+										StackFrame frame = event2.thread().frame(0);
+										ObjectReference _this = frame.thisObject();
 
-									if(_this == null)
+										if(_this == null)
+											consumer.onTraceLine("staticContext");
+										else
+											consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+
+									} catch(IncompatibleThreadStateException e) {
 										consumer.onTraceLine("staticContext");
-									else
-										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
-
+										System.err.println("Error processing MethodExitEvent for "+getMethodNameInTraceFormat(event2.method()));
+										e.printStackTrace();
+									}
 									consumer.onTraceLine("return "+getMethodNameInTraceFormat(event2.method()));
 								}
 
@@ -188,7 +203,7 @@ public class Tracer {
 							}
 						}
 					}
-				} catch(Exception t) {
+				} catch(InterruptedException | RuntimeException | Error t) {
 					consumer.onTracerCrash(t);
 				} finally {
 					consumer.onTraceFinish();
@@ -211,7 +226,7 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) throws Exception {
+	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) {
 
 		// Deal with circular references
 		{
@@ -292,7 +307,7 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static String valueToStateString(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) throws Exception {
+	private static String valueToStateString(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) {
 		if(value == null)
 			return "null";
 		if(value instanceof ObjectReference)
