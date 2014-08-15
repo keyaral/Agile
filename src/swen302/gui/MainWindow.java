@@ -668,6 +668,8 @@ public class MainWindow {
 		conf.displayMethod = GraphSaver.displayMethod;
 		conf.displayParams = GraphSaver.displayParams;
 
+		conf.k = KTailsAlgorithm.k;
+
 		conf.continuousUpdating = chkContinuousUpdating.isSelected();
 	}
 
@@ -712,6 +714,8 @@ public class MainWindow {
 		GraphSaver.displayClass = conf.displayClass;
 		GraphSaver.displayMethod = conf.displayMethod;
 		GraphSaver.displayParams = conf.displayParams;
+
+		KTailsAlgorithm.k = conf.k;
 
 		executions = new ArrayList<ExecutionData>(conf.executions);
 		if(executions.size() == 0)

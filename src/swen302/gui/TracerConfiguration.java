@@ -30,4 +30,6 @@ public class TracerConfiguration implements Serializable {
 	public boolean displayID,displayState,displayClass,displayMethod,displayParams;
 
 	public boolean continuousUpdating = false;
+
+	public int k;
 }
