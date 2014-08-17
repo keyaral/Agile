@@ -14,8 +14,8 @@ public class EadesSpringEmbedder {
 	public Graph graph;
 	public Graphics graphics;
 	
-	public double MAGNETIC_STRENGTH = 600000.0;
-	public double SPRING_STRENGTH = -200.0;
+	public double MAGNETIC_STRENGTH = 8987551787.3681764;
+	public double SPRING_STRENGTH = -1.6;
 	private boolean mouseForce;
 	private int mouseX;
 	private int mouseY;
@@ -36,8 +36,7 @@ public class EadesSpringEmbedder {
 			Vector2D tempForce = new Vector2D(0.0, 0.0);
 			
 			for (Edge e : n.getConnections()) {
-				Vector2D hl = hookesLaw(n, e.getOtherNode(n));
-				tempForce = tempForce.add(hl);
+				tempForce = tempForce.add(hookesLaw(n, e.getOtherNode(n)));
 			}
 			
 			for (Node m : graph.nodes) {
@@ -55,12 +54,12 @@ public class EadesSpringEmbedder {
 			//User interaction
 			if (mouseForce) {
 				Vector2D vecResult = n.getPosition().subtract(new Vector2D(mouseX, mouseY));
-				
-				vecResult = vecResult.scalarMultiply(100000);
+				double dist = n.getPosition().distance(new Vector2D(mouseX, mouseY));
 				
 				if(mouseAttractive)
 					vecResult = vecResult.negate();
 				
+				vecResult = vecResult.scalarMultiply((1/dist*100));
 				tempForce = tempForce.add(vecResult);
 			}
 			
@@ -100,6 +99,7 @@ public class EadesSpringEmbedder {
 		double distance = n1.getPosition().distance(n2.getPosition());
 		
 		double force = (this.MAGNETIC_STRENGTH*n1.getCharge()*n2.getCharge())/(Math.pow(distance, 2));
+		//double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
 		
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		vecResult = vecResult.normalize();
@@ -110,8 +110,11 @@ public class EadesSpringEmbedder {
 	}
 	
 	private Vector2D drag(Vector2D velocity) {
-		double force = 0.25*1*velocity.getNorm();
-		return velocity.scalarMultiply(force);
+		double force = 0.25*10*velocity.getNorm();
+		if (force == 0)
+			return new Vector2D(0.0, 0.0);
+		
+		return velocity.normalize().scalarMultiply(force);
 	}
 	
 	private Vector2D hookesLaw(Node n1, Node n2) {
@@ -124,6 +127,7 @@ public class EadesSpringEmbedder {
 		
 		springLength = springLength.scalarMultiply(length);
 		vecResult = vecResult.subtract(springLength);
+		
 		vecResult = vecResult.scalarMultiply(SPRING_STRENGTH);
 		
 		return vecResult;
@@ -153,8 +157,6 @@ public class EadesSpringEmbedder {
 			double yPos = n.getPosition().getY();
 			
 			Vector2D nCenter = new Vector2D(xPos, yPos);
-			
-			System.out.println(nCenter + " - " + new Vector2D(mouseX, mouseY));
 			
 			if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
 				graphics.setColor(Color.BLUE);

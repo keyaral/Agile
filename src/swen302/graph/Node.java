@@ -28,8 +28,8 @@ public class Node {
 	public double mass;
 	public double REPULSION = 2.0;
 	
-	public static final double uStatic = 20;//1.0;
-	public static final double uKinetic = 14;//0.8;
+	public static final double uStatic = 0.8;//1.0;
+	public static final double uKinetic = 0.4;//0.8;
 	public static final double gravity = -9.8;
 	
 	public Rectangle2D labelBounds;
@@ -55,8 +55,8 @@ public class Node {
 		this.force = new Vector2D(0.0, 0.0);
 	}
 	
-	public int getCharge() {
-		return this.outgoingEdges.size();
+	public double getCharge() {
+		return (this.outgoingEdges.size()+1)*0.00055;
 	}
 	
 	public void updatePosition(double timestep){
@@ -77,17 +77,21 @@ public class Node {
 		}
 		if (this.force.getNorm() < friction) {
 			//Make it so that it doesn't move if the force isn't strong enough to overcome friction
-			frictionForce = this.force.normalize().scalarMultiply(this.force.getNorm()).negate();
+			frictionForce = this.force;
 		}
 		
-		this.force = this.force.subtract(frictionForce);
+		this.force = this.force.add(frictionForce);
 		
 		//F = m*a
 		this.acceleration = this.force.scalarMultiply(mass);
 		
 		//Max Acceleration
-		if(this.acceleration.getNorm() > 100)
-			this.acceleration = this.acceleration.normalize().scalarMultiply(100);
+		//if(this.acceleration.getNorm() > 1000)
+		//	this.acceleration = this.acceleration.normalize().scalarMultiply(1000);
+		
+		//Velocity
+		//Vf = Vi + a*t
+		this.velocity = this.velocity.add(this.acceleration.scalarMultiply(timestep));
 		
 		//Displacement
 		// d = v*t + 0.5*a*t^2
@@ -104,7 +108,7 @@ public class Node {
 		}
 	}
 	
-	public Vector2D getVelocity(){ return velocity; }
+	public Vector2D getVelocity(){return velocity; }
 	public Vector2D getPosition(){ return position; }
 	
 	/**
