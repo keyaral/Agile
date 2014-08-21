@@ -19,11 +19,16 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 	private Graph graph;
 
 	@Override
-	public Graph generateGraph(Trace[] trace) {
+	public Graph generateGraph(Trace[] traces) {
 		startIncremental();
-		//TODO implement for multiple traces?
-		for(String line : trace[0].lines)
-			processLine(line);
+		boolean first = true;
+		for(Trace t : traces) {
+			if(first) first = false;
+			else startTrace();
+			for(String line : t.lines) {
+				processLine(line);
+			}
+		}
 		return getCurrentGraph();
 	}
 
@@ -32,6 +37,10 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 	public void startIncremental() {
 		graph = new Graph();
 		nodeCount = 0;
+		startTrace();
+	}
+
+	private void startTrace() {
 		stack = new Stack<Node>();
 		currentNode = new Node(String.format("%d", nodeCount++));
 		graph.nodes.add(currentNode);
