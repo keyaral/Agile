@@ -85,7 +85,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 		}else if(isReturn(line) && stack.size()>1){ // Reads an instance of return call.
 			Node temp = currentNode;
 			currentNode = stack.pop();
-			graph.addEdge(new Return(getLongReturnName(line), "Return", temp, currentNode));
+			graph.addEdge(new Return(getLongReturnName(line), GraphSaver.displayMethod ? "Return" : "", temp, currentNode));
 
 			return true;
 
