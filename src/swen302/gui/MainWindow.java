@@ -206,7 +206,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayID = !GraphSaver.displayID;
+				GraphSaver.displayID = displayID.isSelected();
 			}
 		});
 
@@ -214,7 +214,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayState = !GraphSaver.displayState;
+				GraphSaver.displayState = displayState.isSelected();
 			}
 		});
 
@@ -222,7 +222,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayClass = !GraphSaver.displayClass;
+				GraphSaver.displayClass = displayClass.isSelected();
 			}
 		});
 
@@ -230,7 +230,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayMethod = !GraphSaver.displayMethod;
+				GraphSaver.displayMethod = displayMethod.isSelected();
 			}
 		});
 
@@ -238,7 +238,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayParams = !GraphSaver.displayMethod;
+				GraphSaver.displayParams = displayParams.isSelected();
 			}
 		});
 
