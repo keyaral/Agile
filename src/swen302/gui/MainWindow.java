@@ -107,12 +107,14 @@ public class MainWindow {
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect;
 
+	private JLabel currentTraceFileLabel;
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 	private JCheckBox chkContinuousUpdating;
 	private JCheckBox saveTracesCheckbox;
 	private JButton runButton;
 
 	private JarData jarData;
+	private File openTraceFile;
 
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
@@ -265,15 +267,7 @@ public class MainWindow {
 				lastJarDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					jarData = JarLoader.loadJarFile(fc.getSelectedFile());
-
-
-					DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(fc.getSelectedFile().getName()));
-
-					((DefaultTreeModel)tree.getModel()).setRoot(top);
-
-					createNodes(top, jarData.data);
-
+					loadJarFile(fc.getSelectedFile());
 
 					executions.clear();
 					executions.add(new ExecutionData());
@@ -302,6 +296,12 @@ public class MainWindow {
 						tf.read(fc.getSelectedFile());
 						loadFromConfiguration(tf.config);
 						processTraces(tf.traces);
+
+						openTraceFile = fc.getSelectedFile();
+
+						updateCheckboxesEnabled();
+
+						((DefaultMutableTreeNode)tree.getModel().getRoot()).setUserObject(new JarTreeItem(openTraceFile.getName()));
 					} catch(IOException | InterruptedException exc) {
 						throw new RuntimeException(exc); // TODO handle error
 					}
@@ -435,14 +435,14 @@ public class MainWindow {
 				if(e.getStateChange() != ItemEvent.SELECTED)
 					return;
 
-				boolean supportsIncremental = IncrementalVisualizationAlgorithm.class.isAssignableFrom(getSelectedAlgorithmClass());
-				chkContinuousUpdating.setEnabled(supportsIncremental);
+				updateCheckboxesEnabled();
 
 				if(AUTO_RUN)
 					doTraceAndAnalysis();
 			}
 		});
 
+		currentTraceFileLabel = new JLabel("No file selected");
 		chkContinuousUpdating = new JCheckBox("Continuously update");
 		saveTracesCheckbox = new JCheckBox("Save trace");
 
@@ -464,6 +464,11 @@ public class MainWindow {
 			gbc.gridx = gbc.gridy = 0;
 			gbc.weightx = gbc.weighty = 1;
 
+			gbc.gridwidth = 2;
+			configPanel.add(currentTraceFileLabel, gbc);
+
+			gbc.gridwidth = 1;
+			gbc.gridy++;
 			gbc.anchor = GridBagConstraints.EAST;
 			gbc.fill = GridBagConstraints.VERTICAL;
 			configPanel.add(new JLabel("Algorithm:"), gbc);
@@ -500,6 +505,7 @@ public class MainWindow {
 		window.setLocationRelativeTo(null);
 		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
+		updateCheckboxesEnabled();
 
 		// for testing
 		/*try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream("test.cfg")))) {
@@ -512,6 +518,22 @@ public class MainWindow {
 			ex.printStackTrace();
 		}*/
 
+	}
+
+	private void updateCheckboxesEnabled() {
+		boolean supportsIncremental = IncrementalVisualizationAlgorithm.class.isAssignableFrom(getSelectedAlgorithmClass());
+		chkContinuousUpdating.setEnabled(jarData != null && supportsIncremental && openTraceFile == null);
+
+		saveTracesCheckbox.setEnabled(jarData != null && openTraceFile == null);
+
+		if(jarData == null)
+			currentTraceFileLabel.setText("No file selected.");
+		else if(openTraceFile == null)
+			currentTraceFileLabel.setText("Tracing: "+jarData.file.getName());
+		else
+			currentTraceFileLabel.setText("Using saved trace: "+openTraceFile.getName());
+
+		runButton.setEnabled(jarData != null);
 	}
 
 	private void checkAllBoxes(TreePath selPath, boolean check){
@@ -535,10 +557,15 @@ public class MainWindow {
 		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance();
 	}
 
-	private void loadJarFile(File testfile) {
-		jarData = JarLoader.loadJarFile(testfile);
+	private void loadJarFile(File jarfile) {
 
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(testfile.getName()));
+		openTraceFile = null;
+
+		jarData = JarLoader.loadJarFile(jarfile);
+
+		updateCheckboxesEnabled();
+
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(jarfile.getName()));
 		((DefaultTreeModel)tree.getModel()).setRoot(top);
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -604,6 +631,17 @@ public class MainWindow {
 		final ExecutionData[] executionsArray = executions.toArray(new ExecutionData[executions.size()]);
 
 		final VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
+
+		if(openTraceFile != null) {
+			TraceFile tf = new TraceFile();
+			try {
+				tf.read(openTraceFile);
+				processTraces(tf.traces);
+			} catch(IOException | InterruptedException e) {
+				throw new RuntimeException(e); // TODO handle error
+			}
+			return;
+		}
 
 		final boolean useIncrementalUpdating = chkContinuousUpdating.isSelected();
 		final File savedTraceFile = saveTracesCheckbox.isSelected() ? chooseSavedTraceFile() : null;
