@@ -47,7 +47,7 @@ public class EadesSpringEmbedder {
 		Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
 		for (Edge e : graph.edges) {
-			
+
 			Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
 			if(vecResult.getNorm() == 0) { continue; }
@@ -210,10 +210,10 @@ public class EadesSpringEmbedder {
 			Rectangle2D stringBounds = n.labelBounds;
 
 			graphics.setColor(new Color(200, 240, 240, 100));
-			graphics.fillRect((int)n.getPosition().getX()+10, (int)n.getPosition().getY()-20,
+			graphics.fillRect((int)(n.getPosition().getX()+10  - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-20,
 					(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
 			graphics.setColor(Color.black);
-			graphics.drawString(n.getLabel(), (int)n.getPosition().getX()+10, (int)n.getPosition().getY()-10);
+			graphics.drawString(n.getLabel(), (int)(n.getPosition().getX()+10 - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-10);
 
 			//Draw the arrows on the edges
 			for (Edge e : n.getConnections()) {
@@ -257,11 +257,11 @@ public class EadesSpringEmbedder {
 			Rectangle2D stringBounds = npm.labelBounds;
 
 			graphics.setColor(new Color(100, 215, 215));
-			graphics.fillRect((int)npm.getPosition().getX()+8, (int)npm.getPosition().getY()-22,
+			graphics.fillRect((int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
 					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
 			graphics.setColor(Color.black);
-			graphics.drawString(npm.getLabel(), (int)npm.getPosition().getX()+8, (int)npm.getPosition().getY()-8);
-			graphics.drawRect((int)npm.getPosition().getX()+8, (int)npm.getPosition().getY()-22,
+			graphics.drawString(npm.getLabel(), (int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-8);
+			graphics.drawRect((int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
 					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
 		}
 
