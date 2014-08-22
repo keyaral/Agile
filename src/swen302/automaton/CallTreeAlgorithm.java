@@ -63,7 +63,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 	public boolean processLine(TraceEntry line) {
 
 		if(line.state != null) { //Updates state of next node
-			currentNode.setState(line.state);
+			currentNode.setState(line.state.toString());
 		}
 
 		if(!line.isReturn) { // Reads an instance of a method call

@@ -6,6 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import swen302.tracer.state.ArrayState;
+import swen302.tracer.state.EnumState;
+import swen302.tracer.state.NullState;
+import swen302.tracer.state.ObjectState;
+import swen302.tracer.state.SimpleState;
+import swen302.tracer.state.State;
+
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.Bootstrap;
@@ -147,7 +154,7 @@ public class Tracer {
 									if(_this == null)
 										te.state = null;
 									else
-										te.state = valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator());
+										te.state = valueToState(fieldFilter, _this, new ObjectReferenceGenerator());
 
 									te.isReturn = false;
 									consumer.onTraceLine(te);
@@ -185,7 +192,7 @@ public class Tracer {
 									if(_this == null)
 										te.state = null;
 									else
-										te.state = valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator());
+										te.state = valueToState(fieldFilter, _this, new ObjectReferenceGenerator());
 
 									te.isReturn = true;
 									consumer.onTraceLine(te);
@@ -227,13 +234,13 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) {
+	private static State objectToState(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) {
 
 		// Deal with circular references
 		{
 			String ref = refs.get(object);
 			if(ref != null)
-				return ref;
+				return new SimpleState(ref);
 			refs.put(object);
 		}
 
@@ -247,59 +254,48 @@ public class Tracer {
 					if(f.isEnumConstant()) {
 						Value value = object.getValue(f);
 						if(value != null && object.getValue(f).equals(object))
-							return f.name();
+							return new EnumState(f.name());
 						if(value == null)
 							fullyInitialized = false;
 					}
 				}
 				if(!fullyInitialized)
-					return "<uninitialized-enum>";
+					return new EnumState("<uninitialized-enum>"); // TODO should this be a separate class?
 				throw new AssertionError("failed to find enum constant name");
 			}
 
-			if(((ClassType)object.type()).name().equals("java.lang.String")) {
-				return "<string>";
-			}
+			//if(((ClassType)object.type()).name().equals("java.lang.String")) {
+			//	return "<string>";
+			//}
+
+			ObjectState state = new ObjectState(object.type().name());
 
 			List<Field> fields = ((ClassType)object.type()).allFields();
 
-			StringBuilder result = new StringBuilder();
-			//result.append(object.type().name());
-			result.append('{');
-
-			boolean first = true;
 			for(int k = 0; k < fields.size(); k++) {
 
 				Field f = fields.get(k);
+				FieldKey fk = new FieldKey(f);
 
-				if(!filter.isFieldTraced(new FieldKey(f)))
+				if(!filter.isFieldTraced(fk))
 					continue;
 
-				if(!first) result.append(",");
-				else first = false;
-
-				result.append(f.name());
-				result.append('=');
-				result.append(valueToStateString(filter, object.getValue(f), refs));
+				state.fields.put(fk, valueToState(filter, object.getValue(f), refs));
 			}
 
-			result.append('}');
-
-			return result.toString();
+			return state;
 
 		} else if(type instanceof ArrayType) {
+
+			ArrayState state = new ArrayState();
+
 			List<Value> values = ((ArrayReference)object).getValues();
 
 			StringBuilder result = new StringBuilder();
-			result.append('[');
-			boolean first = true;
 			for(Value v : values) {
-				if(!first) result.append(',');
-				else first = false;
-				result.append(valueToStateString(filter, v, refs));
+				state.values.add(valueToState(filter, v, refs));
 			}
-			result.append(']');
-			return result.toString();
+			return state;
 
 		} else
 			throw new AssertionError("Unsupported type "+type.name());
@@ -308,12 +304,12 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static String valueToStateString(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) {
+	private static State valueToState(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) {
 		if(value == null)
-			return "null";
+			return new NullState();
 		if(value instanceof ObjectReference)
-			return objectToStateString(filter, (ObjectReference)value, refs);
-		return value.toString();
+			return objectToState(filter, (ObjectReference)value, refs);
+		return new SimpleState(value.toString());
 	}
 
 	private static VirtualMachine launchTracee(String mainClass, String jvmOptions) throws Exception {

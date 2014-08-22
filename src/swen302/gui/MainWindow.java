@@ -770,7 +770,7 @@ public class MainWindow {
 		TraceFieldFilter fieldFilter = getSelectedFieldFilter();
 		for(Trace t : traces) {
 			t.filterMethods(methodFilter);
-			t.filterField(fieldFilter);
+			t.filterFields(fieldFilter);
 		}
 
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
@@ -901,6 +901,7 @@ public class MainWindow {
 
 	private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
 		allMethodTreeItems.clear();
+		allFieldTreeItems.clear();
 
 		Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 

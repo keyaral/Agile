@@ -3,6 +3,7 @@ package swen302.graph;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.Set;
 
 /**
@@ -47,7 +48,10 @@ public class GraphSaver {
 
 		// dot language Command to produce png
 
-		Process p = Runtime.getRuntime().exec(new String[] {"fdp", "-Tpng", "-o"+pngfile.getAbsolutePath(), dotfile.getAbsolutePath()});
+		ProcessBuilder pb = new ProcessBuilder("fdp", "-Tpng", "-o"+pngfile.getAbsolutePath(), dotfile.getAbsolutePath());
+		pb.redirectErrorStream(true);
+		pb.redirectOutput(Redirect.INHERIT);
+		Process p = pb.start();
 		p.waitFor();
 		if(p.exitValue() != 0)
 			throw new IOException("fdp command failed");

@@ -20,8 +20,8 @@ public class Trace implements Serializable {
 		}
 	}
 
-	public void filterField(TraceFieldFilter f) {
-		// TODO Auto-generated method stub
-
+	public void filterFields(TraceFieldFilter f) {
+		for(TraceEntry te : lines)
+			te.filterFields(f);
 	}
 }

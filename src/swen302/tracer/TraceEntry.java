@@ -2,13 +2,16 @@ package swen302.tracer;
 
 import java.io.Serializable;
 
+import swen302.tracer.state.State;
+
 public class TraceEntry implements Serializable{
 	private static final long serialVersionUID = 1L;
 
 	public boolean isReturn;
 
-	/** state string, null if static */
-	public String state;
+	/** The state of the object before the method was called (or before it returned).
+	 * Null if the method is static. */
+	public State state;
 
 	public MethodKey method;
 
@@ -30,5 +33,10 @@ public class TraceEntry implements Serializable{
 			sb.setLength(sb.length() - 1);
 		sb.append(')');
 		return sb.toString();
+	}
+
+
+	public void filterFields(TraceFieldFilter f) {
+		state.filterFields(f);
 	}
 }

@@ -47,7 +47,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	@Override
 	public boolean processLine(TraceEntry line) {
 
-		stack.push(line.state == null ? null : getStateNode(line.state));
+		stack.push(line.state == null ? null : getStateNode(line.state.toString()));
 
 		if(line.isReturn && stack.size()>=1){ // Reads an instance of return call.
 
