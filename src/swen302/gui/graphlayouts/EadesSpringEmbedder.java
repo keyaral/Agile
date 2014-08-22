@@ -21,6 +21,7 @@ public class EadesSpringEmbedder {
 	private int mouseX;
 	private int mouseY;
 	private boolean mouseAttractive;
+	private Node selectedNode = null;
 
 	public double WALL_CHARGE = 5;
 
@@ -41,17 +42,6 @@ public class EadesSpringEmbedder {
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
 
-		if(!mouseForce)
-			draggingNode = null;
-
-		Node hoverNode = pointInNode(mouseX, mouseY);
-		if(hoverNode != null && mouseForce)
-			draggingNode = hoverNode;
-
-		if(draggingNode != null) {
-			draggingNode.setPosition(new Vector2D(mouseX, mouseY));
-			mouseForce = false;
-		}
 
 		for (Node n : graph.nodes) {
 			Vector2D tempForce = new Vector2D(0.0, 0.0);
@@ -71,15 +61,15 @@ public class EadesSpringEmbedder {
 					tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
 				}
 			}
-			
+
 			//User interaction
 			if (mouseForce) {
 				Vector2D vecResult = n.getPosition().subtract(new Vector2D(mouseX, mouseY));
 				double dist = n.getPosition().distance(new Vector2D(mouseX, mouseY));
-				
+
 				if(mouseAttractive)
 					vecResult = vecResult.negate();
-				
+
 				vecResult = vecResult.scalarMultiply((1/dist*100));
 				tempForce = tempForce.add(vecResult);
 			}
@@ -89,6 +79,7 @@ public class EadesSpringEmbedder {
 			n.force = tempForce;
 		}
 		for (Node n : graph.nodes) {
+			if(n == selectedNode) continue;
 			n.updatePosition(timeStep);
 			//Stop calculating, will probably leave out.
 			//This is so the graph can be made interactive
@@ -120,7 +111,7 @@ public class EadesSpringEmbedder {
 		double distance = n1.getPosition().distance(n2.getPosition());
 
 		double force = (this.MAGNETIC_STRENGTH*n1.getCharge()*n2.getCharge())/(Math.pow(distance, 2));
-		
+
 		//double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		vecResult = vecResult.normalize();
@@ -134,7 +125,7 @@ public class EadesSpringEmbedder {
 		double force = 0.25*10*velocity.getNorm();
 		if (force == 0)
 			return new Vector2D(0.0, 0.0);
-		
+
 		return velocity.normalize().scalarMultiply(force);
 	}
 
@@ -151,7 +142,7 @@ public class EadesSpringEmbedder {
 
 		springLength = springLength.scalarMultiply(length);
 		vecResult = vecResult.subtract(springLength);
-		
+
 		vecResult = vecResult.scalarMultiply(SPRING_STRENGTH);
 
 		return vecResult;
@@ -213,6 +204,24 @@ public class EadesSpringEmbedder {
 					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
 		}
 
+	}
+
+	public void selectNode(int mouseX, int mouseY){
+		selectedNode = pointInNode(mouseX, mouseY);
+	}
+
+	public void releaseNode(){
+		selectedNode = null;
+	}
+
+	public void moveNode(int pMouseX, int pMouseY, int mouseX, int mouseY){
+		if(selectedNode != null){
+			double x = selectedNode.getPosition().getX();
+			double y = selectedNode.getPosition().getY();
+			x += mouseX-pMouseX;
+			y += mouseY-pMouseY;
+			selectedNode.setPosition(new Vector2D(x, y));
+		}
 	}
 
 	public void addForce(int mouseX, int mouseY, boolean mouseAttractive) {

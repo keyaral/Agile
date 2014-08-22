@@ -354,14 +354,14 @@ public class MainWindow {
 		//			doTraceAndAnalysis();
 		//		}
 
-		try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream("test.cfg")))) {
-			TracerConfiguration conf = (TracerConfiguration)in.readObject();
-			loadFromConfiguration(conf);
+//		try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream("test.cfg")))) {
+//			TracerConfiguration conf = (TracerConfiguration)in.readObject();
+//			loadFromConfiguration(conf);
+//
+//		} catch(IOException | ClassNotFoundException ex) {
+//			ex.printStackTrace();
+//		}
 
-		} catch(IOException | ClassNotFoundException ex) {
-			ex.printStackTrace();
-		}
-		
 		doTraceAndAnalysis();
 
 	}
@@ -442,7 +442,7 @@ public class MainWindow {
 			//GraphSaver.save(graph, pngfile);
 			//BufferedImage image = ImageIO.read(pngfile);
 			graphPane.setGraph(graph);
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
