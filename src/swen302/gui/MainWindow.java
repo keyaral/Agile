@@ -97,23 +97,26 @@ public class MainWindow {
 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
-	private JMenuItem fileLoadJAR, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit, fileChangeK;
+	private JMenuItem fileLoadJAR, fileLoadTrace, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit, fileChangeK;
 	private JMenu displayMenu;
 	private JCheckBoxMenuItem displayID, displayState, displayClass, displayMethod, displayParams;
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
-	private JButton runButton;
 	private ImagePane graphPane;
-	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect;
+
+	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 	private JCheckBox chkContinuousUpdating;
+	private JCheckBox saveTracesCheckbox;
+	private JButton runButton;
 
 	private JarData jarData;
 
 	private File lastJarDirectory = new File(".");
 	private File lastConfigDirectory = new File(".");
+	private File lastTraceDirectory = new File(".");
 
 	private TreePath selectedPath;
 
@@ -158,6 +161,7 @@ public class MainWindow {
 
 		fileMenu = new JMenu("File");
 		fileLoadJAR = fileMenu.add("Load JAR...");
+		fileLoadTrace = fileMenu.add("Load Trace...");
 		fileLoadAdvanced = fileMenu.add("Load Advanced...");
 		fileMenu.addSeparator();
 		fileEditExecutions = fileMenu.add("Edit Executions...");
@@ -279,6 +283,28 @@ public class MainWindow {
 						doTraceAndAnalysis();
 					else
 						graphPane.setImage(null);
+				}
+			}
+		});
+
+		fileLoadTrace.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser(lastTraceDirectory);
+				fc.setFileFilter(new FileNameExtensionFilter("Trace files", "trace"));
+				int returnVal = fc.showOpenDialog(window);
+
+				lastTraceDirectory = fc.getCurrentDirectory();
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					try {
+						TraceFile tf = new TraceFile();
+						tf.read(fc.getSelectedFile());
+						loadFromConfiguration(tf.config);
+						processTraces(tf.traces);
+					} catch(IOException | InterruptedException exc) {
+						throw new RuntimeException(exc); // TODO handle error
+					}
 				}
 			}
 		});
@@ -418,6 +444,7 @@ public class MainWindow {
 		});
 
 		chkContinuousUpdating = new JCheckBox("Continuously update");
+		saveTracesCheckbox = new JCheckBox("Save trace");
 
 
 		runButton = new JButton("Run");
@@ -449,6 +476,9 @@ public class MainWindow {
 			gbc.gridy++; gbc.gridwidth = 2;
 			configPanel.add(chkContinuousUpdating, gbc);
 
+			gbc.gridy++;
+			configPanel.add(saveTracesCheckbox, gbc);
+
 			gbc.gridx = 0;
 			gbc.gridy++; gbc.gridwidth = 2;
 			configPanel.add(runButton, gbc);
@@ -472,13 +502,15 @@ public class MainWindow {
 
 
 		// for testing
-		//		File testfile = new File("testprogs/StringParserTest.jar");
-		//		if(testfile.exists())
-		//		{
-		//			loadJarFile(testfile);
-		//
-		//			doTraceAndAnalysis();
-		//		}
+		/*try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream("test.cfg")))) {
+			TracerConfiguration conf = (TracerConfiguration)in.readObject();
+			loadFromConfiguration(conf);
+			saveTracesCheckbox.setSelected(true);
+			doTraceAndAnalysis();
+
+		} catch(IOException | ClassNotFoundException ex) {
+			ex.printStackTrace();
+		}*/
 
 	}
 
@@ -499,6 +531,10 @@ public class MainWindow {
 		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).algClass;
 	}
 
+	private VisualizationAlgorithm getSelectedAlgorithmInstance() {
+		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance();
+	}
+
 	private void loadJarFile(File testfile) {
 		jarData = JarLoader.loadJarFile(testfile);
 
@@ -517,11 +553,8 @@ public class MainWindow {
 		window.setVisible(visible);
 	}
 
-	private void doTraceAndAnalysis() {
-		if(jarData == null)
-			return;
-
-		final TraceMethodFilter methodFilter = new TraceMethodFilter() {
+	private TraceMethodFilter getSelectedMethodFilter() {
+		return new TraceMethodFilter() {
 			private Set<String> selectedMethods = new HashSet<String>();
 
 			{
@@ -536,8 +569,10 @@ public class MainWindow {
 			}
 
 		};
+	}
 
-		final TraceFieldFilter fieldFilter = new TraceFieldFilter() {
+	private TraceFieldFilter getSelectedFieldFilter() {
+		return new TraceFieldFilter() {
 			private Set<String> selectedFields = new HashSet<String>();
 
 			{
@@ -554,15 +589,32 @@ public class MainWindow {
 				return selectedFields.contains(f.declaringType().name()+"."+f.name());
 			}
 		};
+	}
+
+	private void doTraceAndAnalysis() {
+		if(jarData == null)
+			return;
+
+		final TraceMethodFilter methodFilter = getSelectedMethodFilter();
+		final TraceFieldFilter fieldFilter = getSelectedFieldFilter();
 
 		final String path = jarData.file.getAbsolutePath();
 		final String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
 
 		final ExecutionData[] executionsArray = executions.toArray(new ExecutionData[executions.size()]);
 
-		final VisualizationAlgorithm algorithm = ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance();
+		final VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 
 		final boolean useIncrementalUpdating = chkContinuousUpdating.isSelected();
+		final File savedTraceFile = saveTracesCheckbox.isSelected() ? chooseSavedTraceFile() : null;
+
+		if(saveTracesCheckbox.isSelected() && savedTraceFile == null) {
+			return;
+		}
+
+		final Set<String> loadedClasses = new HashSet<String>();
+		for(Class<?> cl : jarData.data)
+			loadedClasses.add(cl.getName());
 
 		Thread thread = new Thread() {
 
@@ -570,6 +622,28 @@ public class MainWindow {
 			public void run() {
 
 				try {
+
+					// The filters to use when tracing
+					TraceMethodFilter initialMethodFilter;
+					TraceFieldFilter initialFieldFilter;
+
+					if(savedTraceFile == null) {
+						initialMethodFilter = methodFilter;
+						initialFieldFilter = fieldFilter;
+					} else {
+						initialMethodFilter = new TraceMethodFilter() {
+							@Override
+							public boolean isMethodTraced(com.sun.jdi.Method m) {
+								return loadedClasses.contains(m.declaringType().name());
+							}
+						};
+						initialFieldFilter = new TraceFieldFilter() {
+							@Override
+							public boolean isFieldTraced(com.sun.jdi.Field f) {
+								return loadedClasses.contains(f.declaringType().name());
+							}
+						};
+					}
 
 					if(useIncrementalUpdating && algorithm instanceof IncrementalVisualizationAlgorithm && executionsArray.length == 1) {
 
@@ -621,22 +695,20 @@ public class MainWindow {
 							ExecutionData ed = executions.get(k);
 
 							FutureTraceConsumer future = new FutureTraceConsumer();
-							Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter, future);
+							Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, initialMethodFilter, initialFieldFilter, future);
 							traces[k] = future.get();
 						}
 
-						Graph graph = algorithm.generateGraph(traces);
+						if(savedTraceFile != null) {
+							TraceFile tf = new TraceFile();
+							tf.traces = traces;
+							tf.config = new TracerConfiguration();
+							saveToConfiguration(tf.config);
+							tf.write(savedTraceFile);
+						}
 
-						File pngfile = new File("tempAnalysis.png");
-						GraphSaver.save(graph, pngfile);
-						final BufferedImage image = ImageIO.read(pngfile);
+						processTraces(traces);
 
-						EventQueue.invokeLater(new Runnable() {
-							@Override
-							public void run() {
-								graphPane.setImage(image);
-							}
-						});
 					}
 				} catch(Exception e) {
 					e.printStackTrace();
@@ -649,6 +721,50 @@ public class MainWindow {
 		thread.start();
 	}
 
+	/**
+	 * Called after a set of traces is either traced, or loaded from a file.
+	 * @param traces The traces.
+	 * @param algorithm The algorithm to use.
+	 */
+	private void processTraces(Trace[] traces) throws IOException, InterruptedException {
+		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
+		Graph graph = algorithm.generateGraph(traces);
+
+		File pngfile = new File("tempAnalysis.png");
+		GraphSaver.save(graph, pngfile);
+		final BufferedImage image = ImageIO.read(pngfile);
+
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				graphPane.setImage(image);
+			}
+		});
+	}
+
+
+	/**
+	 * Asks the user to choose a trace file to save to.
+	 * @return The file the user selected, or null if they cancelled.
+	 */
+	private File chooseSavedTraceFile() {
+		JFileChooser fc = new JFileChooser(lastTraceDirectory);
+		fc.setFileFilter(new FileNameExtensionFilter("Trace files", "trace"));
+
+		if(fc.showSaveDialog(window) == JFileChooser.APPROVE_OPTION) {
+			File file = fc.getSelectedFile();
+
+			if(!fc.getFileFilter().accept(file))
+				file = new File(file.toString()+".trace");
+
+			lastTraceDirectory = file.getParentFile();
+
+			return file;
+
+		} else {
+			return null;
+		}
+	}
 
 	public void saveToConfiguration(TracerConfiguration conf) {
 		conf.jarFile = jarData.file;
