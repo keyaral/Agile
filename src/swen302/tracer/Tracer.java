@@ -154,7 +154,7 @@ public class Tracer {
 									if(_this == null)
 										te.state = null;
 									else
-										te.state = valueToState(fieldFilter, _this, new ObjectReferenceGenerator());
+										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
 
 									te.isReturn = false;
 									consumer.onTraceLine(te);
@@ -192,7 +192,7 @@ public class Tracer {
 									if(_this == null)
 										te.state = null;
 									else
-										te.state = valueToState(fieldFilter, _this, new ObjectReferenceGenerator());
+										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
 
 									te.isReturn = true;
 									consumer.onTraceLine(te);
@@ -234,16 +234,10 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static State objectToState(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) {
+	private static State objectToState(TraceFieldFilter filter, ObjectReference object, Map<ObjectReference, State> alreadySeenObjects) {
 
-		// Deal with circular references
-		{
-			String ref = refs.get(object);
-			if(ref != null)
-				return new SimpleState(ref);
-			refs.put(object);
-		}
-
+		if(alreadySeenObjects.containsKey(object))
+			return alreadySeenObjects.get(object);
 
 		Type type = object.type();
 		if(type instanceof ClassType) {
@@ -269,6 +263,7 @@ public class Tracer {
 			//}
 
 			ObjectState state = new ObjectState(object.type().name());
+			alreadySeenObjects.put(object, state);
 
 			List<Field> fields = ((ClassType)object.type()).allFields();
 
@@ -280,7 +275,7 @@ public class Tracer {
 				if(!filter.isFieldTraced(fk))
 					continue;
 
-				state.fields.put(fk, valueToState(filter, object.getValue(f), refs));
+				state.fields.put(fk, valueToState(filter, object.getValue(f), alreadySeenObjects));
 			}
 
 			return state;
@@ -288,12 +283,12 @@ public class Tracer {
 		} else if(type instanceof ArrayType) {
 
 			ArrayState state = new ArrayState();
+			alreadySeenObjects.put(object, state);
 
 			List<Value> values = ((ArrayReference)object).getValues();
 
-			StringBuilder result = new StringBuilder();
 			for(Value v : values) {
-				state.values.add(valueToState(filter, v, refs));
+				state.values.add(valueToState(filter, v, alreadySeenObjects));
 			}
 			return state;
 
@@ -304,11 +299,11 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static State valueToState(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) {
+	private static State valueToState(TraceFieldFilter filter, Value value, Map<ObjectReference, State> alreadySeenObjects) {
 		if(value == null)
 			return new NullState();
 		if(value instanceof ObjectReference)
-			return objectToState(filter, (ObjectReference)value, refs);
+			return objectToState(filter, (ObjectReference)value, alreadySeenObjects);
 		return new SimpleState(value.toString());
 	}
 

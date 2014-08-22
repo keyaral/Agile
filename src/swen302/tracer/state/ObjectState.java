@@ -23,6 +23,14 @@ public class ObjectState extends State {
 
 	@Override
 	public String toString() {
+		return toString(new HashMap<State, String>());
+	}
+
+	public String toString(Map<State, String> alreadySeenObjects) {
+		if(alreadySeenObjects.containsKey(this))
+			return alreadySeenObjects.get(this);
+		alreadySeenObjects.put(this, "OBJ"+alreadySeenObjects.size());
+
 		StringBuilder result = new StringBuilder();
 		result.append('{');
 		List<FieldKey> sortedFields = new ArrayList<FieldKey>(fields.keySet());
@@ -41,7 +49,7 @@ public class ObjectState extends State {
 			State value = fields.get(fk);
 			result.append(fk.name);
 			result.append('=');
-			result.append(value.toString());
+			result.append(value.toString(alreadySeenObjects));
 		}
 		result.append('}');
 
