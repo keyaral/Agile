@@ -1,8 +1,10 @@
 package swen302.tracer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
@@ -14,6 +16,7 @@ import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
@@ -90,7 +93,7 @@ public class Tracer {
 
 					// When a class is loaded, we need to add a MethodEntryRequest and MethodExitRequest if it's traceable.
 					ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-					classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+					classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 					classPrepareRequest.enable();
 
 					VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
@@ -104,6 +107,7 @@ public class Tracer {
 
 					while(true) {
 						EventSet events = vm.eventQueue().remove();
+						Set<ThreadReference> threadsToResume = new HashSet<ThreadReference>();
 						for(Event event : events) {
 							if(event instanceof ClassPrepareEvent) {
 								ClassPrepareEvent event2 = (ClassPrepareEvent)event;
@@ -126,49 +130,41 @@ public class Tracer {
 									}
 								}
 
-								vm.resume();
+								threadsToResume.add(event2.thread());
 							}
 							if(event instanceof MethodEntryEvent) {
 								MethodEntryEvent event2 = (MethodEntryEvent)event;
 
 								if(methodFilter.isMethodTraced(event2.method())) {
 
-									try {
+									// Handle a method entry
+									StackFrame frame = event2.thread().frame(0);
+									ObjectReference _this = frame.thisObject();
 
-										// Handle a method entry
-										StackFrame frame = event2.thread().frame(0);
-										ObjectReference _this = frame.thisObject();
-
-										if(_this == null)
-											consumer.onTraceLine("staticContext");
-										else
-											consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
-
-										consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
-
-										/*try {
-											for(Value v : frame.getArgumentValues()) {
-												System.out.println("   argument: "+v);
-											}
-											if(_this != null && _this.type() instanceof ClassType) {
-												for(Field f : ((ClassType)_this.type()).allFields()) {
-													System.out.println("   field "+f.name()+": "+_this.getValue(f));
-												}
-											}
-										} catch(InternalException e) {
-											// Java bug; InternalException is thrown if getting arguments from a native method
-											// see http://bugs.java.com/view_bug.do?bug_id=6810565
-											//System.out.println("   (unable to get arguments)");
-										}*/
-									} catch(IncompatibleThreadStateException e) {
+									if(_this == null)
 										consumer.onTraceLine("staticContext");
-										consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
-										System.err.println("Error processing MethodExitEvent for "+getMethodNameInTraceFormat(event2.method()));
-										e.printStackTrace();
-									}
+									else
+										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+
+									consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
+
+									/*try {
+										for(Value v : frame.getArgumentValues()) {
+											System.out.println("   argument: "+v);
+										}
+										if(_this != null && _this.type() instanceof ClassType) {
+											for(Field f : ((ClassType)_this.type()).allFields()) {
+												System.out.println("   field "+f.name()+": "+_this.getValue(f));
+											}
+										}
+									} catch(InternalException e) {
+										// Java bug; InternalException is thrown if getting arguments from a native method
+										// see http://bugs.java.com/view_bug.do?bug_id=6810565
+										//System.out.println("   (unable to get arguments)");
+									}*/
 								}
 
-								event2.thread().resume();
+								threadsToResume.add(event2.thread());
 
 							} else if(event instanceof MethodExitEvent) {
 
@@ -176,34 +172,31 @@ public class Tracer {
 								MethodExitEvent event2 = (MethodExitEvent)event;
 
 								if(methodFilter.isMethodTraced(event2.method())) {
-									try {
-										StackFrame frame = event2.thread().frame(0);
-										ObjectReference _this = frame.thisObject();
+									StackFrame frame = event2.thread().frame(0);
+									ObjectReference _this = frame.thisObject();
 
-										if(_this == null)
-											consumer.onTraceLine("staticContext");
-										else
-											consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
-
-									} catch(IncompatibleThreadStateException e) {
+									if(_this == null)
 										consumer.onTraceLine("staticContext");
-										System.err.println("Error processing MethodExitEvent for "+getMethodNameInTraceFormat(event2.method()));
-										e.printStackTrace();
-									}
+									else
+										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+
 									consumer.onTraceLine("return "+getMethodNameInTraceFormat(event2.method()));
 								}
 
-								event2.thread().resume();
+								threadsToResume.add(event2.thread());
 
 							}
 							else if(event instanceof VMDeathEvent)
 							{
+								System.out.println("Tracing done");
 								vm.dispose();
 								return;
 							}
 						}
+						for(ThreadReference thread : threadsToResume)
+							thread.resume();
 					}
-				} catch(InterruptedException | RuntimeException | Error t) {
+				} catch(InterruptedException | RuntimeException | IncompatibleThreadStateException | Error t) {
 					consumer.onTracerCrash(t);
 				} finally {
 					consumer.onTraceFinish();
