@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
@@ -42,23 +44,40 @@ public class EadesSpringEmbedder {
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
 
+		Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
+
+		for (Edge e : graph.edges) {
+			Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
+
+			if(vecResult.getNorm() == 0) { continue; }
+
+			Vector2D vPos = vecResult.normalize();
+
+			double virtualPosition = e.node1.getPosition().distance(e.node2.getPosition()) / 2;
+
+			vPos = vPos.scalarMultiply(virtualPosition);
+
+			virtualNodes.add(new Node(new Vector2D(vPos.getX(), vPos.getY()), true));
+		}
 
 		for (Node n : graph.nodes) {
 			Vector2D tempForce = new Vector2D(0.0, 0.0);
 
-			for (Edge e : n.getConnections()) {
+			for (Edge e : n.getSprings()) {
 				tempForce = tempForce.add(hookesLaw(n, e.getOtherNode(n)));
 			}
 
-			for (Node m : graph.nodes) {
+			for (Node m : virtualNodes) {
 				if (n != m) {
 					tempForce = tempForce.add(coulombsLaw(n, m));
 
-					double x = m.labelBounds.getCenterX();
-					double y = m.labelBounds.getCenterY();
+					if (!m.IsVirtual) {
+						double x = m.labelBounds.getCenterX();
+						double y = m.labelBounds.getCenterY();
 
-					Vector2D label = new Vector2D(x, y);
-					tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
+						Vector2D label = new Vector2D(x, y);
+						tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
+					}
 				}
 			}
 
@@ -114,6 +133,7 @@ public class EadesSpringEmbedder {
 
 		//double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
+		if (vecResult.getNorm() == 0) { return new Vector2D(0,0); }
 		vecResult = vecResult.normalize();
 
 		vecResult = vecResult.scalarMultiply(force);
@@ -189,9 +209,44 @@ public class EadesSpringEmbedder {
 			graphics.setColor(Color.black);
 			graphics.drawString(n.getLabel(), (int)n.getPosition().getX()+10, (int)n.getPosition().getY()-10);
 
+			//Draw the arrows on the edges
+			for (Edge e : n.getConnections()) {
+
+				Vector2D node1 = n.getPosition();
+				Vector2D node2 = e.getOtherNode(n).getPosition();
+
+				Vector2D tipOfArrow = node1;
+				Vector2D bottomOfArrow = node1;
+
+				tipOfArrow = node1.subtract(node2);
+				if (tipOfArrow.getNorm() == 0) { continue; }
+				tipOfArrow = tipOfArrow.normalize().scalarMultiply(node1.distance(node2)-10);
+				tipOfArrow = node1.subtract(tipOfArrow);
+
+				bottomOfArrow = node1.subtract(node2);
+				if (bottomOfArrow.getNorm() == 0) { continue; }
+				bottomOfArrow = bottomOfArrow.normalize().scalarMultiply(node1.distance(node2)-20);
+				bottomOfArrow = node1.subtract(bottomOfArrow);
+
+				int[] xPoints = new int[] {0, -5, 5};
+				int[] yPoints = new int[] {0, 5, 5};
+
+				Vector2D v = node1.subtract(node2);
+				double angle = Math.atan2(v.getY(), v.getX())-Math.PI/2;
+
+				graphics.translate(tipOfArrow.getX(), tipOfArrow.getY());
+				graphics.rotate(angle);
+
+				graphics.fillPolygon(xPoints, yPoints, 3);
+
+				graphics.rotate(-angle);
+				graphics.translate(-tipOfArrow.getX(), -tipOfArrow.getY());
+			}
+
 		}
 		//Lol variable name
 		Node npm = this.pointInNode(mouseX, mouseY);
+		npm = selectedNode != null ? selectedNode : npm;
 		if (npm != null) {
 			Rectangle2D stringBounds = npm.labelBounds;
 
