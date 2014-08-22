@@ -1,4 +1,4 @@
-package swen302.gui;
+package swen302.tracer;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -22,6 +22,10 @@ public final class FieldKey implements Serializable {
 
 	public FieldKey(Field field) {
 		this(field.getDeclaringClass().getName(), field.getName());
+	}
+
+	public FieldKey(com.sun.jdi.Field field) {
+		this(field.declaringType().name(), field.name());
 	}
 
 	@Override

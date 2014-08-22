@@ -76,7 +76,9 @@ import swen302.gui.classtree.FieldTreeItem;
 import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
+import swen302.tracer.FieldKey;
 import swen302.tracer.FutureTraceConsumer;
+import swen302.tracer.MethodKey;
 import swen302.tracer.RealtimeTraceConsumer;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceEntry;
@@ -590,17 +592,17 @@ public class MainWindow {
 
 	private TraceMethodFilter getSelectedMethodFilter() {
 		return new TraceMethodFilter() {
-			private Set<String> selectedMethods = new HashSet<String>();
+			private Set<MethodKey> selectedMethods = new HashSet<MethodKey>();
 
 			{
 				for(MethodTreeItem i : allMethodTreeItems)
 					if(i.checked)
-						selectedMethods.add(i.method.className+"."+i.method.name);
+						selectedMethods.add(i.method);
 			}
 
 			@Override
-			public boolean isMethodTraced(com.sun.jdi.Method m) {
-				return selectedMethods.contains(m.declaringType().name()+"."+m.name());
+			public boolean isMethodTraced(MethodKey m) {
+				return selectedMethods.contains(m);
 			}
 
 		};
@@ -608,20 +610,18 @@ public class MainWindow {
 
 	private TraceFieldFilter getSelectedFieldFilter() {
 		return new TraceFieldFilter() {
-			private Set<String> selectedFields = new HashSet<String>();
+			private Set<FieldKey> selectedFields = new HashSet<FieldKey>();
 
 			{
 				for(FieldTreeItem i : allFieldTreeItems) {
-					if(i.checked) {
-						FieldKey fk = new FieldKey(i.field);
-						selectedFields.add(fk.className+"."+fk.name);
-					}
+					if(i.checked)
+						selectedFields.add(new FieldKey(i.field));
 				}
 			}
 
 			@Override
-			public boolean isFieldTraced(com.sun.jdi.Field f) {
-				return selectedFields.contains(f.declaringType().name()+"."+f.name());
+			public boolean isFieldTraced(FieldKey f) {
+				return selectedFields.contains(f);
 			}
 		};
 	}
@@ -678,14 +678,14 @@ public class MainWindow {
 					} else {
 						initialMethodFilter = new TraceMethodFilter() {
 							@Override
-							public boolean isMethodTraced(com.sun.jdi.Method m) {
-								return loadedClasses.contains(m.declaringType().name());
+							public boolean isMethodTraced(MethodKey m) {
+								return loadedClasses.contains(m.className);
 							}
 						};
 						initialFieldFilter = new TraceFieldFilter() {
 							@Override
-							public boolean isFieldTraced(com.sun.jdi.Field f) {
-								return loadedClasses.contains(f.declaringType().name());
+							public boolean isFieldTraced(FieldKey f) {
+								return loadedClasses.contains(f.className);
 							}
 						};
 					}

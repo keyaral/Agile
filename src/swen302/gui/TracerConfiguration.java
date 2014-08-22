@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import swen302.execution.ExecutionData;
+import swen302.tracer.FieldKey;
+import swen302.tracer.MethodKey;
 
 /**
  * A saved configuration. A configuration file is just a serialized instance of this.

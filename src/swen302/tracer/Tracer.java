@@ -135,14 +135,14 @@ public class Tracer {
 							if(event instanceof MethodEntryEvent) {
 								MethodEntryEvent event2 = (MethodEntryEvent)event;
 
-								if(methodFilter.isMethodTraced(event2.method())) {
+								if(methodFilter.isMethodTraced(new MethodKey(event2.method()))) {
 
 									// Handle a method entry
 									StackFrame frame = event2.thread().frame(0);
 									ObjectReference _this = frame.thisObject();
 
 									TraceEntry te = new TraceEntry();
-									te.setMethod(event2.method());
+									te.method = new MethodKey(event2.method());
 
 									if(_this == null)
 										te.state = null;
@@ -175,12 +175,12 @@ public class Tracer {
 								// Handle a method return
 								MethodExitEvent event2 = (MethodExitEvent)event;
 
-								if(methodFilter.isMethodTraced(event2.method())) {
+								if(methodFilter.isMethodTraced(new MethodKey(event2.method()))) {
 									StackFrame frame = event2.thread().frame(0);
 									ObjectReference _this = frame.thisObject();
 
 									TraceEntry te = new TraceEntry();
-									te.setMethod(event2.method());
+									te.method = new MethodKey(event2.method());
 
 									if(_this == null)
 										te.state = null;
@@ -219,7 +219,7 @@ public class Tracer {
 
 	private static boolean doesClassHaveTraceableMethods(TraceMethodFilter methodFilter, ReferenceType type) {
 		for(Method m : type.methods())
-			if(methodFilter.isMethodTraced(m))
+			if(methodFilter.isMethodTraced(new MethodKey(m)))
 				return true;
 		return false;
 	}
@@ -272,7 +272,7 @@ public class Tracer {
 
 				Field f = fields.get(k);
 
-				if(!filter.isFieldTraced(f))
+				if(!filter.isFieldTraced(new FieldKey(f)))
 					continue;
 
 				if(!first) result.append(",");

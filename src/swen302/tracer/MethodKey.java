@@ -1,4 +1,4 @@
-package swen302.gui;
+package swen302.tracer;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -20,6 +20,10 @@ public final class MethodKey implements Serializable {
 
 	public MethodKey(Method method) {
 		this(method.getDeclaringClass().getName(), method.getName(), getArgTypesArray(method.getParameterTypes()));
+	}
+
+	public MethodKey(com.sun.jdi.Method method) {
+		this(method.declaringType().name(), method.name(), method.argumentTypeNames().toArray(new String[0]));
 	}
 
 	private static String[] getArgTypesArray(Class<?>[] types) {
