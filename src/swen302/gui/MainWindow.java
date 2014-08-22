@@ -79,6 +79,7 @@ import swen302.gui.classtree.PackageTreeItem;
 import swen302.tracer.FutureTraceConsumer;
 import swen302.tracer.RealtimeTraceConsumer;
 import swen302.tracer.Trace;
+import swen302.tracer.TraceEntry;
 import swen302.tracer.TraceFieldFilter;
 import swen302.tracer.TraceMethodFilter;
 import swen302.tracer.Tracer;
@@ -292,9 +293,16 @@ public class MainWindow {
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					try {
-						TraceFile tf = new TraceFile();
-						tf.read(fc.getSelectedFile());
+						TraceFile tf = TraceFile.read(fc.getSelectedFile());
 						loadFromConfiguration(tf.config);
+
+						TraceMethodFilter methodFilter = getSelectedMethodFilter();
+						TraceFieldFilter fieldFilter = getSelectedFieldFilter();
+						for(Trace t : tf.traces) {
+							t.filterMethods(methodFilter);
+							t.filterField(fieldFilter);
+						}
+
 						processTraces(tf.traces);
 
 						openTraceFile = fc.getSelectedFile();
@@ -633,9 +641,8 @@ public class MainWindow {
 		final VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 
 		if(openTraceFile != null) {
-			TraceFile tf = new TraceFile();
 			try {
-				tf.read(openTraceFile);
+				TraceFile tf = TraceFile.read(openTraceFile);
 				processTraces(tf.traces);
 			} catch(IOException | InterruptedException e) {
 				throw new RuntimeException(e); // TODO handle error
@@ -699,7 +706,7 @@ public class MainWindow {
 							}
 
 							@Override
-							public void onTraceLine(String line) {
+							public void onTraceLine(TraceEntry line) {
 								if(iva.processLine(line)) {
 									Graph graph = iva.getCurrentGraph();
 

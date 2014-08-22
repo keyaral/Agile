@@ -1,6 +1,7 @@
 package swen302.automaton;
 
 import swen302.graph.Graph;
+import swen302.tracer.TraceEntry;
 
 public interface IncrementalVisualizationAlgorithm {
 
@@ -10,11 +11,11 @@ public interface IncrementalVisualizationAlgorithm {
 	public void startIncremental();
 
 	/**
-	 * Processes a trace line.
-	 * @param line The trace line.
+	 * Processes a trace entry.
+	 * @param line The trace entry.
 	 * @return True if the graph changed and needs to be redrawn.
 	 */
-	public boolean processLine(String line);
+	public boolean processLine(TraceEntry line);
 
 	/**
 	 * @return The current state of the graph. This might be a static copy of the graph,

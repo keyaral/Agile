@@ -52,7 +52,7 @@ public class FutureTraceConsumer implements Future<Trace>, RealtimeTraceConsumer
 
 
 	@Override
-	public void onTraceLine(String line) {
+	public void onTraceLine(TraceEntry line) {
 		t.lines.add(line);
 	}
 

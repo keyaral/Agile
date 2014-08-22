@@ -141,12 +141,16 @@ public class Tracer {
 									StackFrame frame = event2.thread().frame(0);
 									ObjectReference _this = frame.thisObject();
 
-									if(_this == null)
-										consumer.onTraceLine("staticContext");
-									else
-										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+									TraceEntry te = new TraceEntry();
+									te.setMethod(event2.method());
 
-									consumer.onTraceLine("methodCall "+getMethodNameInTraceFormat(event2.method()));
+									if(_this == null)
+										te.state = null;
+									else
+										te.state = valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator());
+
+									te.isReturn = false;
+									consumer.onTraceLine(te);
 
 									/*try {
 										for(Value v : frame.getArgumentValues()) {
@@ -175,12 +179,16 @@ public class Tracer {
 									StackFrame frame = event2.thread().frame(0);
 									ObjectReference _this = frame.thisObject();
 
-									if(_this == null)
-										consumer.onTraceLine("staticContext");
-									else
-										consumer.onTraceLine("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+									TraceEntry te = new TraceEntry();
+									te.setMethod(event2.method());
 
-									consumer.onTraceLine("return "+getMethodNameInTraceFormat(event2.method()));
+									if(_this == null)
+										te.state = null;
+									else
+										te.state = valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator());
+
+									te.isReturn = true;
+									consumer.onTraceLine(te);
 								}
 
 								threadsToResume.add(event2.thread());
@@ -306,23 +314,6 @@ public class Tracer {
 		if(value instanceof ObjectReference)
 			return objectToStateString(filter, (ObjectReference)value, refs);
 		return value.toString();
-	}
-
-	private static String getMethodNameInTraceFormat(Method m) {
-		StringBuilder result = new StringBuilder();
-		result.append(m.declaringType().name());
-		result.append(' ');
-		result.append(m.name());
-		result.append('(');
-
-		List<String> argTypeNames = m.argumentTypeNames();
-		for(int k = 0; k < argTypeNames.size(); k++) {
-			if(k > 0) result.append(',');
-			result.append(argTypeNames.get(k));
-		}
-
-		result.append(')');
-		return result.toString();
 	}
 
 	private static VirtualMachine launchTracee(String mainClass, String jvmOptions) throws Exception {

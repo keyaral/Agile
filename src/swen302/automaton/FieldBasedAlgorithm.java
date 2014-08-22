@@ -7,6 +7,7 @@ import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.Node;
 import swen302.tracer.Trace;
+import swen302.tracer.TraceEntry;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -44,23 +45,17 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	}
 
 	@Override
-	public boolean processLine(String line) {
+	public boolean processLine(TraceEntry line) {
 
-		if (isStateCall(line) ) { //Updates state of next node
-			if (line.startsWith("staticContext")) {
-				stack.push(null);
-			}else{
-				stack.push(getStateNode(line.substring(12)));
-			}
+		stack.push(line.state == null ? null : getStateNode(line.state));
 
-		}
-		else if(isReturn(line) && stack.size()>=1){ // Reads an instance of return call.
+		if(line.isReturn && stack.size()>=1){ // Reads an instance of return call.
 
 			Node finalState = stack.pop();
 			Node initialState = stack.pop();
 
 			if (finalState != null && initialState != null) {
-				graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(line.substring(7)), initialState, finalState));
+				graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(line.getLongMethodName()), initialState, finalState));
 
 				graph.nodes.add(finalState);
 				graph.nodes.add(initialState);
@@ -73,32 +68,13 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	}
 
 
-	/**
-	 * Returns whether the line is a state call
-	 * @param line
-	 * @return
-	 */
-	private boolean isStateCall(String line) {
-		return line.startsWith("staticContext") || line.startsWith("objectState");
-	}
-
-
-	/**
-	 * Boolean to assert line is a return call
-	 * @param line
-	 * @return
-	 */
-	private boolean isReturn(String line) {
-		return line.startsWith("return");
-	}
-
 	@Override
 	public Graph generateGraph(Trace[] trace) {
 		startIncremental();
 
 		// can just concatenate multiple traces with this algorithm
 		for(Trace t : trace)
-			for(String l : t.lines)
+			for(TraceEntry l : t.lines)
 				processLine(l);
 
 		return getCurrentGraph();

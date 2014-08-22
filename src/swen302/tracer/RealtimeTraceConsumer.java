@@ -2,10 +2,10 @@ package swen302.tracer;
 
 public interface RealtimeTraceConsumer {
 	/**
-	 * Called when a trace line is produced.
+	 * Called when a trace entry is produced.
 	 * TODO refactor into onMethodCalled, onMethodReturn, etc?
 	 */
-	public void onTraceLine(String line);
+	public void onTraceLine(TraceEntry line);
 
 	/**
 	 * Called when the tracer finishes.

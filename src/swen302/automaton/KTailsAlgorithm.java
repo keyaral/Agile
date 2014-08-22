@@ -9,6 +9,7 @@ import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.Node;
 import swen302.tracer.Trace;
+import swen302.tracer.TraceEntry;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -55,9 +56,9 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 
 
 	@Override
-	public boolean processLine(String line) {
-		if(line.startsWith("methodCall ")) {
-			processCall(line.substring(11));
+	public boolean processLine(TraceEntry line) {
+		if(!line.isReturn) {
+			processCall(line.getLongMethodName());
 			return true;
 		}
 		return false;
@@ -69,7 +70,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	private void createEdgeSets(){
 		for(Trace n : traces){
 			startTrace();
-			for(String line : n.lines)
+			for(TraceEntry line : n.lines)
 				processLine(line);
 		}
 	}
