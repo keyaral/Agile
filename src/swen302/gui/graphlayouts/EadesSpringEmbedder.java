@@ -47,6 +47,7 @@ public class EadesSpringEmbedder {
 		Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
 		for (Edge e : graph.edges) {
+			
 			Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
 			if(vecResult.getNorm() == 0) { continue; }
@@ -56,6 +57,8 @@ public class EadesSpringEmbedder {
 			double virtualPosition = e.node1.getPosition().distance(e.node2.getPosition()) / 2;
 
 			vPos = vPos.scalarMultiply(virtualPosition);
+
+			vPos = vecResult.subtract(vPos);
 
 			virtualNodes.add(new Node(new Vector2D(vPos.getX(), vPos.getY()), true));
 		}
@@ -72,6 +75,9 @@ public class EadesSpringEmbedder {
 					tempForce = tempForce.add(coulombsLaw(n, m));
 
 					if (!m.IsVirtual) {
+
+						if (m.labelBounds == null) { continue; }
+
 						double x = m.labelBounds.getCenterX();
 						double y = m.labelBounds.getCenterY();
 
@@ -129,9 +135,9 @@ public class EadesSpringEmbedder {
 	private Vector2D coulombsLaw(Node n1, Node n2) {
 		double distance = n1.getPosition().distance(n2.getPosition());
 
-		double force = (this.MAGNETIC_STRENGTH*n1.getCharge()*n2.getCharge())/(Math.pow(distance, 2));
+		//double force = (this.MAGNETIC_STRENGTH*n1.getCharge()*n2.getCharge())/(Math.pow(distance, 2));
 
-		//double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
+		double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		if (vecResult.getNorm() == 0) { return new Vector2D(0,0); }
 		vecResult = vecResult.normalize();

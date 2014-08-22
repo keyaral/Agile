@@ -42,21 +42,11 @@ public class Node {
 	 * @param id
 	 */
 	public Node(String id){
-		this.id = id;
-		this.position = new Vector2D(0.0, 0.0);
-		this.velocity = new Vector2D(0.0, 0.0);
-		this.acceleration = new Vector2D(0.0, 0.0);
-		this.force = new Vector2D(0.0, 0.0);
-		IsVirtual = false;
+		this(new Vector2D(0.0, 0.0));
 	}
 
 	public Node(Vector2D position){
-		this.id = null;
-		this.position = position;
-		this.velocity = new Vector2D(0.0, 0.0);
-		this.acceleration = new Vector2D(0.0, 0.0);
-		this.force = new Vector2D(0.0, 0.0);
-		IsVirtual = false;
+		this(position, false);
 	}
 
 	public Node(Vector2D position, boolean isVirtual){
@@ -69,7 +59,7 @@ public class Node {
 	}
 
 	public double getCharge() {
-		return (this.outgoingEdges.size()+1)*0.00055;
+		return (this.outgoingEdges.size()+1)*0.00075;
 	}
 
 	public void updatePosition(double timestep){
@@ -193,10 +183,6 @@ public class Node {
 	 */
 	public String getID(){
 		return id;
-	}
-
-	public double kineticEnergy() {
-		return 0.5*(mass*(velocity.dotProduct(velocity)));
 	}
 
 	public void randPosition(Random rand) {
