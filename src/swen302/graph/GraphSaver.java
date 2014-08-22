@@ -3,6 +3,7 @@ package swen302.graph;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.Set;
 
 /**
@@ -16,6 +17,8 @@ import java.util.Set;
  *
  */
 public class GraphSaver {
+
+	public static boolean displayID=true,displayState=true,displayClass=true,displayMethod=true,displayParams=true;
 
 	public static void save(Graph graph, File dotfile, File pngfile) throws InterruptedException, IOException {
 		save(graph.nodes, dotfile, pngfile);
@@ -35,7 +38,7 @@ public class GraphSaver {
 				print.println(n.getID()+"[label=\""+n.getLabel()+"\"]"+";");
 				Set<Edge> connections = n.getConnections();
 				for(Edge e : connections){
-					print.println(n.getID()+"->"+e.getOtherNode(n).getID()+" [label=\""+e.shortname+"\"];");
+					print.println(n.getID()+"->"+e.getOtherNode(n).getID()+" [label=\""+e.label+"\"];");
 				}
 			}
 
@@ -45,7 +48,10 @@ public class GraphSaver {
 
 		// dot language Command to produce png
 
-		Process p = Runtime.getRuntime().exec(new String[] {"fdp", "-Tpng", "-o"+pngfile.getAbsolutePath(), dotfile.getAbsolutePath()});
+		ProcessBuilder pb = new ProcessBuilder("fdp", "-Tpng", "-o"+pngfile.getAbsolutePath(), dotfile.getAbsolutePath());
+		pb.redirectErrorStream(true);
+		pb.redirectOutput(Redirect.INHERIT);
+		Process p = pb.start();
 		p.waitFor();
 		if(p.exitValue() != 0)
 			throw new IOException("fdp command failed");

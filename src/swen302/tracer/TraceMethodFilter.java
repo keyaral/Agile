@@ -1,6 +1,5 @@
 package swen302.tracer;
 
-import com.sun.jdi.Method;
 
 public interface TraceMethodFilter {
 	/**
@@ -8,5 +7,5 @@ public interface TraceMethodFilter {
 	 * @param m The method being called.
 	 * @return True if calls to <var>m</var> should appear in the trace.
 	 */
-	public boolean isMethodTraced(Method m);
+	public boolean isMethodTraced(MethodKey m);
 }

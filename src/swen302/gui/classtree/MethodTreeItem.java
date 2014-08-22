@@ -6,7 +6,7 @@ import java.lang.reflect.Modifier;
 import javax.swing.Icon;
 
 import swen302.gui.MainWindow;
-import swen302.gui.MethodKey;
+import swen302.tracer.MethodKey;
 
 public class MethodTreeItem extends AbstractTreeItem {
 	public ClassTreeItem clazz;

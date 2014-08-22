@@ -16,7 +16,6 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
  *
  */
 public class Node {
-
 	private Set<Edge> outgoingEdges = new HashSet<Edge>();
 	private Set<Edge> springs = new HashSet<Edge>();
 	private String id;
@@ -185,7 +184,7 @@ public class Node {
 	 * @return
 	 */
 	public String getLabel(){
-		return (id + (state.equals("")?Ktailstate.equals("")?"":": "+Ktailstate:": "+ state));
+		return ((GraphSaver.displayID?id:"") + (GraphSaver.displayState?(state.equals("")?Ktailstate.equals("")?"":(GraphSaver.displayID?": ":"")+Ktailstate:(GraphSaver.displayID?": ":"")+ state):""));
 	}
 
 	/**

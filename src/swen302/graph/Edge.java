@@ -1,5 +1,6 @@
 package swen302.graph;
 
+
 /**
  *SuperClass to describe the relation between two nodes to represent a trace call
  *
@@ -9,32 +10,32 @@ package swen302.graph;
 
 public class Edge {
 
-	public String longname,shortname;
+	public String id, label;
 	public final Node node1, node2;
 
-	public Edge(String longName, String shortName, Node node1, Node node2){
-		this.longname = longName;
-		this.shortname = shortName;
+	public Edge(String id, String label, Node node1, Node node2){
+		this.id = id;
+		this.label = label;
 		this.node1 = node1;
 		this.node2 = node2;
 	}
 
 	public Edge(Edge copyFrom, Node node1, Node node2) {
-		this(copyFrom.longname, copyFrom.shortname, node1, node2);
+		this(copyFrom.id, copyFrom.label, node1, node2);
 	}
 
 	@Override
 	public boolean equals(Object obj){
 		if(obj instanceof Edge){
 			Edge o = (Edge)obj;
-			return o.shortname.equals(shortname) && o.node1 == node1 && o.node2 == node2;
+			return o.label.equals(label) && o.node1 == node1 && o.node2 == node2;
 		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return shortname.hashCode();
+		return label.hashCode();
 	}
 
 	public Node getOtherNode(Node n) {

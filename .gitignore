@@ -19,7 +19,8 @@ bin
 test.txt
 test.png
 /*.cfg
-tempAnalysis.png
 
 debugLastTrace.txt
-output.png
+/*.png
+
+*.trace

@@ -1,18 +1,29 @@
 package swen302.tracer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import swen302.tracer.state.ArrayState;
+import swen302.tracer.state.EnumState;
+import swen302.tracer.state.NullState;
+import swen302.tracer.state.ObjectState;
+import swen302.tracer.state.SimpleState;
+import swen302.tracer.state.State;
 
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
@@ -31,20 +42,6 @@ import com.sun.jdi.request.MethodExitRequest;
 import com.sun.jdi.request.VMDeathRequest;
 
 
-class TracerMain {
-	public static void main(String[] commandLineArgs) throws Exception {
-		if(commandLineArgs.length != 3) {
-			System.err.println("Requires 3 arguments:");
-			System.err.println(" 1. VM options (remember to quote the entire string)");
-			System.err.println(" 2. Main class name");
-			System.err.println(" 3. Filter regex");
-			System.exit(1);
-		}
-
-		System.out.println("Trace: ");
-		System.out.println(Tracer.Trace(commandLineArgs[0], commandLineArgs[1], new RegexTraceMethodFilter(commandLineArgs[2]), new DefaultFieldFilter()));
-	}
-}
 
 class ObjectReferenceGenerator {
 	private Map<Object, String> map = new HashMap<>();
@@ -59,132 +56,177 @@ class ObjectReferenceGenerator {
 	}
 }
 
+/**
+ * Main interface class for the tracing subsystem.
+ */
 public class Tracer {
 
 	/**
-	 * Generates a Trace of a given application.
+	 * Starts a program and traces it, asynchronously.
+	 * This method returns once the program is running.
 	 *
 	 * @param vmOptions The arguments passed into the Virtual Machine
 	 * @param mainClass The Main class of the given application
 	 * @param methodFilter The method filter to use
 	 * @param fieldFilter The field filter to use
+	 * @param consumer The trace consumer
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static Trace Trace(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter) throws Exception
+	public static void launchAndTraceAsync(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter, RealtimeTraceConsumer consumer) throws Exception
 	{
-		Trace t = new Trace();
-
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
-		// class -> does it have any traceable methods?
-		Map<ReferenceType, Boolean> knownTraceableClasses = new HashMap<>();
+		TraceAsync(vm, methodFilter, fieldFilter, consumer);
+	}
 
-		// When a class is loaded, we need to add a MethodEntryRequest and MethodExitRequest if it's traceable.
-		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
-		classPrepareRequest.enable();
+	/**
+	 * Starts tracing the given VM in a separate thread.
+	 *
+	 * This method traces asynchronously. Trace lines are delivered to the given consumer.
+	 *
+	 * @param vm The VM to trace.
+	 * @param methodFilter The method filter to use.
+	 * @param fieldFilter The field filter to use.
+	 * @param consumer The consumer that trace lines will be sent to.
+	 */
+	public static void TraceAsync(final VirtualMachine vm, final TraceMethodFilter methodFilter, final TraceFieldFilter fieldFilter, final RealtimeTraceConsumer consumer) {
+		Thread thread = new Thread() {
+			@Override
+			public void run() {
+				try {
+					// class -> does it have any traceable methods?
+					Map<ReferenceType, Boolean> knownTraceableClasses = new HashMap<>();
 
-		VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
+					// When a class is loaded, we need to add a MethodEntryRequest and MethodExitRequest if it's traceable.
+					ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
+					classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+					classPrepareRequest.enable();
 
-		deathRequest.enable();
+					VMDeathRequest deathRequest = vm.eventRequestManager().createVMDeathRequest();
+
+					deathRequest.enable();
 
 
-		// Resume the program (AFTER setting up event requests)
-		vm.resume();
-
-
-		while(true) {
-			EventSet events = vm.eventQueue().remove();
-			for(Event event : events) {
-				if(event instanceof ClassPrepareEvent) {
-					ClassPrepareEvent event2 = (ClassPrepareEvent)event;
-
-					ReferenceType type = event2.referenceType();
-					if(!knownTraceableClasses.containsKey(type)) {
-						boolean traceable = doesClassHaveTraceableMethods(methodFilter, type);
-						knownTraceableClasses.put(type, traceable);
-						if(traceable) {
-							MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
-							entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-							entryRequest.addClassFilter(type);
-							entryRequest.enable();
-
-							// When a method is exited, send an event to this tracer
-							MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
-							exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-							exitRequest.addClassFilter(type);
-							exitRequest.enable();
-						}
-					}
-
+					// Resume the program (AFTER setting up event requests)
 					vm.resume();
-				}
-				if(event instanceof MethodEntryEvent) {
-					MethodEntryEvent event2 = (MethodEntryEvent)event;
 
-					if(methodFilter.isMethodTraced(event2.method())) {
 
-						// Handle a method entry
-						StackFrame frame = event2.thread().frame(0);
-						ObjectReference _this = frame.thisObject();
+					while(true) {
+						EventSet events = vm.eventQueue().remove();
+						Set<ThreadReference> threadsToResume = new HashSet<ThreadReference>();
+						for(Event event : events) {
+							if(event instanceof ClassPrepareEvent) {
+								ClassPrepareEvent event2 = (ClassPrepareEvent)event;
 
-						if(_this == null)
-							t.lines.add("staticContext");
-						else
-							t.lines.add("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
+								ReferenceType type = event2.referenceType();
+								if(!knownTraceableClasses.containsKey(type)) {
+									boolean traceable = doesClassHaveTraceableMethods(methodFilter, type);
+									knownTraceableClasses.put(type, traceable);
+									if(traceable) {
+										MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
+										entryRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+										entryRequest.addClassFilter(type);
+										entryRequest.enable();
 
-						t.lines.add("methodCall "+getMethodNameInTraceFormat(event2.method()));
-
-						/*try {
-							for(Value v : frame.getArgumentValues()) {
-								System.out.println("   argument: "+v);
-							}
-							if(_this != null && _this.type() instanceof ClassType) {
-								for(Field f : ((ClassType)_this.type()).allFields()) {
-									System.out.println("   field "+f.name()+": "+_this.getValue(f));
+										// When a method is exited, send an event to this tracer
+										MethodExitRequest exitRequest = vm.eventRequestManager().createMethodExitRequest();
+										exitRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+										exitRequest.addClassFilter(type);
+										exitRequest.enable();
+									}
 								}
+
+								threadsToResume.add(event2.thread());
 							}
-						} catch(InternalException e) {
-							// Java bug; InternalException is thrown if getting arguments from a native method
-							// see http://bugs.java.com/view_bug.do?bug_id=6810565
-							//System.out.println("   (unable to get arguments)");
-						}*/
+							if(event instanceof MethodEntryEvent) {
+								MethodEntryEvent event2 = (MethodEntryEvent)event;
+
+								if(methodFilter.isMethodTraced(new MethodKey(event2.method()))) {
+
+									// Handle a method entry
+									StackFrame frame = event2.thread().frame(0);
+									ObjectReference _this = frame.thisObject();
+
+									TraceEntry te = new TraceEntry();
+									te.method = new MethodKey(event2.method());
+
+									if(_this == null)
+										te.state = null;
+									else
+										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
+
+									te.isReturn = false;
+									consumer.onTraceLine(te);
+
+									/*try {
+										for(Value v : frame.getArgumentValues()) {
+											System.out.println("   argument: "+v);
+										}
+										if(_this != null && _this.type() instanceof ClassType) {
+											for(Field f : ((ClassType)_this.type()).allFields()) {
+												System.out.println("   field "+f.name()+": "+_this.getValue(f));
+											}
+										}
+									} catch(InternalException e) {
+										// Java bug; InternalException is thrown if getting arguments from a native method
+										// see http://bugs.java.com/view_bug.do?bug_id=6810565
+										//System.out.println("   (unable to get arguments)");
+									}*/
+								}
+
+								threadsToResume.add(event2.thread());
+
+							} else if(event instanceof MethodExitEvent) {
+
+								// Handle a method return
+								MethodExitEvent event2 = (MethodExitEvent)event;
+
+								if(methodFilter.isMethodTraced(new MethodKey(event2.method()))) {
+									StackFrame frame = event2.thread().frame(0);
+									ObjectReference _this = frame.thisObject();
+
+									TraceEntry te = new TraceEntry();
+									te.method = new MethodKey(event2.method());
+
+									if(_this == null)
+										te.state = null;
+									else
+										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
+
+									te.isReturn = true;
+									consumer.onTraceLine(te);
+								}
+
+								threadsToResume.add(event2.thread());
+
+							}
+							else if(event instanceof VMDeathEvent)
+							{
+								System.out.println("Tracing done");
+								vm.dispose();
+								return;
+							}
+						}
+						for(ThreadReference thread : threadsToResume)
+							thread.resume();
 					}
-
-					event2.thread().resume();
-
-				} else if(event instanceof MethodExitEvent) {
-
-					// Handle a method return
-					MethodExitEvent event2 = (MethodExitEvent)event;
-
-					if(methodFilter.isMethodTraced(event2.method())) {
-						StackFrame frame = event2.thread().frame(0);
-						ObjectReference _this = frame.thisObject();
-
-						if(_this == null)
-							t.lines.add("staticContext");
-						else
-							t.lines.add("objectState "+valueToStateString(fieldFilter, _this, new ObjectReferenceGenerator()));
-
-						t.lines.add("return "+getMethodNameInTraceFormat(event2.method()));
-					}
-
-					event2.thread().resume();
-
-				}
-				else if(event instanceof VMDeathEvent)
-				{
-					return t;
+				} catch(InterruptedException | RuntimeException | IncompatibleThreadStateException | Error t) {
+					consumer.onTracerCrash(t);
+				} finally {
+					consumer.onTraceFinish();
 				}
 			}
-		}
+		};
+
+		thread.setName("Tracer thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 
 	private static boolean doesClassHaveTraceableMethods(TraceMethodFilter methodFilter, ReferenceType type) {
 		for(Method m : type.methods())
-			if(methodFilter.isMethodTraced(m))
+			if(methodFilter.isMethodTraced(new MethodKey(m)))
 				return true;
 		return false;
 	}
@@ -192,16 +234,10 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static String objectToStateString(TraceFieldFilter filter, ObjectReference object, ObjectReferenceGenerator refs) throws Exception {
+	private static State objectToState(TraceFieldFilter filter, ObjectReference object, Map<ObjectReference, State> alreadySeenObjects) {
 
-		// Deal with circular references
-		{
-			String ref = refs.get(object);
-			if(ref != null)
-				return ref;
-			refs.put(object);
-		}
-
+		if(alreadySeenObjects.containsKey(object))
+			return alreadySeenObjects.get(object);
 
 		Type type = object.type();
 		if(type instanceof ClassType) {
@@ -212,59 +248,49 @@ public class Tracer {
 					if(f.isEnumConstant()) {
 						Value value = object.getValue(f);
 						if(value != null && object.getValue(f).equals(object))
-							return f.name();
+							return new EnumState(f.name());
 						if(value == null)
 							fullyInitialized = false;
 					}
 				}
 				if(!fullyInitialized)
-					return "<uninitialized-enum>";
+					return new EnumState("<uninitialized-enum>"); // TODO should this be a separate class?
 				throw new AssertionError("failed to find enum constant name");
 			}
 
-			if(((ClassType)object.type()).name().equals("java.lang.String")) {
-				return "<string>";
-			}
+			//if(((ClassType)object.type()).name().equals("java.lang.String")) {
+			//	return "<string>";
+			//}
+
+			ObjectState state = new ObjectState(object.type().name());
+			alreadySeenObjects.put(object, state);
 
 			List<Field> fields = ((ClassType)object.type()).allFields();
 
-			StringBuilder result = new StringBuilder();
-			//result.append(object.type().name());
-			result.append('{');
-
-			boolean first = true;
 			for(int k = 0; k < fields.size(); k++) {
 
 				Field f = fields.get(k);
+				FieldKey fk = new FieldKey(f);
 
-				if(!filter.isFieldTraced(f))
+				if(!filter.isFieldTraced(fk))
 					continue;
 
-				if(!first) result.append(",");
-				else first = false;
-
-				result.append(f.name());
-				result.append('=');
-				result.append(valueToStateString(filter, object.getValue(f), refs));
+				state.fields.put(fk, valueToState(filter, object.getValue(f), alreadySeenObjects));
 			}
 
-			result.append('}');
-
-			return result.toString();
+			return state;
 
 		} else if(type instanceof ArrayType) {
+
+			ArrayState state = new ArrayState();
+			alreadySeenObjects.put(object, state);
+
 			List<Value> values = ((ArrayReference)object).getValues();
 
-			StringBuilder result = new StringBuilder();
-			result.append('[');
-			boolean first = true;
 			for(Value v : values) {
-				if(!first) result.append(',');
-				else first = false;
-				result.append(valueToStateString(filter, v, refs));
+				state.values.add(valueToState(filter, v, alreadySeenObjects));
 			}
-			result.append(']');
-			return result.toString();
+			return state;
 
 		} else
 			throw new AssertionError("Unsupported type "+type.name());
@@ -273,29 +299,12 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static String valueToStateString(TraceFieldFilter filter, Value value, ObjectReferenceGenerator refs) throws Exception {
+	private static State valueToState(TraceFieldFilter filter, Value value, Map<ObjectReference, State> alreadySeenObjects) {
 		if(value == null)
-			return "null";
+			return new NullState();
 		if(value instanceof ObjectReference)
-			return objectToStateString(filter, (ObjectReference)value, refs);
-		return value.toString();
-	}
-
-	private static String getMethodNameInTraceFormat(Method m) {
-		StringBuilder result = new StringBuilder();
-		result.append(m.declaringType().name());
-		result.append(' ');
-		result.append(m.name());
-		result.append('(');
-
-		List<String> argTypeNames = m.argumentTypeNames();
-		for(int k = 0; k < argTypeNames.size(); k++) {
-			if(k > 0) result.append(',');
-			result.append(argTypeNames.get(k));
-		}
-
-		result.append(')');
-		return result.toString();
+			return objectToState(filter, (ObjectReference)value, alreadySeenObjects);
+		return new SimpleState(value.toString());
 	}
 
 	private static VirtualMachine launchTracee(String mainClass, String jvmOptions) throws Exception {
