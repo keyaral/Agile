@@ -2,6 +2,7 @@ package swen302.tracer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Trace implements Serializable {
@@ -12,8 +13,11 @@ public class Trace implements Serializable {
 	public List<TraceEntry> lines = new ArrayList<TraceEntry>();
 
 	public void filterMethods(TraceMethodFilter f) {
-		// TODO Auto-generated method stub
-
+		Iterator<TraceEntry> it = lines.iterator();
+		while(it.hasNext()) {
+			if(!f.isMethodTraced(it.next().method))
+				it.remove();
+		}
 	}
 
 	public void filterField(TraceFieldFilter f) {

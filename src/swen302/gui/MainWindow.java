@@ -298,13 +298,6 @@ public class MainWindow {
 						TraceFile tf = TraceFile.read(fc.getSelectedFile());
 						loadFromConfiguration(tf.config);
 
-						TraceMethodFilter methodFilter = getSelectedMethodFilter();
-						TraceFieldFilter fieldFilter = getSelectedFieldFilter();
-						for(Trace t : tf.traces) {
-							t.filterMethods(methodFilter);
-							t.filterField(fieldFilter);
-						}
-
 						processTraces(tf.traces);
 
 						openTraceFile = fc.getSelectedFile();
@@ -772,6 +765,14 @@ public class MainWindow {
 	 * @param algorithm The algorithm to use.
 	 */
 	private void processTraces(Trace[] traces) throws IOException, InterruptedException {
+
+		TraceMethodFilter methodFilter = getSelectedMethodFilter();
+		TraceFieldFilter fieldFilter = getSelectedFieldFilter();
+		for(Trace t : traces) {
+			t.filterMethods(methodFilter);
+			t.filterField(fieldFilter);
+		}
+
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 		Graph graph = algorithm.generateGraph(traces);
 
