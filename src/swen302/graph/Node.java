@@ -1,6 +1,5 @@
 package swen302.graph;
 
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Random;
@@ -43,6 +42,7 @@ public class Node {
 	 */
 	public Node(String id){
 		this(new Vector2D(0.0, 0.0));
+		this.id = id;
 	}
 
 	public Node(Vector2D position){

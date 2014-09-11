@@ -7,8 +7,6 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-
 public class Graph {
 	public Set<Node> nodes = new HashSet<Node>();
 	public Set<Edge> edges = new HashSet<Edge>();
