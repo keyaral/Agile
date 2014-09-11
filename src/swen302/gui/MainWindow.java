@@ -695,7 +695,9 @@ public class MainWindow {
 
 						iva.startIncremental();
 
-						graphPane.setGraph(iva.getCurrentGraph());
+						final Graph graph = iva.getCurrentGraph();
+
+						graphPane.setGraph(graph);
 
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter, new RealtimeTraceConsumer() {
 
@@ -706,23 +708,8 @@ public class MainWindow {
 
 							@Override
 							public void onTraceLine(TraceEntry line) {
-								if(iva.processLine(line)) {
-									/*final Graph graph = iva.getCurrentGraph();
-
-									try {
-										//File pngfile = new File("tempAnalysis.png");
-										//GraphSaver.save(graph, pngfile);
-										//final BufferedImage image = ImageIO.read(pngfile);
-
-										EventQueue.invokeLater(new Runnable() {
-											@Override
-											public void run() {
-												graphPane.setGraph(graph);
-											}
-										});
-									} catch(Exception e) {
-										e.printStackTrace();
-									}*/
+								synchronized(graph) {
+									iva.processLine(line);
 								}
 							}
 

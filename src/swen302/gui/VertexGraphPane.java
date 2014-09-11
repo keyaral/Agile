@@ -75,7 +75,7 @@ public class VertexGraphPane extends JPanel {
 //		        	graph.addForce(mouseX, mouseY, mouseAttractive);
 //		        }
 
-		        graph.step(0.1, mouseX, mouseY);
+		    	graph.step(0.1, mouseX, mouseY);
 
 		        repaint();
 		    }
