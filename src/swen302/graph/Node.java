@@ -186,10 +186,14 @@ public class Node {
 	}
 
 	public void randPosition(Random rand) {
-		int x = (int)Math.floor(rand.nextDouble() * 600);
+		int x = (int)Math.floor(rand.nextDouble() * 600);//TODO remove hard coded var
 		int y = (int)Math.floor(rand.nextDouble() * 600);
 		this.position = new Vector2D(x,y);
 
+	}
+
+	public void setPosition(int x, int y){
+		this.position = new Vector2D(x,y);
 	}
 
 	public void setLabel(Rectangle2D stringBounds) {

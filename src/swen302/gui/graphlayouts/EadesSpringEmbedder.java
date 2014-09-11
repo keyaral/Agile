@@ -4,13 +4,16 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.ReplicateScaleFilter;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
+import swen302.graph.GraphListener;
 import swen302.graph.Node;
 
 public class EadesSpringEmbedder {
@@ -31,12 +34,22 @@ public class EadesSpringEmbedder {
 
 	private int width, height;
 
+	private GraphListener graphListener = new GraphListener() {
+		@Override
+		public void onNodeAdded(Node n) {
+			n.randPosition(new Random());
+			n.mass = 1.0f;
+			graph.onLabelsChanged(graphics);
+		}
+	};
+
 	public EadesSpringEmbedder(Graph graph, int width, int height, Graphics g){
 		this.graph = graph;
 		graphics = g;
 		this.width = width;
 		this.height = height;
 		graph.generateInitialLayout(800, 600, g);
+		graph.addListener(graphListener);
 	}
 
 	public void step(double timeStep, int mouseX, int mouseY){
