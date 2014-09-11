@@ -215,6 +215,7 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				GraphSaver.displayID = displayID.isSelected();
+				graphPane.onLabelsChanged();
 			}
 		});
 
@@ -223,6 +224,7 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				GraphSaver.displayState = displayState.isSelected();
+				graphPane.onLabelsChanged();
 			}
 		});
 
@@ -231,6 +233,7 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				GraphSaver.displayClass = displayClass.isSelected();
+				graphPane.onLabelsChanged();
 			}
 		});
 
@@ -239,6 +242,7 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				GraphSaver.displayMethod = displayMethod.isSelected();
+				graphPane.onLabelsChanged();
 			}
 		});
 
@@ -247,6 +251,7 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				GraphSaver.displayParams = displayParams.isSelected();
+				graphPane.onLabelsChanged();
 			}
 		});
 

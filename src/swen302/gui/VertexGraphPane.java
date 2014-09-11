@@ -108,6 +108,8 @@ public class VertexGraphPane extends JPanel {
 		}
 	}
 
+	private boolean labelsChanged = false;
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -122,6 +124,15 @@ public class VertexGraphPane extends JPanel {
 		if(graph == null)
 			return;
 
+		if(labelsChanged) {
+			graph.graph.onLabelsChanged(g2d);
+			labelsChanged = false;
+		}
+
 		graph.draw(g2d);
+	}
+
+	public void onLabelsChanged() {
+		labelsChanged = true;
 	}
 }

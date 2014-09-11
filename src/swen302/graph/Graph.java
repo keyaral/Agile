@@ -42,11 +42,17 @@ public class Graph {
 
 		for (Node n : nodes) {
 			n.randPosition(rand);
-			FontMetrics fm = graphics.getFontMetrics();
-			n.setLabel(fm.getStringBounds(n.getLabel(), graphics));
 
 			n.mass = 1.0f;
 		}
 
+		onLabelsChanged(graphics);
+	}
+
+	public void onLabelsChanged(Graphics graphics) {
+		for (Node n : nodes) {
+			FontMetrics fm = graphics.getFontMetrics();
+			n.setLabel(fm.getStringBounds(n.getLabel(), graphics));
+		}
 	}
 }
