@@ -14,6 +14,7 @@ public class Edge {
 	public final Node node1, node2;
 	public int duplicateCount = 0;
 
+
 	public Edge(String id, String label, Node node1, Node node2){
 		this.id = id;
 		this.label = label;
@@ -45,4 +46,6 @@ public class Edge {
 		if(n == node2) return node1;
 		throw new IllegalArgumentException("Node given ("+n+") is not first node ("+node1+") or second node ("+node2+")");
 	}
+
+
 }
