@@ -3,6 +3,7 @@ package swen302.gui.graphlayouts;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Set;
@@ -181,15 +182,66 @@ public class EadesSpringEmbedder {
 
 		for (Node n : graph.nodes) {
 
-			for (Edge cn : n.getConnections())
+			for (Edge cn : n.getConnections()){
+
+				int scalecount = cn.duplicateCount+ 1;
 
 
-			graphics.drawLine(
-					(int)cn.node1.getPosition().getX(),
-					(int)cn.node1.getPosition().getY(),
-					(int)cn.node2.getPosition().getX(),
-					(int)cn.node2.getPosition().getY()
-			);
+				Vector2D v1 = cn.node1.getPosition();
+				Vector2D v2 = v1;
+				Vector2D v4 =  cn.node2.getPosition();
+				Vector2D v3 =  v4;
+
+				Vector2D perp = new Vector2D(v1.getY() * -1, v1.getX());
+				perp = perp.normalize();
+				perp = perp.scalarMultiply(scalecount * 10);
+
+				if (cn.node1.getPosition().getX() > cn.node2.getPosition().getX() )
+				{
+					 v2 = v1.add(perp);
+					 v3 =  cn.node2.getPosition().add(perp);
+				}
+				else {
+					v2 = v1.subtract(perp);
+					v3 =  cn.node2.getPosition().subtract(perp);
+				}
+
+
+
+
+				if ( cn.node1.equals(cn.node2) ){
+
+
+
+
+				}
+
+
+
+
+
+
+				Path2D.Double path = new Path2D.Double();
+				path.moveTo(cn.node1.getPosition().getX(), cn.node1.getPosition().getY());
+
+				path.curveTo(
+						v2.getX(),
+						v2.getY(),
+						v3.getX(),
+						v3.getY(),
+						v4.getX(),
+						v4.getY()
+				);
+
+				graphics.draw(path);
+
+//				graphics.drawLine(
+//						(int)cn.node1.getPosition().getX(),
+//						(int)cn.node1.getPosition().getY(),
+//						(int)cn.node2.getPosition().getX(),
+//						(int)cn.node2.getPosition().getY()
+//				);
+			}
 		}
 
 		for (Node n : graph.nodes) {
