@@ -28,7 +28,7 @@ public class Node {
 
 	public static double uStatic = 0.8;//1.0;
 	public static double uKinetic = 0.4;//0.8;
-	public static double gravity = -9.8;
+	public static double gravity = 9.8;
 
 	public Rectangle2D labelBounds;
 
@@ -80,7 +80,7 @@ public class Node {
 		}
 		if (this.force.getNorm() < friction) {
 			//Make it so that it doesn't move if the force isn't strong enough to overcome friction
-			frictionForce = this.force;
+			frictionForce = this.force.negate();
 		}
 
 		this.force = this.force.add(frictionForce);
