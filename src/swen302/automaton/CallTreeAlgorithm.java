@@ -70,7 +70,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 			stack.push(currentNode);
 			currentNode = new Node(String.format("%d", nodeCount++));
 			graph.addNode(currentNode);
-			graph.addEdge(new Method(line.getLongMethodName(), AutomatonGraphUtils.formatMethodLabel(line.getLongMethodName()), stack.peek(), currentNode));
+			graph.addEdge(new Method(line.getLongMethodName(), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName()), stack.peek(), currentNode));
 
 		} else if(stack.size() > 1) { // Reads an instance of return call.
 

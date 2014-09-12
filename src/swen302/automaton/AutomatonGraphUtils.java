@@ -41,4 +41,13 @@ public class AutomatonGraphUtils {
 		}
 	}
 
+	public static Object createMethodLabelObject(final String longMethodName) {
+		return new Object() {
+			@Override
+			public String toString() {
+				return formatMethodLabel(longMethodName);
+			}
+		};
+	}
+
 }

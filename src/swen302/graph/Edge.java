@@ -10,12 +10,13 @@ package swen302.graph;
 
 public class Edge {
 
-	public String id, label;
+	public String id;
+	public Object label;
 	public final Node node1, node2;
 	public int duplicateCount = 0;
 
 
-	public Edge(String id, String label, Node node1, Node node2){
+	public Edge(String id, Object label, Node node1, Node node2){
 		this.id = id;
 		this.label = label;
 		this.node1 = node1;

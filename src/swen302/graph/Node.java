@@ -18,8 +18,7 @@ public class Node {
 	private Set<Edge> outgoingEdges = new HashSet<Edge>();
 	private Set<Edge> springs = new HashSet<Edge>();
 	private String id;
-	private String state = "";
-	private String Ktailstate = ""; //A string for recording Ktail strings in Graph using Ktails
+	private Object state = "";
 	private Vector2D position;
 	private Vector2D velocity;
 	private Vector2D acceleration;
@@ -110,7 +109,7 @@ public class Node {
 		if (finalDisplacement.getNorm() > 0.5) {
 			this.position = this.position.add(finalDisplacement);
 		}
-	} 
+	}
 
 	public Vector2D getVelocity(){return velocity; }
 	public Vector2D getPosition(){ return position; }
@@ -157,18 +156,6 @@ return count;
 		return springs;
 	}
 
-	/**
-	 * Returns the String stored in state
-	 * @return
-	 */
-	public String getState(){
-		return state;
-	}
-
-	public String getKState(){
-		return Ktailstate;
-	}
-
 	public void setPosition(Vector2D newPos) {
 		this.position = newPos;
 	}
@@ -177,11 +164,8 @@ return count;
 	 * Sets the state of the node
 	 * @param state
 	 */
-	public void setState(String state) {
+	public void setState(Object state) {
 		this.state = state;
-	}
-	public void setKState(String state) {
-		this.Ktailstate = state;
 	}
 
 	/**
@@ -189,7 +173,18 @@ return count;
 	 * @return
 	 */
 	public String getLabel(){
-		return ((GraphSaver.displayID?id:"") + (GraphSaver.displayState?(state.equals("")?Ktailstate.equals("")?"":(GraphSaver.displayID?": ":"")+Ktailstate:(GraphSaver.displayID?": ":"")+ state):""));
+		if(!GraphSaver.displayState) {
+			if(GraphSaver.displayID)
+				return id;
+			else
+				return "";
+
+		} else {
+			if(GraphSaver.displayID)
+				return id+": "+state;
+			else
+				return String.valueOf(state);
+		}
 	}
 
 	/**

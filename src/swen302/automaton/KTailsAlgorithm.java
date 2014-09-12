@@ -2,8 +2,10 @@ package swen302.automaton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
@@ -22,6 +24,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	private Graph finalGraph = new Graph();
 	private int nextEdgeID = 0;
 	private Map<String, Node> nodes = new HashMap<>();
+	private Set<String> addedEdges = new HashSet<String>();
 
 	public static int k = 3;
 
@@ -86,30 +89,34 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 
 		if(prev == null){ //New trace, and new original node
 			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
-			nodes.put(getMethodStateString(next, false), n);
-			n.setKState(getMethodStateString(next, true));
+			nodes.put(getMethodStateString(next), n);
+			n.setState(getMethodStateObject(next));
 			finalGraph.addNode(n);
 
 		} else {
+			String edgeName = getMethodStateString(prev)+" "+getMethodStateString(next);
+			if(!addedEdges.add(edgeName))
+				return; // this edge already added
+
 			Node nextNode = findNode(next);
 			Node prevNode = findNode(prev);
 
 			if(nextNode == null) { // new node within a trace
 				nextNode = new Node(String.valueOf(finalGraph.nodes.size()));
-				nodes.put(getMethodStateString(next, false), nextNode);
-				nextNode.setKState(getMethodStateString(next, true));
+				nodes.put(getMethodStateString(next), nextNode);
+				nextNode.setState(getMethodStateObject(next));
 				finalGraph.addNode(nextNode);
 			}
 
-			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.formatMethodLabel(prev[0]), prevNode, nextNode));
+			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.createMethodLabelObject(prev[0]), prevNode, nextNode));
 		}
 	}
 // Returns a string of the array of method calls
-	private String getMethodStateString(String[] edges, boolean formatted){
+	private String getMethodStateString(String[] edges){
 		String toReturn = "";
 		for(String e : edges){
 			if(e != null){
-				toReturn += (formatted ? AutomatonGraphUtils.formatMethodLabel(e) : e)+",";
+				toReturn += e+",";
 			}
 		}
 		if(toReturn.length() > 0){
@@ -118,13 +125,31 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		return toReturn;
 	}
 
+	private Object getMethodStateObject(final String[] edges) {
+		return new Object() {
+			@Override
+			public String toString() {
+				String toReturn = "";
+				for(String e : edges){
+					if(e != null){
+						toReturn += AutomatonGraphUtils.formatMethodLabel(e)+",";
+					}
+				}
+				if(toReturn.length() > 0){
+					toReturn = toReturn.substring(0, toReturn.length()-1);
+				}
+				return toReturn;
+			}
+		};
+	}
+
 	/**
 	 * Returns the node that contains identical method calls to the given array
 	 * @param trans	Array of method calls
 	 * @return Node if one is found that matches, else returns null
 	 */
 	private Node findNode(String[] trans){
-		return nodes.get(getMethodStateString(trans, false));
+		return nodes.get(getMethodStateString(trans));
 	}
 
 
