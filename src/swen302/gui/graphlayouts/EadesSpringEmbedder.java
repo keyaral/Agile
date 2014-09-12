@@ -155,7 +155,7 @@ public class EadesSpringEmbedder {
 
 		if(distance < 10) distance = 10; // avoid excessive forces when nodes overlap
 
-		double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
+		double force = this.MAGNETIC_STRENGTH/(Math.pow(distance, 2));
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		if (vecResult.getNorm() == 0) { return new Vector2D(0,0); }
 		vecResult = vecResult.normalize();

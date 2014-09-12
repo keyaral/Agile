@@ -508,7 +508,7 @@ public class MainWindow {
 			configPanel.add(runButton, gbc);
 		}
 
-		final double DEFAULT_MAGNETIC_STRENGTH = 898755178736.81764;
+		final double DEFAULT_MAGNETIC_STRENGTH = 350000;
 		magneticStrengthSlider = new SliderTextBox("Magnetic strength", 0, DEFAULT_MAGNETIC_STRENGTH*20, DEFAULT_MAGNETIC_STRENGTH) {
 			@Override
 			public void onChanged(double value) {
