@@ -26,10 +26,6 @@ public class Node {
 	public double mass;
 	public double REPULSION = 2.0;
 
-	public static double uStatic = 0.8;//1.0;
-	public static double uKinetic = 0.4;//0.8;
-	public static double gravity = 9.8;
-
 	public Rectangle2D labelBounds;
 
 	public final boolean IsVirtual;
@@ -63,28 +59,6 @@ public class Node {
 	}
 
 	public void updatePosition(double timestep){
-		//Apply friction
-		double friction;
-
-		if(this.velocity.getNorm() < 0.1) {
-			friction = uStatic*mass*gravity;
-		}
-		else {
-			friction = uKinetic*mass*gravity;
-		}
-
-		//Friction force should oppose the force
-		Vector2D frictionForce = new Vector2D(0.0, 0.0);
-		if (this.force.getNorm() > 0) {
-			frictionForce = this.force.normalize().scalarMultiply(friction).negate();
-		}
-		if (this.force.getNorm() < friction) {
-			//Make it so that it doesn't move if the force isn't strong enough to overcome friction
-			frictionForce = this.force.negate();
-		}
-
-		this.force = this.force.add(frictionForce);
-
 		//F = m*a
 		this.acceleration = this.force.scalarMultiply(mass);
 

@@ -125,7 +125,7 @@ public class MainWindow {
 	private JCheckBox chkContinuousUpdating;
 	private JCheckBox saveTracesCheckbox;
 	private JButton runButton;
-	private SliderTextBox magneticStrengthSlider, springStrengthSlider, staticFrictionSlider, kineticFrictionSlider, springLengthSlider;
+	private SliderTextBox magneticStrengthSlider, springStrengthSlider, springLengthSlider;
 
 	private JarData jarData;
 	private File openTraceFile;
@@ -524,22 +524,6 @@ public class MainWindow {
 			}
 		};
 
-		final double DEFAULT_STATIC_FRICTION = 0.8;
-		staticFrictionSlider = new SliderTextBox("Static friction", 0, 10, DEFAULT_STATIC_FRICTION) {
-			@Override
-			public void onChanged(double value) {
-				Node.uStatic = value;
-			}
-		};
-
-		final double DEFAULT_KINETIC_FRICTION = 0.4;
-		kineticFrictionSlider = new SliderTextBox("Kinetic friction", 0, 10, DEFAULT_KINETIC_FRICTION) {
-			@Override
-			public void onChanged(double value) {
-				Node.uKinetic = value;
-			}
-		};
-
 		final double DEFAULT_SPRING_LENGTH = 100;
 		springLengthSlider = new SliderTextBox("Spring length", 0, 500, DEFAULT_SPRING_LENGTH) {
 			@Override
@@ -554,8 +538,6 @@ public class MainWindow {
 		graphConfigPanel.setLayout(new BoxLayout(graphConfigPanel, BoxLayout.Y_AXIS));
 		graphConfigPanel.add(magneticStrengthSlider);
 		graphConfigPanel.add(springStrengthSlider);
-		graphConfigPanel.add(staticFrictionSlider);
-		graphConfigPanel.add(kineticFrictionSlider);
 		graphConfigPanel.add(springLengthSlider);
 		graphConfigPanel.add(Box.createVerticalGlue());
 
