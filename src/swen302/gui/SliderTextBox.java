@@ -53,7 +53,15 @@ public class SliderTextBox extends JPanel {
 			}
 		});
 
-		textbox = new JTextField("");
+		textbox = new JTextField("") {
+			Dimension preferredSize;
+			@Override
+			public Dimension getPreferredSize() {
+				if(preferredSize != null)
+					return preferredSize;
+				return preferredSize = super.getPreferredSize();
+			}
+		};
 		setValue(_default, false);
 		textbox.setInputVerifier(new InputVerifier() {
 			@Override
@@ -84,7 +92,9 @@ public class SliderTextBox extends JPanel {
 
 			private void update() {
 				try {
-					setValue(Double.parseDouble(textbox.getText()), true);
+					double d = Double.parseDouble(textbox.getText());
+					if(!Double.isNaN(d) && !Double.isInfinite(d))
+						setValue(d, true);
 				} catch(NumberFormatException e) {
 				}
 			}
