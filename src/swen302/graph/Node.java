@@ -47,6 +47,7 @@ public class Node {
 
 	public Node(Vector2D position){
 		this(position, false);
+
 	}
 
 	public Node(Vector2D position, boolean isVirtual){
@@ -109,7 +110,7 @@ public class Node {
 		if (finalDisplacement.getNorm() > 0.5) {
 			this.position = this.position.add(finalDisplacement);
 		}
-	}
+	} 
 
 	public Vector2D getVelocity(){return velocity; }
 	public Vector2D getPosition(){ return position; }
@@ -120,9 +121,23 @@ public class Node {
 	 * @param n
 	 */
 	public void addOutgoingEdge(Edge trans){
+
+		trans.duplicateCount = hasEdgeAlreadyCount(trans);
+
 		outgoingEdges.add(trans);
 		addSpring(trans);
 		trans.getOtherNode(this).addSpring(trans);
+	}
+
+	private int hasEdgeAlreadyCount(Edge tran) {
+		int count= 0;
+
+		for (Edge e : outgoingEdges) {
+			if ( e.node2.equals(tran.node2)    ) { count++; }
+
+		}
+
+return count;
 	}
 
 	public void addSpring(Edge edge){

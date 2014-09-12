@@ -12,12 +12,14 @@ public class Edge {
 
 	public String id, label;
 	public final Node node1, node2;
+	public int duplicateCount = 0;
 
 	public Edge(String id, String label, Node node1, Node node2){
 		this.id = id;
 		this.label = label;
 		this.node1 = node1;
 		this.node2 = node2;
+
 	}
 
 	public Edge(Edge copyFrom, Node node1, Node node2) {

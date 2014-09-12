@@ -93,7 +93,7 @@ public class VertexGraphPane extends JPanel {
 				if(graph != null){
 					graph.setSize(getWidth(), getHeight());
 				}
-			}
+			} 
 
 			@Override
 			public void componentMoved(ComponentEvent e) {}
