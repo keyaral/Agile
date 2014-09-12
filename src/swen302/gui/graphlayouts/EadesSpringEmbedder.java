@@ -153,6 +153,8 @@ public class EadesSpringEmbedder {
 
 		//double force = (this.MAGNETIC_STRENGTH*n1.getCharge()*n2.getCharge())/(Math.pow(distance, 2));
 
+		if(distance < 10) distance = 10; // avoid excessive forces when nodes overlap
+
 		double force = (this.MAGNETIC_STRENGTH*0.000625*0.000625)/(Math.pow(distance, 2));
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		if (vecResult.getNorm() == 0) { return new Vector2D(0,0); }
@@ -182,10 +184,12 @@ public class EadesSpringEmbedder {
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition()); //The vector between the two nodes
 		if(vecResult.getNorm() < 0.0000000001)
 			return Vector2D.ZERO;
-		Vector2D springLength = vecResult.normalize();
 
-		springLength = springLength.scalarMultiply(length);
-		vecResult = vecResult.subtract(springLength);
+		double distance = vecResult.getNorm();
+		if(distance > 1000)
+			distance = 1000;
+
+		vecResult = vecResult.normalize().scalarMultiply(distance - length);
 
 		vecResult = vecResult.scalarMultiply(SPRING_STRENGTH);
 
