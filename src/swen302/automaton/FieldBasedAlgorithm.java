@@ -1,6 +1,8 @@
 package swen302.automaton;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import swen302.graph.Edge;
@@ -19,6 +21,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	private Graph graph;
 	private Map<String, Node> states;
 	private Stack<Node> stack;
+	private Set<String> addedEdges = new HashSet<String>();
 
 	private int nodeCount;
 
@@ -55,10 +58,14 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 			Node initialState = stack.pop();
 
 			if (finalState != null && initialState != null) {
-				graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName()), initialState, finalState));
+				String edgeID = initialState.getID()+" "+finalState.getID()+" "+line.getLongMethodName();
+				if(addedEdges.add(edgeID)) { // don't add duplicate edges
 
-				if(!graph.nodes.contains(finalState)) graph.addNode(finalState);
-				if(!graph.nodes.contains(initialState)) graph.addNode(initialState);
+					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName()), initialState, finalState));
+
+					if(!graph.nodes.contains(finalState)) graph.addNode(finalState);
+					if(!graph.nodes.contains(initialState)) graph.addNode(initialState);
+				}
 			}
 
 			return true;
