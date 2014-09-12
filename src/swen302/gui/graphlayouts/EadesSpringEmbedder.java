@@ -80,7 +80,7 @@ public class EadesSpringEmbedder {
 				Vector2D tempForce = new Vector2D(0.0, 0.0);
 
 				for (Edge e : n.getSprings()) {
-					tempForce = tempForce.add(hookesLaw(n, e.getOtherNode(n)));
+					tempForce = tempForce.add(hookesLaw(n, e.getOtherNode(n)).scalarMultiply(1.0/n.getSprings().size()));
 				}
 
 				for (Node m : virtualNodes) {
