@@ -256,20 +256,25 @@ public class EadesSpringEmbedder {
 
 				}
 				else {
-					Vector2D perp = new Vector2D(v1.getY() * -1, v1.getX());
+					Vector2D diff = v1.subtract(v4);
+
+					Vector2D perp = new Vector2D(diff.getY() * -1, diff.getX());
 
 					perp = perp.normalize();
-					perp = perp.scalarMultiply(scalecount * 10);
+					perp = perp.scalarMultiply(scalecount * 20);
 
-					if (cn.node1.getPosition().getX() > cn.node2.getPosition().getX() )
-					{
-						 v2 = v1.add(perp);
-						 v3 =  cn.node2.getPosition().add(perp);
-					}
-					else {
-						v2 = v1.subtract(perp);
-						v3 =  cn.node2.getPosition().subtract(perp);
-					}
+					v2 = v1.add(perp);
+					v3 =  cn.node2.getPosition().add(perp);
+
+//					if (v4.getX() > v1.getX() )
+//					{
+//						 v2 = v1.add(perp);
+//						 v3 =  cn.node2.getPosition().add(perp);
+//					}
+//					else {
+//						v2 = v1.subtract(perp);
+//						v3 =  cn.node2.getPosition().subtract(perp);
+//					}
 
 					path.curveTo(
 							v2.getX(),
