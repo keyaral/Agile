@@ -65,7 +65,7 @@ public class EadesSpringEmbedder {
 
 			Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
-			/*for (Edge e : graph.edges) {
+			for (Edge e : graph.edges) {
 
 				Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
@@ -74,7 +74,7 @@ public class EadesSpringEmbedder {
 				Vector2D vPos = e.node2.getPosition().add(vecResult.scalarMultiply(0.5));
 
 				virtualNodes.add(new Node(vPos, true));
-			}*/
+			}
 
 			for (Node n : graph.nodes) {
 				Vector2D tempForce = new Vector2D(0.0, 0.0);
@@ -180,6 +180,8 @@ public class EadesSpringEmbedder {
 		double length = SPRING_LENGTH;
 
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition()); //The vector between the two nodes
+		if(vecResult.getNorm() < 0.0000000001)
+			return Vector2D.ZERO;
 		Vector2D springLength = vecResult.normalize();
 
 		springLength = springLength.scalarMultiply(length);
@@ -194,6 +196,29 @@ public class EadesSpringEmbedder {
 	public void draw(Graphics2D graphics) {
 
 		synchronized(graph) {
+
+			//calc bounding box of graph
+			double minX = Integer.MAX_VALUE;
+			double maxX = Integer.MIN_VALUE;
+			double minY = Integer.MAX_VALUE;
+			double maxY = Integer.MIN_VALUE;
+			for(Node n : graph.nodes){
+				double xPos = n.getPosition().getX();
+				double yPos = n.getPosition().getY();
+				minX = Math.min(minX, xPos);
+				maxX = Math.max(maxX, xPos);
+				minY = Math.min(minY, yPos);
+				maxY = Math.max(maxY, yPos);
+			}
+			double centerX = (maxX + minX)/2;
+			double centerY = (maxY + minY)/2;
+
+			double diffX = this.width/2 - centerX;
+			double diffY = this.height/2 -centerY;
+
+			for(Node n : graph.nodes){
+				n.setPosition(n.getPosition().add(new Vector2D(diffX, diffY)));
+			}
 
 			graphics.setColor(Color.BLACK);
 

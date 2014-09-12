@@ -516,11 +516,11 @@ public class MainWindow {
 			}
 		};
 
-		final double DEFAULT_SPRING_STRENGTH = -1.6;
+		final double DEFAULT_SPRING_STRENGTH = 1.6;
 		springStrengthSlider = new SliderTextBox("Spring strength", 0, DEFAULT_SPRING_STRENGTH*4, DEFAULT_SPRING_STRENGTH) {
 			@Override
 			public void onChanged(double value) {
-				EadesSpringEmbedder.SPRING_STRENGTH = value;
+				EadesSpringEmbedder.SPRING_STRENGTH = -value;
 			}
 		};
 
