@@ -390,7 +390,7 @@ public class EadesSpringEmbedder {
 			double y = selectedNode.getPosition().getY();
 			x += mouseX-pMouseX;
 			y += mouseY-pMouseY;
-			selectedNode.setPosition(new Vector2D(x, y));
+			selectedNode.setPosition(new Vector2D(mouseX, mouseY));
 		}
 	}
 
