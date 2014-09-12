@@ -184,7 +184,10 @@ public class EadesSpringEmbedder {
 
 			for (Edge cn : n.getConnections()){
 
-				int scalecount = cn.duplicateCount+ 1;
+				Path2D.Double path = new Path2D.Double();
+				path.moveTo(cn.node1.getPosition().getX(), cn.node1.getPosition().getY());
+
+				int scalecount = cn.duplicateCount + 1;
 
 
 				Vector2D v1 = cn.node1.getPosition();
@@ -192,55 +195,54 @@ public class EadesSpringEmbedder {
 				Vector2D v4 =  cn.node2.getPosition();
 				Vector2D v3 =  v4;
 
-				Vector2D perp = new Vector2D(v1.getY() * -1, v1.getX());
-				perp = perp.normalize();
-				perp = perp.scalarMultiply(scalecount * 10);
-
-				if (cn.node1.getPosition().getX() > cn.node2.getPosition().getX() )
-				{
-					 v2 = v1.add(perp);
-					 v3 =  cn.node2.getPosition().add(perp);
-				}
-				else {
-					v2 = v1.subtract(perp);
-					v3 =  cn.node2.getPosition().subtract(perp);
-				}
-
-
-
-
 				if ( cn.node1.equals(cn.node2) ){
 
+					Vector2D lineMid = v1.add(new Vector2D(20*scalecount, 0));
 
+					Vector2D perp = new Vector2D(0, -15 *scalecount);
 
+					Vector2D p1v2 = v1.add(perp);
+					Vector2D p1v3 = lineMid.add(perp);
 
+					Vector2D p2v2 = v1.subtract(perp);
+				    Vector2D p2v3 = lineMid.subtract(perp);
+
+					path.curveTo(p1v2.getX(), p1v2.getY(), p1v3.getX(), p1v3.getY(), lineMid.getX(), lineMid.getY());
+
+					path.curveTo(p2v3.getX(), p2v3.getY(), p2v2.getX(), p2v2.getY(), v1.getX(), v1.getY());
+
+				}
+				else {
+					Vector2D perp = new Vector2D(v1.getY() * -1, v1.getX());
+
+					perp = perp.normalize();
+					perp = perp.scalarMultiply(scalecount * 10);
+
+					if (cn.node1.getPosition().getX() > cn.node2.getPosition().getX() )
+					{
+						 v2 = v1.add(perp);
+						 v3 =  cn.node2.getPosition().add(perp);
+					}
+					else {
+						v2 = v1.subtract(perp);
+						v3 =  cn.node2.getPosition().subtract(perp);
+					}
+
+					path.curveTo(
+							v2.getX(),
+							v2.getY(),
+							v3.getX(),
+							v3.getY(),
+							v4.getX(),
+							v4.getY()
+					);
 				}
 
 
 
-
-
-
-				Path2D.Double path = new Path2D.Double();
-				path.moveTo(cn.node1.getPosition().getX(), cn.node1.getPosition().getY());
-
-				path.curveTo(
-						v2.getX(),
-						v2.getY(),
-						v3.getX(),
-						v3.getY(),
-						v4.getX(),
-						v4.getY()
-				);
 
 				graphics.draw(path);
 
-//				graphics.drawLine(
-//						(int)cn.node1.getPosition().getX(),
-//						(int)cn.node1.getPosition().getY(),
-//						(int)cn.node2.getPosition().getX(),
-//						(int)cn.node2.getPosition().getY()
-//				);
 			}
 		}
 

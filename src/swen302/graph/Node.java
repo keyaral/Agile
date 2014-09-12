@@ -110,7 +110,7 @@ public class Node {
 		if (finalDisplacement.getNorm() > 0.5) {
 			this.position = this.position.add(finalDisplacement);
 		}
-	}
+	} 
 
 	public Vector2D getVelocity(){return velocity; }
 	public Vector2D getPosition(){ return position; }
