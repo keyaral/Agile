@@ -38,6 +38,7 @@ import java.util.jar.Attributes.Name;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -77,6 +78,7 @@ import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
+import swen302.graph.Node;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
 import swen302.gui.classtree.FieldTreeItem;
@@ -123,7 +125,7 @@ public class MainWindow {
 	private JCheckBox chkContinuousUpdating;
 	private JCheckBox saveTracesCheckbox;
 	private JButton runButton;
-	private JSlider magneticStrengthSlider, springStrengthSlider, staticFrictionSlider, kineticFrictionSlider, gravitySlider;
+	private SliderTextBox magneticStrengthSlider, springStrengthSlider, staticFrictionSlider, kineticFrictionSlider, springLengthSlider;
 
 	private JarData jarData;
 	private File openTraceFile;
@@ -506,29 +508,56 @@ public class MainWindow {
 			configPanel.add(runButton, gbc);
 		}
 
-		{
-			final double MAGNETIC_STRENGTH_SCALE = 50;
-			final double DEFAULT_MAGNETIC_STRENGTH = 8987551787.3681764;
-			final double MIN_MAGNETIC_STRENGTH = 0;
-			final double MAX_MAGNETIC_STRENGTH = DEFAULT_MAGNETIC_STRENGTH * 10;
-			magneticStrengthSlider = new JSlider(
-					(int)(MIN_MAGNETIC_STRENGTH/MAGNETIC_STRENGTH_SCALE),
-					(int)(MAX_MAGNETIC_STRENGTH/MAGNETIC_STRENGTH_SCALE),
-					(int)(DEFAULT_MAGNETIC_STRENGTH/MAGNETIC_STRENGTH_SCALE));
-			magneticStrengthSlider.addChangeListener(new ChangeListener() {
-				@Override
-				public void stateChanged(ChangeEvent e) {
-					EadesSpringEmbedder.MAGNETIC_STRENGTH = magneticStrengthSlider.getValue() * MAGNETIC_STRENGTH_SCALE;
-				}
-			});
-		}
+		final double DEFAULT_MAGNETIC_STRENGTH = 8987551787.3681764;
+		magneticStrengthSlider = new SliderTextBox("Magnetic strength", 0, DEFAULT_MAGNETIC_STRENGTH*500, DEFAULT_MAGNETIC_STRENGTH) {
+			@Override
+			public void onChanged(double value) {
+				EadesSpringEmbedder.MAGNETIC_STRENGTH = value;
+			}
+		};
+
+		final double DEFAULT_SPRING_STRENGTH = -1.6;
+		springStrengthSlider = new SliderTextBox("Spring strength", 0, DEFAULT_SPRING_STRENGTH*4, DEFAULT_SPRING_STRENGTH) {
+			@Override
+			public void onChanged(double value) {
+				EadesSpringEmbedder.SPRING_STRENGTH = value;
+			}
+		};
+
+		final double DEFAULT_STATIC_FRICTION = 0.8;
+		staticFrictionSlider = new SliderTextBox("Static friction", 0, 10, DEFAULT_STATIC_FRICTION) {
+			@Override
+			public void onChanged(double value) {
+				Node.uStatic = value;
+			}
+		};
+
+		final double DEFAULT_KINETIC_FRICTION = 0.4;
+		kineticFrictionSlider = new SliderTextBox("Kinetic friction", 0, 10, DEFAULT_KINETIC_FRICTION) {
+			@Override
+			public void onChanged(double value) {
+				Node.uKinetic = value;
+			}
+		};
+
+		final double DEFAULT_SPRING_LENGTH = 100;
+		springLengthSlider = new SliderTextBox("Spring length", 0, 500, DEFAULT_SPRING_LENGTH) {
+			@Override
+			public void onChanged(double value) {
+				EadesSpringEmbedder.SPRING_LENGTH = value;
+			}
+		};
 
 
 		graphConfigPanel = new JPanel();
 		graphConfigPanel.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
 		graphConfigPanel.setLayout(new BoxLayout(graphConfigPanel, BoxLayout.Y_AXIS));
-		graphConfigPanel.add(new JLabel("Magnetic strength"));
 		graphConfigPanel.add(magneticStrengthSlider);
+		graphConfigPanel.add(springStrengthSlider);
+		graphConfigPanel.add(staticFrictionSlider);
+		graphConfigPanel.add(kineticFrictionSlider);
+		graphConfigPanel.add(springLengthSlider);
+		graphConfigPanel.add(Box.createVerticalGlue());
 
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());

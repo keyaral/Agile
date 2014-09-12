@@ -22,6 +22,7 @@ public class EadesSpringEmbedder {
 	public Graphics graphics;
 	public static double MAGNETIC_STRENGTH = 8987551787.3681764;
 	public static double SPRING_STRENGTH = -1.6;
+	public static double SPRING_LENGTH = 100;
 	private boolean mouseForce;
 	private int mouseX;
 	private int mouseY;
@@ -63,22 +64,16 @@ public class EadesSpringEmbedder {
 
 			Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
-			for (Edge e : graph.edges) {
+			/*for (Edge e : graph.edges) {
 
 				Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
 				if(vecResult.getNorm() == 0) { continue; }
 
-				Vector2D vPos = vecResult.normalize();
+				Vector2D vPos = e.node2.getPosition().add(vecResult.scalarMultiply(0.5));
 
-				double virtualPosition = e.node1.getPosition().distance(e.node2.getPosition()) / 2;
-
-				vPos = vPos.scalarMultiply(virtualPosition);
-
-				vPos = vecResult.subtract(vPos);
-
-				virtualNodes.add(new Node(new Vector2D(vPos.getX(), vPos.getY()), true));
-			}
+				virtualNodes.add(new Node(vPos, true));
+			}*/
 
 			for (Node n : graph.nodes) {
 				Vector2D tempForce = new Vector2D(0.0, 0.0);
@@ -95,8 +90,8 @@ public class EadesSpringEmbedder {
 
 							if (m.labelBounds == null) { continue; }
 
-							double x = m.labelBounds.getCenterX();
-							double y = m.labelBounds.getCenterY();
+							double x = m.getPosition().getX();
+							double y = m.getPosition().getY() + 10 - m.labelBounds.getHeight()/2;
 
 							Vector2D label = new Vector2D(x, y);
 							tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
@@ -181,7 +176,7 @@ public class EadesSpringEmbedder {
 
 		// F = -K(x-N)
 
-		double length = 100.0;
+		double length = SPRING_LENGTH;
 
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition()); //The vector between the two nodes
 		Vector2D springLength = vecResult.normalize();

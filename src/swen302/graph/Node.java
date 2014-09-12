@@ -27,9 +27,9 @@ public class Node {
 	public double mass;
 	public double REPULSION = 2.0;
 
-	public static final double uStatic = 0.8;//1.0;
-	public static final double uKinetic = 0.4;//0.8;
-	public static final double gravity = -9.8;
+	public static double uStatic = 0.8;//1.0;
+	public static double uKinetic = 0.4;//0.8;
+	public static double gravity = -9.8;
 
 	public Rectangle2D labelBounds;
 

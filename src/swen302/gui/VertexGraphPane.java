@@ -38,12 +38,14 @@ public class VertexGraphPane extends JPanel {
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				mouseDown = false;
-				graph.releaseNode();
+				if(graph != null)
+					graph.releaseNode();
 			}
 
 			public void mousePressed(MouseEvent e){
 				mouseDown = true;
-				graph.selectNode(e.getX(), e.getY());
+				if(graph != null)
+					graph.selectNode(e.getX(), e.getY());
 				mouseX = e.getX();
 				mouseY = e.getY();
 			}
@@ -52,7 +54,8 @@ public class VertexGraphPane extends JPanel {
 			public void mouseDragged(MouseEvent e) {
 				mouseAttractive = SwingUtilities.isLeftMouseButton(e);
 				mouseDown = true;
-				graph.moveNode(mouseX, mouseY, e.getX(), e.getY());
+				if(graph != null)
+					graph.moveNode(mouseX, mouseY, e.getX(), e.getY());
 				mouseX = e.getX();
 				mouseY = e.getY();
 			}
