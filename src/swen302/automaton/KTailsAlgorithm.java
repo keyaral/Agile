@@ -87,7 +87,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		if(prev == null){ //New trace, and new original node
 			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
 			nodes.put(getMethodStateString(next, false), n);
-			n.setKState(getMethodStateString(next, true));
+			n.setState(getMethodStateString(next, true));
 			finalGraph.addNode(n);
 
 		} else {
@@ -97,7 +97,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 			if(nextNode == null) { // new node within a trace
 				nextNode = new Node(String.valueOf(finalGraph.nodes.size()));
 				nodes.put(getMethodStateString(next, false), nextNode);
-				nextNode.setKState(getMethodStateString(next, true));
+				nextNode.setState(getMethodStateString(next, true));
 				finalGraph.addNode(nextNode);
 			}
 
