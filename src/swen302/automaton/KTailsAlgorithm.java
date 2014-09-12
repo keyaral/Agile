@@ -86,8 +86,8 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 
 		if(prev == null){ //New trace, and new original node
 			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
-			nodes.put(getMethodStateString(next, false), n);
-			n.setState(getMethodStateString(next, true));
+			nodes.put(getMethodStateString(next), n);
+			n.setState(getMethodStateObject(next));
 			finalGraph.addNode(n);
 
 		} else {
@@ -96,8 +96,8 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 
 			if(nextNode == null) { // new node within a trace
 				nextNode = new Node(String.valueOf(finalGraph.nodes.size()));
-				nodes.put(getMethodStateString(next, false), nextNode);
-				nextNode.setState(getMethodStateString(next, true));
+				nodes.put(getMethodStateString(next), nextNode);
+				nextNode.setState(getMethodStateObject(next));
 				finalGraph.addNode(nextNode);
 			}
 
@@ -105,11 +105,11 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		}
 	}
 // Returns a string of the array of method calls
-	private String getMethodStateString(String[] edges, boolean formatted){
+	private String getMethodStateString(String[] edges){
 		String toReturn = "";
 		for(String e : edges){
 			if(e != null){
-				toReturn += (formatted ? AutomatonGraphUtils.formatMethodLabel(e) : e)+",";
+				toReturn += e+",";
 			}
 		}
 		if(toReturn.length() > 0){
@@ -118,13 +118,31 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		return toReturn;
 	}
 
+	private Object getMethodStateObject(final String[] edges) {
+		return new Object() {
+			@Override
+			public String toString() {
+				String toReturn = "";
+				for(String e : edges){
+					if(e != null){
+						toReturn += AutomatonGraphUtils.formatMethodLabel(e)+",";
+					}
+				}
+				if(toReturn.length() > 0){
+					toReturn = toReturn.substring(0, toReturn.length()-1);
+				}
+				return toReturn;
+			}
+		};
+	}
+
 	/**
 	 * Returns the node that contains identical method calls to the given array
 	 * @param trans	Array of method calls
 	 * @return Node if one is found that matches, else returns null
 	 */
 	private Node findNode(String[] trans){
-		return nodes.get(getMethodStateString(trans, false));
+		return nodes.get(getMethodStateString(trans));
 	}
 
 

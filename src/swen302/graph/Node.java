@@ -18,7 +18,7 @@ public class Node {
 	private Set<Edge> outgoingEdges = new HashSet<Edge>();
 	private Set<Edge> springs = new HashSet<Edge>();
 	private String id;
-	private String state = "";
+	private Object state = "";
 	private Vector2D position;
 	private Vector2D velocity;
 	private Vector2D acceleration;
@@ -164,7 +164,7 @@ return count;
 	 * Sets the state of the node
 	 * @param state
 	 */
-	public void setState(String state) {
+	public void setState(Object state) {
 		this.state = state;
 	}
 
