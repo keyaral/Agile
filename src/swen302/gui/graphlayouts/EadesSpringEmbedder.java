@@ -20,8 +20,8 @@ public class EadesSpringEmbedder {
 
 	public Graph graph;
 	public Graphics graphics;
-	public double MAGNETIC_STRENGTH = 8987551787.3681764;
-	public double SPRING_STRENGTH = -1.6;
+	public static double MAGNETIC_STRENGTH = 8987551787.3681764;
+	public static double SPRING_STRENGTH = -1.6;
 	private boolean mouseForce;
 	private int mouseX;
 	private int mouseY;

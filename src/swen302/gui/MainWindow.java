@@ -37,6 +37,7 @@ import java.util.jar.Attributes.Name;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -52,8 +53,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTree;
 import javax.swing.Timer;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -77,6 +83,7 @@ import swen302.gui.classtree.FieldTreeItem;
 import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
+import swen302.gui.graphlayouts.EadesSpringEmbedder;
 import swen302.tracer.FieldKey;
 import swen302.tracer.FutureTraceConsumer;
 import swen302.tracer.MethodKey;
@@ -107,6 +114,7 @@ public class MainWindow {
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
+	private JPanel graphConfigPanel;
 	private VertexGraphPane graphPane;
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect;
@@ -115,6 +123,8 @@ public class MainWindow {
 	private JCheckBox chkContinuousUpdating;
 	private JCheckBox saveTracesCheckbox;
 	private JButton runButton;
+	private JSlider magneticStrengthSlider, springStrengthSlider, staticFrictionSlider, kineticFrictionSlider, gravitySlider;
+
 	private JarData jarData;
 	private File openTraceFile;
 
@@ -496,6 +506,30 @@ public class MainWindow {
 			configPanel.add(runButton, gbc);
 		}
 
+		{
+			final double MAGNETIC_STRENGTH_SCALE = 50;
+			final double DEFAULT_MAGNETIC_STRENGTH = 8987551787.3681764;
+			final double MIN_MAGNETIC_STRENGTH = 0;
+			final double MAX_MAGNETIC_STRENGTH = DEFAULT_MAGNETIC_STRENGTH * 10;
+			magneticStrengthSlider = new JSlider(
+					(int)(MIN_MAGNETIC_STRENGTH/MAGNETIC_STRENGTH_SCALE),
+					(int)(MAX_MAGNETIC_STRENGTH/MAGNETIC_STRENGTH_SCALE),
+					(int)(DEFAULT_MAGNETIC_STRENGTH/MAGNETIC_STRENGTH_SCALE));
+			magneticStrengthSlider.addChangeListener(new ChangeListener() {
+				@Override
+				public void stateChanged(ChangeEvent e) {
+					EadesSpringEmbedder.MAGNETIC_STRENGTH = magneticStrengthSlider.getValue() * MAGNETIC_STRENGTH_SCALE;
+				}
+			});
+		}
+
+
+		graphConfigPanel = new JPanel();
+		graphConfigPanel.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
+		graphConfigPanel.setLayout(new BoxLayout(graphConfigPanel, BoxLayout.Y_AXIS));
+		graphConfigPanel.add(new JLabel("Magnetic strength"));
+		graphConfigPanel.add(magneticStrengthSlider);
+
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
 		treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
@@ -507,24 +541,13 @@ public class MainWindow {
 		window.add(menuBar, BorderLayout.NORTH);
 		window.add(graphPane, BorderLayout.CENTER);
 		window.add(treePanel, BorderLayout.WEST);
+		window.add(graphConfigPanel, BorderLayout.EAST);
 
 		window.pack();
 		window.setLocationRelativeTo(null);
 		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
 		updateCheckboxesEnabled();
-
-		// for testing
-		/*try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream("test.cfg")))) {
-			TracerConfiguration conf = (TracerConfiguration)in.readObject();
-			loadFromConfiguration(conf);
-			saveTracesCheckbox.setSelected(true);
-			doTraceAndAnalysis();
-
-		} catch(IOException | ClassNotFoundException ex) {
-			ex.printStackTrace();
-		}*/
-
 	}
 
 	private void updateCheckboxesEnabled() {
