@@ -286,12 +286,12 @@ public class EadesSpringEmbedder {
 
 					Vector2D midpoint = cn.node1.getPosition().add(cn.node2.getPosition()).scalarMultiply(0.5);
 
-					graphics.drawString(cn.label, (int)midpoint.getX() , (int) midpoint.getY());
+					graphics.drawString(String.valueOf(cn.label), (int)midpoint.getX() , (int) midpoint.getY());
 				}
 
 				else {
 					Vector2D Midline = v1.add(new Vector2D(20*scalecount, 0));
-					graphics.drawString(cn.label, (int)Midline.getX() , (int) Midline.getY());
+					graphics.drawString(String.valueOf(cn.label), (int)Midline.getX() , (int) Midline.getY());
 
 				}
 

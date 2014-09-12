@@ -2,8 +2,10 @@ package swen302.automaton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
@@ -22,6 +24,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	private Graph finalGraph = new Graph();
 	private int nextEdgeID = 0;
 	private Map<String, Node> nodes = new HashMap<>();
+	private Set<String> addedEdges = new HashSet<String>();
 
 	public static int k = 3;
 
@@ -91,6 +94,10 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 			finalGraph.addNode(n);
 
 		} else {
+			String edgeName = getMethodStateString(prev)+" "+getMethodStateString(next);
+			if(!addedEdges.add(edgeName))
+				return; // this edge already added
+
 			Node nextNode = findNode(next);
 			Node prevNode = findNode(prev);
 
@@ -101,7 +108,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 				finalGraph.addNode(nextNode);
 			}
 
-			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.formatMethodLabel(prev[0]), prevNode, nextNode));
+			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.createMethodLabelObject(prev[0]), prevNode, nextNode));
 		}
 	}
 // Returns a string of the array of method calls
