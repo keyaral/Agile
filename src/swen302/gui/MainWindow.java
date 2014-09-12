@@ -37,6 +37,8 @@ import java.util.jar.Attributes.Name;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -52,8 +54,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTree;
 import javax.swing.Timer;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -71,12 +78,14 @@ import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
+import swen302.graph.Node;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
 import swen302.gui.classtree.FieldTreeItem;
 import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
+import swen302.gui.graphlayouts.EadesSpringEmbedder;
 import swen302.tracer.FieldKey;
 import swen302.tracer.FutureTraceConsumer;
 import swen302.tracer.MethodKey;
@@ -107,6 +116,7 @@ public class MainWindow {
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
+	private JPanel graphConfigPanel;
 	private VertexGraphPane graphPane;
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect;
@@ -115,6 +125,8 @@ public class MainWindow {
 	private JCheckBox chkContinuousUpdating;
 	private JCheckBox saveTracesCheckbox;
 	private JButton runButton;
+	private SliderTextBox magneticStrengthSlider, springStrengthSlider, staticFrictionSlider, kineticFrictionSlider, springLengthSlider;
+
 	private JarData jarData;
 	private File openTraceFile;
 
@@ -496,6 +508,57 @@ public class MainWindow {
 			configPanel.add(runButton, gbc);
 		}
 
+		final double DEFAULT_MAGNETIC_STRENGTH = 8987551787.3681764;
+		magneticStrengthSlider = new SliderTextBox("Magnetic strength", 0, DEFAULT_MAGNETIC_STRENGTH*500, DEFAULT_MAGNETIC_STRENGTH) {
+			@Override
+			public void onChanged(double value) {
+				EadesSpringEmbedder.MAGNETIC_STRENGTH = value;
+			}
+		};
+
+		final double DEFAULT_SPRING_STRENGTH = -1.6;
+		springStrengthSlider = new SliderTextBox("Spring strength", 0, DEFAULT_SPRING_STRENGTH*4, DEFAULT_SPRING_STRENGTH) {
+			@Override
+			public void onChanged(double value) {
+				EadesSpringEmbedder.SPRING_STRENGTH = value;
+			}
+		};
+
+		final double DEFAULT_STATIC_FRICTION = 0.8;
+		staticFrictionSlider = new SliderTextBox("Static friction", 0, 10, DEFAULT_STATIC_FRICTION) {
+			@Override
+			public void onChanged(double value) {
+				Node.uStatic = value;
+			}
+		};
+
+		final double DEFAULT_KINETIC_FRICTION = 0.4;
+		kineticFrictionSlider = new SliderTextBox("Kinetic friction", 0, 10, DEFAULT_KINETIC_FRICTION) {
+			@Override
+			public void onChanged(double value) {
+				Node.uKinetic = value;
+			}
+		};
+
+		final double DEFAULT_SPRING_LENGTH = 100;
+		springLengthSlider = new SliderTextBox("Spring length", 0, 500, DEFAULT_SPRING_LENGTH) {
+			@Override
+			public void onChanged(double value) {
+				EadesSpringEmbedder.SPRING_LENGTH = value;
+			}
+		};
+
+
+		graphConfigPanel = new JPanel();
+		graphConfigPanel.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
+		graphConfigPanel.setLayout(new BoxLayout(graphConfigPanel, BoxLayout.Y_AXIS));
+		graphConfigPanel.add(magneticStrengthSlider);
+		graphConfigPanel.add(springStrengthSlider);
+		graphConfigPanel.add(staticFrictionSlider);
+		graphConfigPanel.add(kineticFrictionSlider);
+		graphConfigPanel.add(springLengthSlider);
+		graphConfigPanel.add(Box.createVerticalGlue());
+
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
 		treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
@@ -507,24 +570,13 @@ public class MainWindow {
 		window.add(menuBar, BorderLayout.NORTH);
 		window.add(graphPane, BorderLayout.CENTER);
 		window.add(treePanel, BorderLayout.WEST);
+		window.add(graphConfigPanel, BorderLayout.EAST);
 
 		window.pack();
 		window.setLocationRelativeTo(null);
 		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
 		updateCheckboxesEnabled();
-
-		// for testing
-		/*try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream("test.cfg")))) {
-			TracerConfiguration conf = (TracerConfiguration)in.readObject();
-			loadFromConfiguration(conf);
-			saveTracesCheckbox.setSelected(true);
-			doTraceAndAnalysis();
-
-		} catch(IOException | ClassNotFoundException ex) {
-			ex.printStackTrace();
-		}*/
-
 	}
 
 	private void updateCheckboxesEnabled() {
@@ -695,6 +747,10 @@ public class MainWindow {
 
 						iva.startIncremental();
 
+						final Graph graph = iva.getCurrentGraph();
+
+						graphPane.setGraph(graph);
+
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter, new RealtimeTraceConsumer() {
 
 							@Override
@@ -704,23 +760,8 @@ public class MainWindow {
 
 							@Override
 							public void onTraceLine(TraceEntry line) {
-								if(iva.processLine(line)) {
-									final Graph graph = iva.getCurrentGraph();
-
-									try {
-										//File pngfile = new File("tempAnalysis.png");
-										//GraphSaver.save(graph, pngfile);
-										//final BufferedImage image = ImageIO.read(pngfile);
-
-										EventQueue.invokeLater(new Runnable() {
-											@Override
-											public void run() {
-												graphPane.setGraph(graph);
-											}
-										});
-									} catch(Exception e) {
-										e.printStackTrace();
-									}
+								synchronized(graph) {
+									iva.processLine(line);
 								}
 							}
 

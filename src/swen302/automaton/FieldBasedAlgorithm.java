@@ -57,8 +57,8 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 			if (finalState != null && initialState != null) {
 				graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.formatMethodLabel(line.getLongMethodName()), initialState, finalState));
 
-				graph.nodes.add(finalState);
-				graph.nodes.add(initialState);
+				if(!graph.nodes.contains(finalState)) graph.addNode(finalState);
+				if(!graph.nodes.contains(initialState)) graph.addNode(initialState);
 			}
 
 			return true;

@@ -5,21 +5,25 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.ReplicateScaleFilter;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 import swen302.graph.Edge;
 import swen302.graph.Graph;
+import swen302.graph.GraphListener;
 import swen302.graph.Node;
 
 public class EadesSpringEmbedder {
 
 	public Graph graph;
 	public Graphics graphics;
-	public double MAGNETIC_STRENGTH = 8987551787.3681764;
-	public double SPRING_STRENGTH = -1.6;
+	public static double MAGNETIC_STRENGTH = 8987551787.3681764;
+	public static double SPRING_STRENGTH = -1.6;
+	public static double SPRING_LENGTH = 100;
 	private boolean mouseForce;
 	private int mouseX;
 	private int mouseY;
@@ -32,98 +36,109 @@ public class EadesSpringEmbedder {
 
 	private int width, height;
 
+	private GraphListener graphListener = new GraphListener() {
+		@Override
+		public void onNodeAdded(Node n) {
+			n.randPosition(new Random());
+			n.mass = 1.0f;
+			graph.onLabelsChanged(graphics);
+		}
+	};
+
 	public EadesSpringEmbedder(Graph graph, int width, int height, Graphics g){
-		this.graph = graph;
-		graphics = g;
-		this.width = width;
-		this.height = height;
-		graph.generateInitialLayout(800, 600, g);
+		synchronized(graph) {
+			this.graph = graph;
+			graphics = g;
+			this.width = width;
+			this.height = height;
+			graph.generateInitialLayout(800, 600, g);
+			graph.addListener(graphListener);
+		}
 	}
 
 	public void step(double timeStep, int mouseX, int mouseY){
 
-		this.mouseX = mouseX;
-		this.mouseY = mouseY;
+		synchronized(graph) {
 
-		Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
+			this.mouseX = mouseX;
+			this.mouseY = mouseY;
 
-		for (Edge e : graph.edges) {
+			Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
-			Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
+			/*for (Edge e : graph.edges) {
 
-			if(vecResult.getNorm() == 0) { continue; }
+				Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
-			Vector2D vPos = vecResult.normalize();
+				if(vecResult.getNorm() == 0) { continue; }
 
-			double virtualPosition = e.node1.getPosition().distance(e.node2.getPosition()) / 2;
+				Vector2D vPos = e.node2.getPosition().add(vecResult.scalarMultiply(0.5));
 
-			vPos = vPos.scalarMultiply(virtualPosition);
+				virtualNodes.add(new Node(vPos, true));
+			}*/
 
-			vPos = vecResult.subtract(vPos);
+			for (Node n : graph.nodes) {
+				Vector2D tempForce = new Vector2D(0.0, 0.0);
 
-			virtualNodes.add(new Node(new Vector2D(vPos.getX(), vPos.getY()), true));
-		}
+				for (Edge e : n.getSprings()) {
+					tempForce = tempForce.add(hookesLaw(n, e.getOtherNode(n)));
+				}
 
-		for (Node n : graph.nodes) {
-			Vector2D tempForce = new Vector2D(0.0, 0.0);
+				for (Node m : virtualNodes) {
+					if (n != m) {
+						tempForce = tempForce.add(coulombsLaw(n, m));
 
-			for (Edge e : n.getSprings()) {
-				tempForce = tempForce.add(hookesLaw(n, e.getOtherNode(n)));
-			}
+						if (!m.IsVirtual) {
 
-			for (Node m : virtualNodes) {
-				if (n != m) {
-					tempForce = tempForce.add(coulombsLaw(n, m));
+							if (m.labelBounds == null) { continue; }
 
-					if (!m.IsVirtual) {
+							double x = m.getPosition().getX();
+							double y = m.getPosition().getY() + 10 - m.labelBounds.getHeight()/2;
 
-						if (m.labelBounds == null) { continue; }
-
-						double x = m.labelBounds.getCenterX();
-						double y = m.labelBounds.getCenterY();
-
-						Vector2D label = new Vector2D(x, y);
-						tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
+							Vector2D label = new Vector2D(x, y);
+							tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
+						}
 					}
 				}
+
+				//User interaction
+				if (mouseForce) {
+					Vector2D vecResult = n.getPosition().subtract(new Vector2D(mouseX, mouseY));
+					double dist = n.getPosition().distance(new Vector2D(mouseX, mouseY));
+
+					if(mouseAttractive)
+						vecResult = vecResult.negate();
+
+					vecResult = vecResult.scalarMultiply((1/dist*100));
+					tempForce = tempForce.add(vecResult);
+				}
+
+				tempForce = tempForce.subtract(drag(n.getVelocity()));
+
+				n.force = tempForce;
+			}
+			for (Node n : graph.nodes) {
+				if(n == selectedNode) continue;
+				n.updatePosition(timeStep);
+				//Stop calculating, will probably leave out.
+				//This is so the graph can be made interactive
 			}
 
-			//User interaction
-			if (mouseForce) {
-				Vector2D vecResult = n.getPosition().subtract(new Vector2D(mouseX, mouseY));
-				double dist = n.getPosition().distance(new Vector2D(mouseX, mouseY));
-
-				if(mouseAttractive)
-					vecResult = vecResult.negate();
-
-				vecResult = vecResult.scalarMultiply((1/dist*100));
-				tempForce = tempForce.add(vecResult);
-			}
-
-			tempForce = tempForce.subtract(drag(n.getVelocity()));
-
-			n.force = tempForce;
+			mouseForce = false;
 		}
-		for (Node n : graph.nodes) {
-			if(n == selectedNode) continue;
-			n.updatePosition(timeStep);
-			//Stop calculating, will probably leave out.
-			//This is so the graph can be made interactive
-		}
-
-		mouseForce = false;
 	}
 
 	private Node pointInNode(int x, int y){
 
-		for(Node n : graph.nodes) {
-			double xPos = n.getPosition().getX();
-			double yPos = n.getPosition().getY();
+		synchronized(graph) {
+			for(Node n : graph.nodes) {
+				double xPos = n.getPosition().getX();
+				double yPos = n.getPosition().getY();
 
-			Vector2D nCenter = new Vector2D(xPos, yPos);
+				Vector2D nCenter = new Vector2D(xPos, yPos);
 
-			if (nCenter.distance(new Vector2D(x, y)) < 10)
-				return n;
+				if (nCenter.distance(new Vector2D(x, y)) < 10)
+					return n;
+			}
 		}
 
 		return null;
@@ -162,7 +177,7 @@ public class EadesSpringEmbedder {
 
 		// F = -K(x-N)
 
-		double length = 100.0;
+		double length = SPRING_LENGTH;
 
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition()); //The vector between the two nodes
 		Vector2D springLength = vecResult.normalize();
@@ -178,9 +193,11 @@ public class EadesSpringEmbedder {
 
 	public void draw(Graphics2D graphics) {
 
-		graphics.setColor(Color.BLACK);
+		synchronized(graph) {
 
-		for (Node n : graph.nodes) {
+			graphics.setColor(Color.BLACK);
+
+			for (Node n : graph.nodes) {
 
 			for (Edge cn : n.getConnections()){
 
@@ -246,79 +263,80 @@ public class EadesSpringEmbedder {
 			}
 		}
 
-		for (Node n : graph.nodes) {
 
-			double xPos = n.getPosition().getX();
-			double yPos = n.getPosition().getY();
+			for (Node n : graph.nodes) {
 
-			Vector2D nCenter = new Vector2D(xPos, yPos);
-			if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
-				graphics.setColor(Color.BLUE);
-			else
-				graphics.setColor(Color.LIGHT_GRAY);
+				double xPos = n.getPosition().getX();
+				double yPos = n.getPosition().getY();
 
-			graphics.fillOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
-			graphics.setColor(Color.BLACK);
-			graphics.drawOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
+				Vector2D nCenter = new Vector2D(xPos, yPos);
+				if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
+					graphics.setColor(Color.BLUE);
+				else
+					graphics.setColor(Color.LIGHT_GRAY);
 
-			Rectangle2D stringBounds = n.labelBounds;
+				graphics.fillOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
+				graphics.setColor(Color.BLACK);
+				graphics.drawOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
 
-			graphics.setColor(new Color(200, 240, 240, 100));
-			graphics.fillRect((int)(n.getPosition().getX()+10  - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-20,
-					(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
-			graphics.setColor(Color.black);
-			graphics.drawString(n.getLabel(), (int)(n.getPosition().getX()+10 - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-10);
+				Rectangle2D stringBounds = n.labelBounds;
 
-			//Draw the arrows on the edges
-			for (Edge e : n.getConnections()) {
+				graphics.setColor(new Color(200, 240, 240, 100));
+				graphics.fillRect((int)(n.getPosition().getX()+10  - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-20,
+						(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
+				graphics.setColor(Color.black);
+				graphics.drawString(n.getLabel(), (int)(n.getPosition().getX()+10 - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-10);
 
-				Vector2D node1 = n.getPosition();
-				Vector2D node2 = e.getOtherNode(n).getPosition();
+				//Draw the arrows on the edges
+				for (Edge e : n.getConnections()) {
 
-				Vector2D tipOfArrow = node1;
-				Vector2D bottomOfArrow = node1;
+					Vector2D node1 = n.getPosition();
+					Vector2D node2 = e.getOtherNode(n).getPosition();
 
-				tipOfArrow = node1.subtract(node2);
-				if (tipOfArrow.getNorm() == 0) { continue; }
-				tipOfArrow = tipOfArrow.normalize().scalarMultiply(node1.distance(node2)-10);
-				tipOfArrow = node1.subtract(tipOfArrow);
+					Vector2D tipOfArrow = node1;
+					Vector2D bottomOfArrow = node1;
 
-				bottomOfArrow = node1.subtract(node2);
-				if (bottomOfArrow.getNorm() == 0) { continue; }
-				bottomOfArrow = bottomOfArrow.normalize().scalarMultiply(node1.distance(node2)-20);
-				bottomOfArrow = node1.subtract(bottomOfArrow);
+					tipOfArrow = node1.subtract(node2);
+					if (tipOfArrow.getNorm() == 0) { continue; }
+					tipOfArrow = tipOfArrow.normalize().scalarMultiply(node1.distance(node2)-10);
+					tipOfArrow = node1.subtract(tipOfArrow);
 
-				int[] xPoints = new int[] {0, -5, 5};
-				int[] yPoints = new int[] {0, 5, 5};
+					bottomOfArrow = node1.subtract(node2);
+					if (bottomOfArrow.getNorm() == 0) { continue; }
+					bottomOfArrow = bottomOfArrow.normalize().scalarMultiply(node1.distance(node2)-20);
+					bottomOfArrow = node1.subtract(bottomOfArrow);
 
-				Vector2D v = node1.subtract(node2);
-				double angle = Math.atan2(v.getY(), v.getX())-Math.PI/2;
+					int[] xPoints = new int[] {0, -5, 5};
+					int[] yPoints = new int[] {0, 5, 5};
 
-				graphics.translate(tipOfArrow.getX(), tipOfArrow.getY());
-				graphics.rotate(angle);
+					Vector2D v = node1.subtract(node2);
+					double angle = Math.atan2(v.getY(), v.getX())-Math.PI/2;
 
-				graphics.fillPolygon(xPoints, yPoints, 3);
+					graphics.translate(tipOfArrow.getX(), tipOfArrow.getY());
+					graphics.rotate(angle);
 
-				graphics.rotate(-angle);
-				graphics.translate(-tipOfArrow.getX(), -tipOfArrow.getY());
+					graphics.fillPolygon(xPoints, yPoints, 3);
+
+					graphics.rotate(-angle);
+					graphics.translate(-tipOfArrow.getX(), -tipOfArrow.getY());
+				}
+
 			}
+			//Lol variable name
+			Node npm = this.pointInNode(mouseX, mouseY);
+			npm = selectedNode != null ? selectedNode : npm;
+			if (npm != null) {
+				Rectangle2D stringBounds = npm.labelBounds;
 
+				graphics.setColor(new Color(100, 215, 215));
+				graphics.fillRect((int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
+						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
+				graphics.setColor(Color.black);
+				graphics.drawString(npm.getLabel(), (int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-8);
+				graphics.drawRect((int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
+						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
+			}
 		}
-		//Lol variable name
-		Node npm = this.pointInNode(mouseX, mouseY);
-		npm = selectedNode != null ? selectedNode : npm;
-		if (npm != null) {
-			Rectangle2D stringBounds = npm.labelBounds;
-
-			graphics.setColor(new Color(100, 215, 215));
-			graphics.fillRect((int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
-					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
-			graphics.setColor(Color.black);
-			graphics.drawString(npm.getLabel(), (int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-8);
-			graphics.drawRect((int)(npm.getPosition().getX()+8 - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
-					(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
-		}
-
 	}
 
 	public void selectNode(int mouseX, int mouseY){

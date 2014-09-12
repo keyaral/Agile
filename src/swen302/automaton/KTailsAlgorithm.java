@@ -88,7 +88,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
 			nodes.put(getMethodStateString(next, false), n);
 			n.setKState(getMethodStateString(next, true));
-			finalGraph.nodes.add(n);
+			finalGraph.addNode(n);
 
 		} else {
 			Node nextNode = findNode(next);
@@ -98,7 +98,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 				nextNode = new Node(String.valueOf(finalGraph.nodes.size()));
 				nodes.put(getMethodStateString(next, false), nextNode);
 				nextNode.setKState(getMethodStateString(next, true));
-				finalGraph.nodes.add(nextNode);
+				finalGraph.addNode(nextNode);
 			}
 
 			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.formatMethodLabel(prev[0]), prevNode, nextNode));
