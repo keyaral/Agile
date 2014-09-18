@@ -5,7 +5,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.ReplicateScaleFilter;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -155,7 +154,7 @@ public class EadesSpringEmbedder {
 
 		if(distance < 10) distance = 10; // avoid excessive forces when nodes overlap
 
-		double force = this.MAGNETIC_STRENGTH/(Math.pow(distance, 2));
+		double force = MAGNETIC_STRENGTH/(Math.pow(distance, 2));
 		Vector2D vecResult = n1.getPosition().subtract(n2.getPosition());
 		if (vecResult.getNorm() == 0) { return new Vector2D(0,0); }
 		vecResult = vecResult.normalize();
@@ -395,10 +394,6 @@ public class EadesSpringEmbedder {
 
 	public void moveNode(int pMouseX, int pMouseY, int mouseX, int mouseY){
 		if(selectedNode != null){
-			double x = selectedNode.getPosition().getX();
-			double y = selectedNode.getPosition().getY();
-			x += mouseX-pMouseX;
-			y += mouseY-pMouseY;
 			selectedNode.setPosition(new Vector2D(mouseX, mouseY));
 		}
 	}

@@ -14,6 +14,7 @@ import swen302.tracer.TraceFieldFilter;
 public class ObjectState extends State {
 	private static final long serialVersionUID = 1L;
 
+	@SuppressWarnings("unused")
 	private String className;
 	public ObjectState(String className) {
 		this.className = className;

@@ -12,7 +12,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import swen302.graph.Graph;
@@ -21,29 +20,21 @@ import swen302.gui.graphlayouts.EadesSpringEmbedder;
 public class VertexGraphPane extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private Timer timer;
-	private boolean doAnimation;   // for starting and stoping animation
-	private boolean mouseDown;
 	private int mouseX;
 	private int mouseY;
-	private boolean mouseAttractive;
 	public EadesSpringEmbedder graph;
 
 	public VertexGraphPane(){
 		super();
 
-		doAnimation = true;
-		mouseDown = false;
-
 		MouseAdapter ma = new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				mouseDown = false;
 				if(graph != null)
 					graph.releaseNode();
 			}
 
 			public void mousePressed(MouseEvent e){
-				mouseDown = true;
 				if(graph != null)
 					graph.selectNode(e.getX(), e.getY());
 				mouseX = e.getX();
@@ -52,8 +43,6 @@ public class VertexGraphPane extends JPanel {
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				mouseAttractive = SwingUtilities.isLeftMouseButton(e);
-				mouseDown = true;
 				if(graph != null)
 					graph.moveNode(mouseX, mouseY, e.getX(), e.getY());
 				mouseX = e.getX();
@@ -62,7 +51,6 @@ public class VertexGraphPane extends JPanel {
 
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				mouseDown = false;
 				mouseX = e.getX();
 				mouseY = e.getY();
 			}
@@ -93,7 +81,7 @@ public class VertexGraphPane extends JPanel {
 				if(graph != null){
 					graph.setSize(getWidth(), getHeight());
 				}
-			} 
+			}
 
 			@Override
 			public void componentMoved(ComponentEvent e) {}

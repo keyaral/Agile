@@ -14,7 +14,6 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes.Name;
 
-import javax.imageio.ImageIO;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -54,13 +52,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JSlider;
 import javax.swing.JTree;
-import javax.swing.Timer;
-import javax.swing.border.BevelBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -78,7 +70,6 @@ import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
 import swen302.graph.GraphSaver;
-import swen302.graph.Node;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
 import swen302.gui.classtree.FieldTreeItem;
@@ -510,6 +501,8 @@ public class MainWindow {
 
 		final double DEFAULT_MAGNETIC_STRENGTH = 350000;
 		magneticStrengthSlider = new SliderTextBox("Magnetic strength", 0, DEFAULT_MAGNETIC_STRENGTH*20, DEFAULT_MAGNETIC_STRENGTH) {
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void onChanged(double value) {
 				EadesSpringEmbedder.MAGNETIC_STRENGTH = value;
@@ -518,6 +511,8 @@ public class MainWindow {
 
 		final double DEFAULT_SPRING_STRENGTH = 1.6;
 		springStrengthSlider = new SliderTextBox("Spring strength", 0, DEFAULT_SPRING_STRENGTH*4, DEFAULT_SPRING_STRENGTH) {
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void onChanged(double value) {
 				EadesSpringEmbedder.SPRING_STRENGTH = -value;
@@ -526,6 +521,8 @@ public class MainWindow {
 
 		final double DEFAULT_SPRING_LENGTH = 100;
 		springLengthSlider = new SliderTextBox("Spring length", 0, 500, DEFAULT_SPRING_LENGTH) {
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void onChanged(double value) {
 				EadesSpringEmbedder.SPRING_LENGTH = value;
@@ -578,6 +575,7 @@ public class MainWindow {
 	}
 
 	private void checkAllBoxes(TreePath selPath, boolean check){
+		@SuppressWarnings("unchecked")
 		Enumeration<TreeNode> children = ((DefaultMutableTreeNode)selPath.getLastPathComponent()).breadthFirstEnumeration();
 		while (children.hasMoreElements()) {
 			TreeNode child = children.nextElement();
