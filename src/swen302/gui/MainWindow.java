@@ -94,16 +94,22 @@ public class MainWindow {
 	/** Whether fields are selected by default */
 	public static final boolean DEFAULT_FIELD_SELECTED = true;
 
-	/** Whether the tracing and analysis will be run whenever the filter is changed. */
+	/**
+	 * Whether the tracing and analysis will be run whenever the filter is
+	 * changed.
+	 */
 	public static final boolean AUTO_RUN = false;
 
 	private JFrame window;
 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
-	private JMenuItem fileLoadJAR, fileLoadTrace, fileLoadAdvanced, fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit, fileChangeK;
+	private JMenuItem fileLoadJAR, fileLoadTrace, fileLoadAdvanced,
+			fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit,
+			fileChangeK;
 	private JMenu displayMenu;
-	private JCheckBoxMenuItem displayID, displayState, displayClass, displayMethod, displayParams;
+	private JCheckBoxMenuItem displayID, displayState, displayClass,
+			displayMethod, displayParams;
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
@@ -116,7 +122,8 @@ public class MainWindow {
 	private JCheckBox chkContinuousUpdating;
 	private JCheckBox saveTracesCheckbox;
 	private JButton runButton;
-	private SliderTextBox magneticStrengthSlider, springStrengthSlider, springLengthSlider;
+	private SliderTextBox electricStrengthSlider, springStrengthSlider,
+			springLengthSlider;
 
 	private JarData jarData;
 	private File openTraceFile;
@@ -127,20 +134,25 @@ public class MainWindow {
 
 	private TreePath selectedPath;
 
-	private List<ExecutionData> executions = new ArrayList<>(Arrays.asList(new ExecutionData()));
+	private List<ExecutionData> executions = new ArrayList<>(
+			Arrays.asList(new ExecutionData()));
 
 	/**
-	 * Instances of this are used in the combo box's item list, as they implement toString.
+	 * Instances of this are used in the combo box's item list, as they
+	 * implement toString.
+	 *
 	 * @author campbealex2
 	 */
 	private static class AlgorithmComboBoxWrapper {
 		Class<? extends VisualizationAlgorithm> algClass;
 		String name;
-		AlgorithmComboBoxWrapper(Class<? extends VisualizationAlgorithm> algClass) {
+
+		AlgorithmComboBoxWrapper(
+				Class<? extends VisualizationAlgorithm> algClass) {
 			this.algClass = algClass;
 			try {
 				name = algClass.newInstance().toString();
-			} catch(Exception e) {
+			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -148,7 +160,7 @@ public class MainWindow {
 		VisualizationAlgorithm createInstance() {
 			try {
 				return algClass.newInstance();
-			} catch(Exception e) {
+			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -158,7 +170,6 @@ public class MainWindow {
 			return name;
 		}
 	}
-
 
 	public MainWindow() {
 		window = new JFrame("SWEN302 Program Tracer");
@@ -182,15 +193,15 @@ public class MainWindow {
 
 		displayMenu = new JMenu("Display");
 
-		displayID = new JCheckBoxMenuItem("ID",true);
+		displayID = new JCheckBoxMenuItem("ID", true);
 		displayMenu.add(displayID);
-		displayState = new JCheckBoxMenuItem("State",true);
+		displayState = new JCheckBoxMenuItem("State", true);
 		displayMenu.add(displayState);
-		displayClass = new JCheckBoxMenuItem("Class",true);
+		displayClass = new JCheckBoxMenuItem("Class", true);
 		displayMenu.add(displayClass);
-		displayMethod = new JCheckBoxMenuItem("Method",true);
+		displayMethod = new JCheckBoxMenuItem("Method", true);
 		displayMenu.add(displayMethod);
-		displayParams = new JCheckBoxMenuItem("Parameters",true);
+		displayParams = new JCheckBoxMenuItem("Parameters", true);
 		displayMenu.add(displayParams);
 
 		treePopup = new JPopupMenu();
@@ -271,7 +282,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser(lastJarDirectory);
-				fc.setFileFilter(new FileNameExtensionFilter("JAR files", "zip", "jar"));
+				fc.setFileFilter(new FileNameExtensionFilter("JAR files",
+						"zip", "jar"));
 				int returnVal = fc.showOpenDialog(window);
 
 				lastJarDirectory = fc.getCurrentDirectory();
@@ -282,8 +294,7 @@ public class MainWindow {
 					executions.clear();
 					executions.add(new ExecutionData());
 
-
-					if(AUTO_RUN)
+					if (AUTO_RUN)
 						doTraceAndAnalysis();
 					else
 						graphPane.setGraph(null);
@@ -295,7 +306,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser(lastTraceDirectory);
-				fc.setFileFilter(new FileNameExtensionFilter("Trace files", "trace"));
+				fc.setFileFilter(new FileNameExtensionFilter("Trace files",
+						"trace"));
 				int returnVal = fc.showOpenDialog(window);
 
 				lastTraceDirectory = fc.getCurrentDirectory();
@@ -311,8 +323,10 @@ public class MainWindow {
 
 						updateCheckboxesEnabled();
 
-						((DefaultMutableTreeNode)tree.getModel().getRoot()).setUserObject(new JarTreeItem(openTraceFile.getName()));
-					} catch(IOException | InterruptedException exc) {
+						((DefaultMutableTreeNode) tree.getModel().getRoot())
+								.setUserObject(new JarTreeItem(openTraceFile
+										.getName()));
+					} catch (IOException | InterruptedException exc) {
 						throw new RuntimeException(exc); // TODO handle error
 					}
 				}
@@ -323,9 +337,10 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser(lastConfigDirectory);
-				fc.setFileFilter(new FileNameExtensionFilter("Configuration files", "cfg"));
+				fc.setFileFilter(new FileNameExtensionFilter(
+						"Configuration files", "cfg"));
 				int returnVal = fc.showSaveDialog(window);
-				if(returnVal == JFileChooser.CANCEL_OPTION){
+				if (returnVal == JFileChooser.CANCEL_OPTION) {
 					return;
 				}
 
@@ -334,14 +349,15 @@ public class MainWindow {
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					if(!fc.getFileFilter().accept(file))
-						file = new File(file.toString()+".cfg");
+					if (!fc.getFileFilter().accept(file))
+						file = new File(file.toString() + ".cfg");
 
 					TracerConfiguration conf = new TracerConfiguration();
 					saveToConfiguration(conf);
-					try (ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+					try (ObjectOutputStream out = new ObjectOutputStream(
+							new BufferedOutputStream(new FileOutputStream(file)))) {
 						out.writeObject(conf);
-					} catch(IOException ex) {
+					} catch (IOException ex) {
 						ex.printStackTrace();
 					}
 				}
@@ -352,7 +368,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser(lastConfigDirectory);
-				fc.setFileFilter(new FileNameExtensionFilter("Configuration files", "cfg"));
+				fc.setFileFilter(new FileNameExtensionFilter(
+						"Configuration files", "cfg"));
 				int returnVal = fc.showOpenDialog(window);
 
 				File file = fc.getSelectedFile();
@@ -360,11 +377,13 @@ public class MainWindow {
 				lastConfigDirectory = fc.getCurrentDirectory();
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
-						TracerConfiguration conf = (TracerConfiguration)in.readObject();
+					try (ObjectInputStream in = new ObjectInputStream(
+							new BufferedInputStream(new FileInputStream(file)))) {
+						TracerConfiguration conf = (TracerConfiguration) in
+								.readObject();
 						loadFromConfiguration(conf);
 
-					} catch(IOException | ClassNotFoundException ex) {
+					} catch (IOException | ClassNotFoundException ex) {
 						ex.printStackTrace();
 					}
 				}
@@ -374,7 +393,8 @@ public class MainWindow {
 		fileEditExecutions.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				EditExecutionsDialog dlg = new EditExecutionsDialog(window, executions);
+				EditExecutionsDialog dlg = new EditExecutionsDialog(window,
+						executions);
 				dlg.setModalityType(ModalityType.APPLICATION_MODAL);
 				dlg.setLocationRelativeTo(window);
 				dlg.setVisible(true);
@@ -385,14 +405,16 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				boolean valid = false;
-				while(!valid){
-					try{
-						int k = Integer.parseInt(JOptionPane.showInputDialog(null, "Enter K value:", "Set K", JOptionPane.PLAIN_MESSAGE));
-						if(k>0){
+				while (!valid) {
+					try {
+						int k = Integer.parseInt(JOptionPane.showInputDialog(
+								null, "Enter K value:", "Set K",
+								JOptionPane.PLAIN_MESSAGE));
+						if (k > 0) {
 							valid = true;
 							KTailsAlgorithm.k = k;
 						}
-					}catch(Exception ex){
+					} catch (Exception ex) {
 						valid = false;
 					}
 				}
@@ -402,12 +424,14 @@ public class MainWindow {
 		menuBar.add(fileMenu);
 		menuBar.add(displayMenu);
 
-		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem("No file loaded")));
+		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem(
+				"No file loaded")));
 		tree.setCellRenderer(new ClassTreeCellRenderer());
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
 
-		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.getSelectionModel().setSelectionMode(
+				TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setPreferredSize(new Dimension(300, 1));
 
 		MouseListener ml = new MouseAdapter() {
@@ -415,17 +439,16 @@ public class MainWindow {
 				int selRow = tree.getRowForLocation(e.getX(), e.getY());
 				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
 				selectedPath = selPath;
-				if(selRow != -1) {
-					if(e.getClickCount() == 1) {
-						if(e.getButton() == MouseEvent.BUTTON3){
+				if (selRow != -1) {
+					if (e.getClickCount() == 1) {
+						if (e.getButton() == MouseEvent.BUTTON3) {
 							treePopup.show(tree, e.getX(), e.getY());
 						}
-					}
-					else if(e.getClickCount() == 2) {
-						if(e.getButton() == MouseEvent.BUTTON1){
-							if(tree.isCollapsed(selPath)){
+					} else if (e.getClickCount() == 2) {
+						if (e.getButton() == MouseEvent.BUTTON1) {
+							if (tree.isCollapsed(selPath)) {
 								tree.expandPath(selPath);
-							}else{
+							} else {
 								tree.collapsePath(selPath);
 							}
 						}
@@ -436,18 +459,18 @@ public class MainWindow {
 		tree.addMouseListener(ml);
 
 		cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
-		for(Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
+		for (Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
 			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
 		}
 		cmbAlgorithm.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				if(e.getStateChange() != ItemEvent.SELECTED)
+				if (e.getStateChange() != ItemEvent.SELECTED)
 					return;
 
 				updateCheckboxesEnabled();
 
-				if(AUTO_RUN)
+				if (AUTO_RUN)
 					doTraceAndAnalysis();
 			}
 		});
@@ -455,7 +478,6 @@ public class MainWindow {
 		currentTraceFileLabel = new JLabel("No file selected");
 		chkContinuousUpdating = new JCheckBox("Continuously update");
 		saveTracesCheckbox = new JCheckBox("Save trace");
-
 
 		runButton = new JButton("Run");
 		runButton.addActionListener(new ActionListener() {
@@ -488,19 +510,22 @@ public class MainWindow {
 			configPanel.add(cmbAlgorithm, gbc);
 
 			gbc.gridx = 0;
-			gbc.gridy++; gbc.gridwidth = 2;
+			gbc.gridy++;
+			gbc.gridwidth = 2;
 			configPanel.add(chkContinuousUpdating, gbc);
 
 			gbc.gridy++;
 			configPanel.add(saveTracesCheckbox, gbc);
 
 			gbc.gridx = 0;
-			gbc.gridy++; gbc.gridwidth = 2;
+			gbc.gridy++;
+			gbc.gridwidth = 2;
 			configPanel.add(runButton, gbc);
 		}
 
 		final double DEFAULT_MAGNETIC_STRENGTH = 350000;
-		magneticStrengthSlider = new SliderTextBox("Magnetic strength", 0, DEFAULT_MAGNETIC_STRENGTH*20, DEFAULT_MAGNETIC_STRENGTH) {
+		electricStrengthSlider = new SliderTextBox("Magnetic strength", 0,
+				DEFAULT_MAGNETIC_STRENGTH * 20, DEFAULT_MAGNETIC_STRENGTH) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -510,7 +535,8 @@ public class MainWindow {
 		};
 
 		final double DEFAULT_SPRING_STRENGTH = 1.6;
-		springStrengthSlider = new SliderTextBox("Spring strength", 0, DEFAULT_SPRING_STRENGTH*4, DEFAULT_SPRING_STRENGTH) {
+		springStrengthSlider = new SliderTextBox("Spring strength", 0,
+				DEFAULT_SPRING_STRENGTH * 4, DEFAULT_SPRING_STRENGTH) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -520,7 +546,8 @@ public class MainWindow {
 		};
 
 		final double DEFAULT_SPRING_LENGTH = 100;
-		springLengthSlider = new SliderTextBox("Spring length", 0, 500, DEFAULT_SPRING_LENGTH) {
+		springLengthSlider = new SliderTextBox("Spring length", 0, 500,
+				DEFAULT_SPRING_LENGTH) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -529,11 +556,12 @@ public class MainWindow {
 			}
 		};
 
-
 		graphConfigPanel = new JPanel();
-		graphConfigPanel.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
-		graphConfigPanel.setLayout(new BoxLayout(graphConfigPanel, BoxLayout.Y_AXIS));
-		graphConfigPanel.add(magneticStrengthSlider);
+		graphConfigPanel.setBorder(BorderFactory
+				.createEmptyBorder(3, 10, 3, 10));
+		graphConfigPanel.setLayout(new BoxLayout(graphConfigPanel,
+				BoxLayout.Y_AXIS));
+		graphConfigPanel.add(electricStrengthSlider);
 		graphConfigPanel.add(springStrengthSlider);
 		graphConfigPanel.add(springLengthSlider);
 		graphConfigPanel.add(Box.createVerticalGlue());
@@ -553,47 +581,56 @@ public class MainWindow {
 
 		window.pack();
 		window.setLocationRelativeTo(null);
-		window.setExtendedState(window.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+		window.setExtendedState(window.getExtendedState()
+				| JFrame.MAXIMIZED_BOTH);
 
 		updateCheckboxesEnabled();
 	}
 
 	private void updateCheckboxesEnabled() {
-		boolean supportsIncremental = IncrementalVisualizationAlgorithm.class.isAssignableFrom(getSelectedAlgorithmClass());
-		chkContinuousUpdating.setEnabled(jarData != null && supportsIncremental && openTraceFile == null);
+		boolean supportsIncremental = IncrementalVisualizationAlgorithm.class
+				.isAssignableFrom(getSelectedAlgorithmClass());
+		chkContinuousUpdating.setEnabled(jarData != null && supportsIncremental
+				&& openTraceFile == null);
 
 		saveTracesCheckbox.setEnabled(jarData != null && openTraceFile == null);
 
-		if(jarData == null)
+		if (jarData == null)
 			currentTraceFileLabel.setText("No file selected.");
-		else if(openTraceFile == null)
-			currentTraceFileLabel.setText("Tracing: "+jarData.file.getName());
+		else if (openTraceFile == null)
+			currentTraceFileLabel.setText("Tracing: " + jarData.file.getName());
 		else
-			currentTraceFileLabel.setText("Using saved trace: "+openTraceFile.getName());
+			currentTraceFileLabel.setText("Using saved trace: "
+					+ openTraceFile.getName());
 
 		runButton.setEnabled(jarData != null);
 	}
 
-	private void checkAllBoxes(TreePath selPath, boolean check){
+	private void checkAllBoxes(TreePath selPath, boolean check) {
 		@SuppressWarnings("unchecked")
-		Enumeration<TreeNode> children = ((DefaultMutableTreeNode)selPath.getLastPathComponent()).breadthFirstEnumeration();
+		Enumeration<TreeNode> children = ((DefaultMutableTreeNode) selPath
+				.getLastPathComponent()).breadthFirstEnumeration();
 		while (children.hasMoreElements()) {
 			TreeNode child = children.nextElement();
-			Object currentNode = ((DefaultMutableTreeNode) child).getUserObject();
-			//cast your currentNode to the check box and set selected or unselected.
-			if(currentNode instanceof AbstractTreeItem && ((AbstractTreeItem)currentNode).isCheckable()){
-				((AbstractTreeItem)currentNode).checked = check;
+			Object currentNode = ((DefaultMutableTreeNode) child)
+					.getUserObject();
+			// cast your currentNode to the check box and set selected or
+			// unselected.
+			if (currentNode instanceof AbstractTreeItem
+					&& ((AbstractTreeItem) currentNode).isCheckable()) {
+				((AbstractTreeItem) currentNode).checked = check;
 			}
 		}
 		tree.repaint();
 	}
 
 	private Class<? extends VisualizationAlgorithm> getSelectedAlgorithmClass() {
-		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).algClass;
+		return ((AlgorithmComboBoxWrapper) cmbAlgorithm.getSelectedItem()).algClass;
 	}
 
 	private VisualizationAlgorithm getSelectedAlgorithmInstance() {
-		return ((AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem()).createInstance();
+		return ((AlgorithmComboBoxWrapper) cmbAlgorithm.getSelectedItem())
+				.createInstance();
 	}
 
 	private void loadJarFile(File jarfile) {
@@ -604,11 +641,13 @@ public class MainWindow {
 
 		updateCheckboxesEnabled();
 
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(new JarTreeItem(jarfile.getName()));
-		((DefaultTreeModel)tree.getModel()).setRoot(top);
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode(
+				new JarTreeItem(jarfile.getName()));
+		((DefaultTreeModel) tree.getModel()).setRoot(top);
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				tree.expandPath(new TreePath(new Object[] {tree.getModel().getRoot()}));
+				tree.expandPath(new TreePath(new Object[] { tree.getModel()
+						.getRoot() }));
 			}
 		});
 
@@ -624,8 +663,8 @@ public class MainWindow {
 			private Set<MethodKey> selectedMethods = new HashSet<MethodKey>();
 
 			{
-				for(MethodTreeItem i : allMethodTreeItems)
-					if(i.checked)
+				for (MethodTreeItem i : allMethodTreeItems)
+					if (i.checked)
 						selectedMethods.add(i.method);
 			}
 
@@ -642,8 +681,8 @@ public class MainWindow {
 			private Set<FieldKey> selectedFields = new HashSet<FieldKey>();
 
 			{
-				for(FieldTreeItem i : allFieldTreeItems) {
-					if(i.checked)
+				for (FieldTreeItem i : allFieldTreeItems) {
+					if (i.checked)
 						selectedFields.add(new FieldKey(i.field));
 				}
 			}
@@ -656,38 +695,42 @@ public class MainWindow {
 	}
 
 	private void doTraceAndAnalysis() {
-		if(jarData == null)
+		if (jarData == null)
 			return;
 
 		final TraceMethodFilter methodFilter = getSelectedMethodFilter();
 		final TraceFieldFilter fieldFilter = getSelectedFieldFilter();
 
 		final String path = jarData.file.getAbsolutePath();
-		final String mainClass = jarData.manifest.getMainAttributes().getValue(Name.MAIN_CLASS);
+		final String mainClass = jarData.manifest.getMainAttributes().getValue(
+				Name.MAIN_CLASS);
 
-		final ExecutionData[] executionsArray = executions.toArray(new ExecutionData[executions.size()]);
+		final ExecutionData[] executionsArray = executions
+				.toArray(new ExecutionData[executions.size()]);
 
 		final VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 
-		if(openTraceFile != null) {
+		if (openTraceFile != null) {
 			try {
 				TraceFile tf = TraceFile.read(openTraceFile);
 				processTraces(tf.traces);
-			} catch(IOException | InterruptedException e) {
+			} catch (IOException | InterruptedException e) {
 				throw new RuntimeException(e); // TODO handle error
 			}
 			return;
 		}
 
-		final boolean useIncrementalUpdating = chkContinuousUpdating.isSelected();
-		final File savedTraceFile = saveTracesCheckbox.isSelected() ? chooseSavedTraceFile() : null;
+		final boolean useIncrementalUpdating = chkContinuousUpdating
+				.isSelected();
+		final File savedTraceFile = saveTracesCheckbox.isSelected() ? chooseSavedTraceFile()
+				: null;
 
-		if(saveTracesCheckbox.isSelected() && savedTraceFile == null) {
+		if (saveTracesCheckbox.isSelected() && savedTraceFile == null) {
 			return;
 		}
 
 		final Set<String> loadedClasses = new HashSet<String>();
-		for(Class<?> cl : jarData.data)
+		for (Class<?> cl : jarData.data)
 			loadedClasses.add(cl.getName());
 
 		Thread thread = new Thread() {
@@ -701,7 +744,7 @@ public class MainWindow {
 					TraceMethodFilter initialMethodFilter;
 					TraceFieldFilter initialFieldFilter;
 
-					if(savedTraceFile == null) {
+					if (savedTraceFile == null) {
 						initialMethodFilter = methodFilter;
 						initialFieldFilter = fieldFilter;
 					} else {
@@ -719,11 +762,13 @@ public class MainWindow {
 						};
 					}
 
-					if(useIncrementalUpdating && algorithm instanceof IncrementalVisualizationAlgorithm && executionsArray.length == 1) {
+					if (useIncrementalUpdating
+							&& algorithm instanceof IncrementalVisualizationAlgorithm
+							&& executionsArray.length == 1) {
 
 						ExecutionData ed = executionsArray[0];
 
-						final IncrementalVisualizationAlgorithm iva = (IncrementalVisualizationAlgorithm)algorithm;
+						final IncrementalVisualizationAlgorithm iva = (IncrementalVisualizationAlgorithm) algorithm;
 
 						iva.startIncremental();
 
@@ -731,38 +776,44 @@ public class MainWindow {
 
 						graphPane.setGraph(graph);
 
-						Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, methodFilter, fieldFilter, new RealtimeTraceConsumer() {
+						Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
+								mainClass + " " + ed.commandLineArguments,
+								methodFilter, fieldFilter,
+								new RealtimeTraceConsumer() {
 
-							@Override
-							public void onTracerCrash(Throwable t) {
-								t.printStackTrace();
-							}
+									@Override
+									public void onTracerCrash(Throwable t) {
+										t.printStackTrace();
+									}
 
-							@Override
-							public void onTraceLine(TraceEntry line) {
-								synchronized(graph) {
-									iva.processLine(line);
-								}
-							}
+									@Override
+									public void onTraceLine(TraceEntry line) {
+										synchronized (graph) {
+											iva.processLine(line);
+										}
+									}
 
-							@Override
-							public void onTraceFinish() {
+									@Override
+									public void onTraceFinish() {
 
-							}
-						});
+									}
+								});
 
 					} else {
 						Trace[] traces = new Trace[executionsArray.length];
 
-						for(int k = 0; k < executions.size(); k++) {
+						for (int k = 0; k < executions.size(); k++) {
 							ExecutionData ed = executions.get(k);
 
 							FutureTraceConsumer future = new FutureTraceConsumer();
-							Tracer.launchAndTraceAsync("-cp \"" + path + "\"", mainClass+" "+ed.commandLineArguments, initialMethodFilter, initialFieldFilter, future);
+							Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
+									mainClass + " " + ed.commandLineArguments,
+									initialMethodFilter, initialFieldFilter,
+									future);
 							traces[k] = future.get();
 						}
 
-						if(savedTraceFile != null) {
+						if (savedTraceFile != null) {
 							TraceFile tf = new TraceFile();
 							tf.traces = traces;
 							tf.config = new TracerConfiguration();
@@ -773,7 +824,7 @@ public class MainWindow {
 						processTraces(traces);
 
 					}
-				} catch(Exception e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -786,14 +837,18 @@ public class MainWindow {
 
 	/**
 	 * Called after a set of traces is either traced, or loaded from a file.
-	 * @param traces The traces.
-	 * @param algorithm The algorithm to use.
+	 *
+	 * @param traces
+	 *            The traces.
+	 * @param algorithm
+	 *            The algorithm to use.
 	 */
-	private void processTraces(Trace[] traces) throws IOException, InterruptedException {
+	private void processTraces(Trace[] traces) throws IOException,
+			InterruptedException {
 
 		TraceMethodFilter methodFilter = getSelectedMethodFilter();
 		TraceFieldFilter fieldFilter = getSelectedFieldFilter();
-		for(Trace t : traces) {
+		for (Trace t : traces) {
 			t.filterMethods(methodFilter);
 			t.filterFields(fieldFilter);
 		}
@@ -801,9 +856,9 @@ public class MainWindow {
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 		final Graph graph = algorithm.generateGraph(traces);
 
-		//File pngfile = new File("tempAnalysis.png");
-		//GraphSaver.save(graph, pngfile);
-		//final BufferedImage image = ImageIO.read(pngfile);
+		// File pngfile = new File("tempAnalysis.png");
+		// GraphSaver.save(graph, pngfile);
+		// final BufferedImage image = ImageIO.read(pngfile);
 
 		EventQueue.invokeLater(new Runnable() {
 			@Override
@@ -813,20 +868,20 @@ public class MainWindow {
 		});
 	}
 
-
 	/**
 	 * Asks the user to choose a trace file to save to.
+	 *
 	 * @return The file the user selected, or null if they cancelled.
 	 */
 	private File chooseSavedTraceFile() {
 		JFileChooser fc = new JFileChooser(lastTraceDirectory);
 		fc.setFileFilter(new FileNameExtensionFilter("Trace files", "trace"));
 
-		if(fc.showSaveDialog(window) == JFileChooser.APPROVE_OPTION) {
+		if (fc.showSaveDialog(window) == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
 
-			if(!fc.getFileFilter().accept(file))
-				file = new File(file.toString()+".trace");
+			if (!fc.getFileFilter().accept(file))
+				file = new File(file.toString() + ".trace");
 
 			lastTraceDirectory = file.getParentFile();
 
@@ -839,12 +894,13 @@ public class MainWindow {
 
 	public void saveToConfiguration(TracerConfiguration conf) {
 		conf.jarFile = jarData.file;
-		for(MethodTreeItem mti : allMethodTreeItems)
+		for (MethodTreeItem mti : allMethodTreeItems)
 			conf.selectedMethods.put(mti.method, mti.checked);
-		for(FieldTreeItem fti : allFieldTreeItems)
+		for (FieldTreeItem fti : allFieldTreeItems)
 			conf.selectedFields.put(new FieldKey(fti.field), fti.checked);
 
-		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper)cmbAlgorithm.getSelectedItem();
+		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper) cmbAlgorithm
+				.getSelectedItem();
 		conf.algorithmName = algorithm.name;
 		conf.algorithmClassName = algorithm.algClass.getName();
 
@@ -855,6 +911,11 @@ public class MainWindow {
 		conf.displayMethod = GraphSaver.displayMethod;
 		conf.displayParams = GraphSaver.displayParams;
 
+		conf.haveGraphPhysicsSettings = true;
+		conf.graphElectricStrength = electricStrengthSlider.getValue();
+		conf.graphSpringStrength = springStrengthSlider.getValue();
+		conf.graphSpringLength = springLengthSlider.getValue();
+
 		conf.k = KTailsAlgorithm.k;
 
 		conf.continuousUpdating = chkContinuousUpdating.isSelected();
@@ -863,38 +924,42 @@ public class MainWindow {
 	public void loadFromConfiguration(TracerConfiguration conf) {
 		loadJarFile(conf.jarFile);
 
-		for(MethodTreeItem mti : allMethodTreeItems) {
+		for (MethodTreeItem mti : allMethodTreeItems) {
 			Boolean saved = conf.selectedMethods.get(mti.method);
 			mti.checked = (saved != null ? saved : DEFAULT_METHOD_SELECTED);
 		}
 
-		for(FieldTreeItem fti : allFieldTreeItems) {
+		for (FieldTreeItem fti : allFieldTreeItems) {
 			Boolean saved = conf.selectedFields.get(new FieldKey(fti.field));
 			fti.checked = (saved != null ? saved : DEFAULT_FIELD_SELECTED);
 		}
 
 		boolean foundAlgorithm = false;
 		// Try to find an algorithm by class name first
-		for(int k = 0; k < cmbAlgorithm.getItemCount() && !foundAlgorithm; k++) {
-			AlgorithmComboBoxWrapper acbw = (AlgorithmComboBoxWrapper)cmbAlgorithm.getItemAt(k);
-			if(acbw.algClass.getName().equals(conf.algorithmClassName)) {
+		for (int k = 0; k < cmbAlgorithm.getItemCount() && !foundAlgorithm; k++) {
+			AlgorithmComboBoxWrapper acbw = (AlgorithmComboBoxWrapper) cmbAlgorithm
+					.getItemAt(k);
+			if (acbw.algClass.getName().equals(conf.algorithmClassName)) {
 				foundAlgorithm = true;
 				cmbAlgorithm.setSelectedIndex(k);
 			}
 		}
-		// then try the name if the class name fails (maybe because the class name was changed)
-		for(int k = 0; k < cmbAlgorithm.getItemCount() && !foundAlgorithm; k++) {
-			AlgorithmComboBoxWrapper acbw = (AlgorithmComboBoxWrapper)cmbAlgorithm.getItemAt(k);
-			if(acbw.name.equals(conf.algorithmName)) {
+		// then try the name if the class name fails (maybe because the class
+		// name was changed)
+		for (int k = 0; k < cmbAlgorithm.getItemCount() && !foundAlgorithm; k++) {
+			AlgorithmComboBoxWrapper acbw = (AlgorithmComboBoxWrapper) cmbAlgorithm
+					.getItemAt(k);
+			if (acbw.name.equals(conf.algorithmName)) {
 				foundAlgorithm = true;
 				cmbAlgorithm.setSelectedIndex(k);
 			}
 		}
-		// If the algorithm the configuration was saved with is not available, just pick the first one.
-		if(!foundAlgorithm)
+		// If the algorithm the configuration was saved with is not available,
+		// just pick the first one.
+		if (!foundAlgorithm)
 			cmbAlgorithm.setSelectedIndex(0);
 
-		//Set display settings
+		// Set display settings
 		GraphSaver.displayID = conf.displayID;
 		displayID.setState(GraphSaver.displayID);
 		GraphSaver.displayState = conf.displayState;
@@ -906,25 +971,31 @@ public class MainWindow {
 		GraphSaver.displayParams = conf.displayParams;
 		displayParams.setState(GraphSaver.displayParams);
 
+		// Set graph layout settings
+		if(conf.haveGraphPhysicsSettings) {
+			electricStrengthSlider.setValue(conf.graphElectricStrength, false);
+			springStrengthSlider.setValue(conf.graphSpringStrength, false);
+			springLengthSlider.setValue(conf.graphSpringLength, false);
+		}
+
 		KTailsAlgorithm.k = conf.k;
 
 		executions = new ArrayList<ExecutionData>(conf.executions);
 
-		if(executions.size() == 0)
+		if (executions.size() == 0)
 			executions.add(new ExecutionData());
 
 		chkContinuousUpdating.setSelected(conf.continuousUpdating);
 
-		if(AUTO_RUN)
+		if (AUTO_RUN)
 			doTraceAndAnalysis();
 	}
-
 
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
 
-
-	private void createNodes(DefaultMutableTreeNode top, ArrayList<Class<?>> classData) {
+	private void createNodes(DefaultMutableTreeNode top,
+			ArrayList<Class<?>> classData) {
 		allMethodTreeItems.clear();
 		allFieldTreeItems.clear();
 
@@ -936,23 +1007,26 @@ public class MainWindow {
 		for (Class<?> data : classData)
 			classNodes.put(data, createClassNodes(data));
 
-		// Then insert the subtrees at the right locations (under packages or other classes)
-		for(Map.Entry<Class<?>, DefaultMutableTreeNode> entry : classNodes.entrySet()) {
+		// Then insert the subtrees at the right locations (under packages or
+		// other classes)
+		for (Map.Entry<Class<?>, DefaultMutableTreeNode> entry : classNodes
+				.entrySet()) {
 			Class<?> clazz = entry.getKey();
 
 			DefaultMutableTreeNode parentNode;
 
 			Class<?> enclosingClass = clazz.getEnclosingClass();
 
-			if(enclosingClass == null) {
+			if (enclosingClass == null) {
 
 				// Top-level class; insert under a package
 				String packageName = getPackageName(clazz);
 
 				DefaultMutableTreeNode packageNode = packages.get(packageName);
-				if(packageNode == null) {
+				if (packageNode == null) {
 					// If no node exists for this package, create one
-					packageNode = new DefaultMutableTreeNode(new PackageTreeItem(packageName));
+					packageNode = new DefaultMutableTreeNode(
+							new PackageTreeItem(packageName));
 					packages.put(packageName, packageNode);
 					top.add(packageNode);
 				}
@@ -967,14 +1041,15 @@ public class MainWindow {
 			parentNode.add(entry.getValue());
 		}
 
-
 	}
 
-
-	/** Returns the package name, as shown in the class tree - e.g. "swen302.testprograms" or "(default package)" */
+	/**
+	 * Returns the package name, as shown in the class tree - e.g.
+	 * "swen302.testprograms" or "(default package)"
+	 */
 	private String getPackageName(Class<?> clazz) {
 		String className = clazz.getName();
-		if(className.contains("."))
+		if (className.contains("."))
 			return className.substring(0, className.lastIndexOf('.'));
 		else
 			return "(default package)";
@@ -986,26 +1061,24 @@ public class MainWindow {
 
 		DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
 
-		for (Field field : data.getDeclaredFields()){
+		for (Field field : data.getDeclaredFields()) {
 			FieldTreeItem fti = new FieldTreeItem(field);
-			if(field.isSynthetic() && !fti.isCheckable())
+			if (field.isSynthetic() && !fti.isCheckable())
 				continue;
 			allFieldTreeItems.add(fti);
 			category.add(new DefaultMutableTreeNode(fti));
 		}
 
 		for (Method method : data.getDeclaredMethods()) {
-			MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
-			if(method.isSynthetic() && !treeItem.isCheckable())
+			MethodTreeItem treeItem = new MethodTreeItem(classItem,
+					new MethodKey(method), method);
+			if (method.isSynthetic() && !treeItem.isCheckable())
 				continue;
 			allMethodTreeItems.add(treeItem);
 			category.add(new DefaultMutableTreeNode(treeItem));
 		}
 		return category;
 	}
-
-
-
 
 	private class CheckBoxIconPanel extends JPanel {
 		private static final long serialVersionUID = 1L;
@@ -1021,9 +1094,6 @@ public class MainWindow {
 		}
 	}
 
-
-
-
 	private class ClassTreeCellRenderer implements TreeCellRenderer {
 
 		private JLabel label = new JLabel();
@@ -1031,11 +1101,13 @@ public class MainWindow {
 		private CheckBoxIconPanel checkBoxPanel = new CheckBoxIconPanel();
 
 		@Override
-		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-			value = ((DefaultMutableTreeNode)value).getUserObject();
+		public Component getTreeCellRendererComponent(JTree tree, Object value,
+				boolean selected, boolean expanded, boolean leaf, int row,
+				boolean hasFocus) {
+			value = ((DefaultMutableTreeNode) value).getUserObject();
 			try {
-				AbstractTreeItem item = (AbstractTreeItem)value;
-				if(item.isCheckable()) {
+				AbstractTreeItem item = (AbstractTreeItem) value;
+				if (item.isCheckable()) {
 					checkBoxPanel.label.setIcon(item.getIcon());
 					checkBoxPanel.checkBox.setSelected(item.checked);
 					checkBoxPanel.checkBox.setText(value.toString());
@@ -1045,14 +1117,15 @@ public class MainWindow {
 					label.setText(value.toString());
 					return label;
 				}
-			} catch(StackOverflowError e) {
+			} catch (StackOverflowError e) {
 				System.exit(1);
 				return null;
 			}
 		}
 	}
 
-	private class ClassTreeCellEditor extends AbstractCellEditor implements TreeCellEditor {
+	private class ClassTreeCellEditor extends AbstractCellEditor implements
+			TreeCellEditor {
 		private static final long serialVersionUID = 1L;
 
 		Object value;
@@ -1063,20 +1136,26 @@ public class MainWindow {
 		}
 
 		@Override
-		public Component getTreeCellEditorComponent(JTree tree, final Object value_, boolean selected, boolean expanded, boolean leaf, int row) {
-			final Component rv = new ClassTreeCellRenderer().getTreeCellRendererComponent(tree, value_, selected, expanded, leaf, row, true);
-			this.value = ((DefaultMutableTreeNode)value_).getUserObject();
-			if(rv instanceof CheckBoxIconPanel) {
-				((CheckBoxIconPanel)rv).checkBox.addItemListener(new ItemListener() {
-					@Override
-					public void itemStateChanged(ItemEvent e) {
-						if(stopCellEditing())
-							fireEditingStopped();
-						((AbstractTreeItem)value).checked = ((CheckBoxIconPanel)rv).checkBox.isSelected();
-						if(AUTO_RUN)
-							doTraceAndAnalysis();
-					}
-				});
+		public Component getTreeCellEditorComponent(JTree tree,
+				final Object value_, boolean selected, boolean expanded,
+				boolean leaf, int row) {
+			final Component rv = new ClassTreeCellRenderer()
+					.getTreeCellRendererComponent(tree, value_, selected,
+							expanded, leaf, row, true);
+			this.value = ((DefaultMutableTreeNode) value_).getUserObject();
+			if (rv instanceof CheckBoxIconPanel) {
+				((CheckBoxIconPanel) rv).checkBox
+						.addItemListener(new ItemListener() {
+							@Override
+							public void itemStateChanged(ItemEvent e) {
+								if (stopCellEditing())
+									fireEditingStopped();
+								((AbstractTreeItem) value).checked = ((CheckBoxIconPanel) rv).checkBox
+										.isSelected();
+								if (AUTO_RUN)
+									doTraceAndAnalysis();
+							}
+						});
 			}
 			return rv;
 		}

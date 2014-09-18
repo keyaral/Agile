@@ -135,4 +135,8 @@ public class SliderTextBox extends JPanel {
 	public void onChanged(double value) {
 
 	}
+
+	public double getValue() {
+		return currentValue;
+	}
 }

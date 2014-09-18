@@ -38,6 +38,11 @@ public class TracerConfiguration implements Serializable {
 
 	public boolean continuousUpdating = false;
 
+	public boolean haveGraphPhysicsSettings;
+	public double graphElectricStrength;
+	public double graphSpringStrength;
+	public double graphSpringLength;
+
 	public int k;
 
 
