@@ -1,6 +1,9 @@
 package swen302.automaton;
 
+import java.util.List;
+
 import swen302.graph.GraphSaver;
+import swen302.tracer.state.State;
 
 public class AutomatonGraphUtils {
 
@@ -41,11 +44,27 @@ public class AutomatonGraphUtils {
 		}
 	}
 
+
 	public static Object createMethodLabelObject(final String longMethodName) {
+		return createMethodLabelObject(longMethodName, null);
+	}
+
+	public static Object createMethodLabelObject(final String longMethodName, final List<State> arguments) {
 		return new Object() {
 			@Override
 			public String toString() {
-				return formatMethodLabel(longMethodName);
+				StringBuilder rv = new StringBuilder();
+				rv.append(formatMethodLabel(longMethodName));
+
+				if(arguments != null) {
+					rv.append("(");
+					for(State s : arguments) {
+						rv.append(", ");
+						rv.append(s.toString());
+					}
+					rv.append(")");
+				}
+				return rv.toString();
 			}
 		};
 	}

@@ -240,6 +240,8 @@ public class EadesSpringEmbedder {
 				Vector2D v4 =  cn.node2.getPosition();
 				Vector2D v3 =  v4;
 
+				Vector2D labelPos = null;
+
 
 				if ( cn.node1.equals(cn.node2) ){
 
@@ -256,6 +258,8 @@ public class EadesSpringEmbedder {
 					path.curveTo(p1v2.getX(), p1v2.getY(), p1v3.getX(), p1v3.getY(), lineMid.getX(), lineMid.getY());
 
 					path.curveTo(p2v3.getX(), p2v3.getY(), p2v2.getX(), p2v2.getY(), v1.getX(), v1.getY());
+
+					labelPos = v1.add(new Vector2D(20*scalecount, 0));
 
 				}
 				else {
@@ -287,22 +291,13 @@ public class EadesSpringEmbedder {
 							v4.getX(),
 							v4.getY()
 					);
+
+					double t = 0.5;
+					labelPos = v1.scalarMultiply((1-t)*(1-t)*(1-t)).add(v2.scalarMultiply((1-t)*(1-t)*t*3)).add(v3.scalarMultiply((1-t)*t*t*3)).add(v4.scalarMultiply(t*t*t));
 				}
 
 
-				if (!cn.node1.getPosition().equals(cn.node2.getPosition())) {
-
-					Vector2D midpoint = cn.node1.getPosition().add(cn.node2.getPosition()).scalarMultiply(0.5);
-
-					graphics.drawString(String.valueOf(cn.label), (int)midpoint.getX() , (int) midpoint.getY());
-				}
-
-				else {
-					Vector2D Midline = v1.add(new Vector2D(20*scalecount, 0));
-					graphics.drawString(String.valueOf(cn.label), (int)Midline.getX() , (int) Midline.getY());
-
-				}
-
+				graphics.drawString(String.valueOf(cn.label), (int)labelPos.getX() , (int) labelPos.getY());
 				graphics.draw(path);
 
 			}

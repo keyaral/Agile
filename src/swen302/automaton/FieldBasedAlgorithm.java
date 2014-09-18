@@ -1,6 +1,7 @@
 package swen302.automaton;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -10,6 +11,7 @@ import swen302.graph.Graph;
 import swen302.graph.Node;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceEntry;
+import swen302.tracer.state.State;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -22,6 +24,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	private Map<String, Node> states;
 	private Stack<Node> stack;
 	private Set<String> addedEdges = new HashSet<String>();
+	private Stack<TraceEntry> callEntries;
 
 	private int nodeCount;
 
@@ -31,6 +34,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 		states = new HashMap<String, Node>();
 		nodeCount = 0;
 		stack = new Stack<Node>();
+		callEntries = new Stack<TraceEntry>();
 	}
 
 	@Override
@@ -52,16 +56,23 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 
 		stack.push(line.state == null ? null : getStateNode(line.state.toString()));
 
+		if(!line.isReturn)
+			callEntries.push(line);
+
 		if(line.isReturn && stack.size()>=1){ // Reads an instance of return call.
 
 			Node finalState = stack.pop();
 			Node initialState = stack.pop();
 
+			TraceEntry callEntry = callEntries.pop();
+
+			List<State> arguments = callEntry.arguments;
+
 			if (finalState != null && initialState != null) {
 				String edgeID = initialState.getID()+" "+finalState.getID()+" "+line.getLongMethodName();
 				if(addedEdges.add(edgeID)) { // don't add duplicate edges
 
-					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName()), initialState, finalState));
+					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName(), arguments), initialState, finalState));
 
 					if(!graph.nodes.contains(finalState)) graph.addNode(finalState);
 					if(!graph.nodes.contains(initialState)) graph.addNode(initialState);

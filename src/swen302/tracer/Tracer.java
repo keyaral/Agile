@@ -1,5 +1,6 @@
 package swen302.tracer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -159,20 +160,14 @@ public class Tracer {
 									te.isReturn = false;
 									consumer.onTraceLine(te);
 
-									/*try {
+									// Java bug; InternalException is thrown if getting arguments from a native method
+									// see http://bugs.java.com/view_bug.do?bug_id=6810565
+									if(!event2.method().isNative()) {
+										te.arguments = new ArrayList<>();
 										for(Value v : frame.getArgumentValues()) {
-											System.out.println("   argument: "+v);
+											te.arguments.add(valueToState(fieldFilter, v, new HashMap<ObjectReference, swen302.tracer.state.State>()));
 										}
-										if(_this != null && _this.type() instanceof ClassType) {
-											for(Field f : ((ClassType)_this.type()).allFields()) {
-												System.out.println("   field "+f.name()+": "+_this.getValue(f));
-											}
-										}
-									} catch(InternalException e) {
-										// Java bug; InternalException is thrown if getting arguments from a native method
-										// see http://bugs.java.com/view_bug.do?bug_id=6810565
-										//System.out.println("   (unable to get arguments)");
-									}*/
+									}
 								}
 
 								threadsToResume.add(event2.thread());
