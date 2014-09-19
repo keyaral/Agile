@@ -52,6 +52,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -128,6 +129,7 @@ public class MainWindow {
 	private JButton runButton;
 	private SliderTextBox electricStrengthSlider, springStrengthSlider,
 			springLengthSlider;
+	private JSplitPane splitter;
 
 	private JarData jarData;
 	private File openTraceFile;
@@ -587,10 +589,13 @@ public class MainWindow {
 
 		graphPane = new VertexGraphPane();
 
+		splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitter.add(treePanel);
+		splitter.add(graphPane);
+
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
-		window.add(graphPane, BorderLayout.CENTER);
-		window.add(treePanel, BorderLayout.WEST);
+		window.add(splitter, BorderLayout.CENTER);
 		window.add(graphConfigPanel, BorderLayout.EAST);
 
 		window.pack();
