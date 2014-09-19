@@ -26,17 +26,54 @@ public class AutomatonGraphUtils {
 				className = className.substring(className.lastIndexOf('$')+1);
 
 			String methodName = methodAndArgs.split("\\(")[0];
-
 			String args = "";
-			String[] split = methodAndArgs.split("\\(");
-			for(int i=1; i<split.length; i++){
-				args+="("+split[i];
+
+			if(LabelFormatOptions.displayParamTypes || LabelFormatOptions.displayParamValues) {
+				String[] argtypes = methodAndArgs.split("\\(", 2)[1].split(",");
+
+				for(int k = 0; k < argtypes.length; k++) {
+					String argtype = argtypes[k];
+					State value = (arguments == null ? null : arguments.get(k));
+
+					int last$ = argtype.lastIndexOf('$');
+					int lastDot = argtype.lastIndexOf('.');
+					if(last$ != -1 && lastDot != -1)
+						argtype = argtype.substring(Math.max(lastDot, last$)+1);
+					else if(last$ != -1)
+						argtype = argtype.substring(last$+1);
+					else if(lastDot != -1)
+						argtype = argtype.substring(lastDot+1);
+
+					if(!LabelFormatOptions.displayParamValues)
+						value = null;
+
+					if(!LabelFormatOptions.displayParamTypes && value == null)
+						continue;
+
+					if(argtype.endsWith(")"))
+						argtype = argtype.substring(0, argtype.length() - 1);
+
+					args += ",";
+
+					if(LabelFormatOptions.displayParamTypes)
+						args += argtype;
+
+					if(value != null) {
+						if(LabelFormatOptions.displayParamTypes)
+							args += " ";
+						args += value.toString();
+					}
+				}
+
+				if(args.length() > 0)
+					args = args.substring(1);
 			}
 
 			String toReturn = "";
 			toReturn += LabelFormatOptions.displayClass?className+(LabelFormatOptions.displayMethod?".":" "):"";
 			toReturn += LabelFormatOptions.displayMethod?methodName:"";
-			toReturn += LabelFormatOptions.displayParams?args:"";
+			if(LabelFormatOptions.displayParamTypes || LabelFormatOptions.displayParamValues)
+				toReturn += "(" + args + ")";
 
 			return toReturn.trim();
 		}catch(ArrayIndexOutOfBoundsException e){

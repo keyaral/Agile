@@ -158,7 +158,6 @@ public class Tracer {
 										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
 
 									te.isReturn = false;
-									consumer.onTraceLine(te);
 
 									// Java bug; InternalException is thrown if getting arguments from a native method
 									// see http://bugs.java.com/view_bug.do?bug_id=6810565
@@ -168,6 +167,8 @@ public class Tracer {
 											te.arguments.add(valueToState(fieldFilter, v, new HashMap<ObjectReference, swen302.tracer.state.State>()));
 										}
 									}
+
+									consumer.onTraceLine(te);
 								}
 
 								threadsToResume.add(event2.thread());

@@ -12,6 +12,7 @@ import swen302.graph.Graph;
 import swen302.graph.Node;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceEntry;
+import swen302.tracer.state.State;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -28,11 +29,16 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 
 	public static int k = 3;
 
+	private static class MethodCall {
+		String method;
+		List<State> arguments;
+	}
 
-	private String[] prev;
+
+	private MethodCall[] prev;
 
 	private void startTrace() {
-		prev = new String[k];
+		prev = new MethodCall[k];
 	}
 
 	@Override
@@ -45,8 +51,8 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		startTrace();
 	}
 
-	private void processCall(String methodIdentifier) {
-		String[] old = Arrays.copyOf(prev, k);
+	private void processCall(MethodCall methodIdentifier) {
+		MethodCall[] old = Arrays.copyOf(prev, k);
 
 		for(int i = 1; i < k; i++)
 			prev[i-1] = prev[i];
@@ -61,7 +67,10 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	@Override
 	public boolean processLine(TraceEntry line) {
 		if(!line.isReturn) {
-			processCall(line.getLongMethodName());
+			MethodCall call = new MethodCall();
+			call.method = line.getLongMethodName();
+			call.arguments = line.arguments;
+			processCall(call);
 			return true;
 		}
 		return false;
@@ -85,7 +94,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	 * @param next	An array of the current method call followed by k-1 calls in the trace
 	 * @param newNode	Boolean defining if the current node does not already exist
 	 */
-	private void connect(String[] prev, String[] next){
+	private void connect(MethodCall[] prev, MethodCall[] next){
 
 		if(prev == null){ //New trace, and new original node
 			Node n = new Node(String.valueOf(finalGraph.nodes.size()));
@@ -108,15 +117,16 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 				finalGraph.addNode(nextNode);
 			}
 
-			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.createMethodLabelObject(prev[0]), prevNode, nextNode));
+			finalGraph.addEdge(new Edge(String.valueOf(nextEdgeID++), AutomatonGraphUtils.createMethodLabelObject(prev[0].method, prev[0].arguments), prevNode, nextNode));
 		}
 	}
 // Returns a string of the array of method calls
-	private String getMethodStateString(String[] edges){
+	private String getMethodStateString(MethodCall[] edges){
 		String toReturn = "";
-		for(String e : edges){
+		for(int k = 0; k < edges.length; k++) {
+			MethodCall e = edges[k];
 			if(e != null){
-				toReturn += e+",";
+				toReturn += e.method+","+e.arguments+",";
 			}
 		}
 		if(toReturn.length() > 0){
@@ -125,19 +135,15 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		return toReturn;
 	}
 
-	private Object getMethodStateObject(String[] edges2) {
-		final String[] edges = new String[edges2.length];
-		for(int k = 0; k < edges.length; k++)
-			edges[k] = edges2[k];
+	private Object getMethodStateObject(MethodCall[] edges2) {
+		final MethodCall[] edges = Arrays.copyOf(edges2, edges2.length);
 
 		return new Object() {
 			@Override
 			public String toString() {
 				String toReturn = "";
-				for(String e : edges){
-					if(e != null){
-						toReturn += AutomatonGraphUtils.formatMethodLabel(e)+",";
-					}
+				for(int k = 0; k < edges.length; k++) {
+					toReturn += AutomatonGraphUtils.formatMethodLabel(edges[k].method, edges[k].arguments)+",";
 				}
 				if(toReturn.length() > 0){
 					toReturn = toReturn.substring(0, toReturn.length()-1);
@@ -152,7 +158,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	 * @param trans	Array of method calls
 	 * @return Node if one is found that matches, else returns null
 	 */
-	private Node findNode(String[] trans){
+	private Node findNode(MethodCall[] trans){
 		return nodes.get(getMethodStateString(trans));
 	}
 

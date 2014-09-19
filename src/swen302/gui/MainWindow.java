@@ -109,7 +109,7 @@ public class MainWindow {
 			fileChangeK;
 	private JMenu displayMenu;
 	private JCheckBoxMenuItem displayID, displayState, displayClass,
-			displayMethod, displayParams;
+			displayMethod, displayParamTypes, displayParamValues;
 	private JTree tree;
 	private JPanel treePanel;
 	private JPanel configPanel;
@@ -201,8 +201,10 @@ public class MainWindow {
 		displayMenu.add(displayClass);
 		displayMethod = new JCheckBoxMenuItem("Method", true);
 		displayMenu.add(displayMethod);
-		displayParams = new JCheckBoxMenuItem("Parameters", true);
-		displayMenu.add(displayParams);
+		displayParamTypes = new JCheckBoxMenuItem("Parameter types", true);
+		displayMenu.add(displayParamTypes);
+		displayParamValues = new JCheckBoxMenuItem("Parameter values", true);
+		displayMenu.add(displayParamValues);
 
 		treePopup = new JPopupMenu();
 		popupSelect = treePopup.add("Select All");
@@ -260,11 +262,19 @@ public class MainWindow {
 			}
 		});
 
-		displayParams.addActionListener(new ActionListener() {
+		displayParamTypes.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParams = displayParams.isSelected();
+				LabelFormatOptions.displayParamTypes = displayParamTypes.isSelected();
+				graphPane.onLabelsChanged();
+			}
+		});
+
+		displayParamValues.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayParamValues = displayParamValues.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -909,7 +919,8 @@ public class MainWindow {
 		conf.displayState = LabelFormatOptions.displayState;
 		conf.displayClass = LabelFormatOptions.displayClass;
 		conf.displayMethod = LabelFormatOptions.displayMethod;
-		conf.displayParams = LabelFormatOptions.displayParams;
+		conf.displayParams = LabelFormatOptions.displayParamTypes;
+		conf.displayParamValues = LabelFormatOptions.displayParamValues;
 
 		conf.haveGraphPhysicsSettings = true;
 		conf.graphElectricStrength = electricStrengthSlider.getValue();
@@ -968,8 +979,10 @@ public class MainWindow {
 		displayClass.setState(LabelFormatOptions.displayClass);
 		LabelFormatOptions.displayMethod = conf.displayMethod;
 		displayMethod.setState(LabelFormatOptions.displayMethod);
-		LabelFormatOptions.displayParams = conf.displayParams;
-		displayParams.setState(LabelFormatOptions.displayParams);
+		LabelFormatOptions.displayParamTypes = conf.displayParams;
+		displayParamTypes.setState(LabelFormatOptions.displayParamTypes);
+		LabelFormatOptions.displayParamValues = conf.displayParamValues;
+		displayParamValues.setState(LabelFormatOptions.displayParamValues);
 
 		// Set graph layout settings
 		if(conf.haveGraphPhysicsSettings) {

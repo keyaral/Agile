@@ -34,7 +34,7 @@ public class TracerConfiguration implements Serializable {
 
 	public List<ExecutionData> executions = new ArrayList<>();
 
-	public boolean displayID,displayState,displayClass,displayMethod,displayParams;
+	public boolean displayID,displayState,displayClass,displayMethod,displayParams,displayParamValues;
 
 	public boolean continuousUpdating = false;
 
@@ -45,6 +45,12 @@ public class TracerConfiguration implements Serializable {
 
 	public int k;
 
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+
+		displayParamValues = true;
+
+		in.defaultReadObject();
+	}
 
 	/**
 	 * Saves this configuration to a byte array.
