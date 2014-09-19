@@ -76,10 +76,12 @@ import swen302.gui.classtree.FieldTreeItem;
 import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
+import swen302.gui.classtree.ParameterTreeItem;
 import swen302.gui.graphlayouts.EadesSpringEmbedder;
 import swen302.tracer.FieldKey;
 import swen302.tracer.FutureTraceConsumer;
 import swen302.tracer.MethodKey;
+import swen302.tracer.ParameterKey;
 import swen302.tracer.RealtimeTraceConsumer;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceEntry;
@@ -93,6 +95,8 @@ public class MainWindow {
 	public static final boolean DEFAULT_METHOD_SELECTED = false;
 	/** Whether fields are selected by default */
 	public static final boolean DEFAULT_FIELD_SELECTED = true;
+	/** Whether parameters are selected by default */
+	public static final boolean DEFAULT_PARAMETER_SELECTED = false;
 
 	/**
 	 * Whether the tracing and analysis will be run whenever the filter is
@@ -908,6 +912,8 @@ public class MainWindow {
 			conf.selectedMethods.put(mti.method, mti.checked);
 		for (FieldTreeItem fti : allFieldTreeItems)
 			conf.selectedFields.put(new FieldKey(fti.field), fti.checked);
+		for (ParameterTreeItem pti : allParameterTreeItems)
+			conf.selectedParameters.put(new ParameterKey(pti.parent.method, pti.argNum), pti.checked);
 
 		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper) cmbAlgorithm
 				.getSelectedItem();
@@ -943,6 +949,11 @@ public class MainWindow {
 		for (FieldTreeItem fti : allFieldTreeItems) {
 			Boolean saved = conf.selectedFields.get(new FieldKey(fti.field));
 			fti.checked = (saved != null ? saved : DEFAULT_FIELD_SELECTED);
+		}
+
+		for (ParameterTreeItem pti : allParameterTreeItems) {
+			Boolean saved = conf.selectedParameters.get(new ParameterKey(pti.parent.method, pti.argNum));
+			pti.checked = (saved != null ? saved : DEFAULT_PARAMETER_SELECTED);
 		}
 
 		boolean foundAlgorithm = false;
@@ -1006,11 +1017,13 @@ public class MainWindow {
 
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
+	private List<ParameterTreeItem> allParameterTreeItems = new ArrayList<ParameterTreeItem>();
 
 	private void createNodes(DefaultMutableTreeNode top,
 			ArrayList<Class<?>> classData) {
 		allMethodTreeItems.clear();
 		allFieldTreeItems.clear();
+		allParameterTreeItems.clear();
 
 		Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 
@@ -1072,25 +1085,34 @@ public class MainWindow {
 	private DefaultMutableTreeNode createClassNodes(Class<?> data) {
 		ClassTreeItem classItem = new ClassTreeItem(data);
 
-		DefaultMutableTreeNode category = new DefaultMutableTreeNode(classItem);
+		DefaultMutableTreeNode classNode = new DefaultMutableTreeNode(classItem);
 
 		for (Field field : data.getDeclaredFields()) {
 			FieldTreeItem fti = new FieldTreeItem(field);
 			if (field.isSynthetic() && !fti.isCheckable())
 				continue;
 			allFieldTreeItems.add(fti);
-			category.add(new DefaultMutableTreeNode(fti));
+			classNode.add(new DefaultMutableTreeNode(fti));
 		}
 
 		for (Method method : data.getDeclaredMethods()) {
-			MethodTreeItem treeItem = new MethodTreeItem(classItem,
-					new MethodKey(method), method);
+			MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
 			if (method.isSynthetic() && !treeItem.isCheckable())
 				continue;
+
+			DefaultMutableTreeNode methodNode = new DefaultMutableTreeNode(treeItem);
+			classNode.add(methodNode);
+
 			allMethodTreeItems.add(treeItem);
-			category.add(new DefaultMutableTreeNode(treeItem));
+
+			int numArgs = method.getParameterTypes().length;
+			for(int k = 0; k < numArgs; k++) {
+				ParameterTreeItem pti = new ParameterTreeItem(treeItem, k);
+				allParameterTreeItems.add(pti);
+				methodNode.add(new DefaultMutableTreeNode(pti));
+			}
 		}
-		return category;
+		return classNode;
 	}
 
 	private class CheckBoxIconPanel extends JPanel {

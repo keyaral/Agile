@@ -15,6 +15,7 @@ import java.util.Map;
 import swen302.execution.ExecutionData;
 import swen302.tracer.FieldKey;
 import swen302.tracer.MethodKey;
+import swen302.tracer.ParameterKey;
 
 /**
  * A saved configuration. A configuration file is just a serialized instance of this.
@@ -28,6 +29,7 @@ public class TracerConfiguration implements Serializable {
 
 	public Map<MethodKey, Boolean> selectedMethods = new HashMap<>();
 	public Map<FieldKey, Boolean> selectedFields = new HashMap<>();
+	public Map<ParameterKey, Boolean> selectedParameters = new HashMap<>();
 
 	public String algorithmClassName;
 	public String algorithmName;
@@ -48,6 +50,7 @@ public class TracerConfiguration implements Serializable {
 	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
 
 		displayParamValues = true;
+		selectedParameters = new HashMap<>();
 
 		in.defaultReadObject();
 	}
