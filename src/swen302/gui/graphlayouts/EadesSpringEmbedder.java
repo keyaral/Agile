@@ -292,7 +292,7 @@ public class EadesSpringEmbedder {
 							v4.getY()
 					);
 
-					double t = 0.5;
+					double t = 0.45;
 					labelPos = v1.scalarMultiply((1-t)*(1-t)*(1-t)).add(v2.scalarMultiply((1-t)*(1-t)*t*3)).add(v3.scalarMultiply((1-t)*t*t*3)).add(v4.scalarMultiply(t*t*t));
 				}
 
