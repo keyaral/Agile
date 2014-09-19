@@ -65,8 +65,9 @@ import javax.swing.tree.TreeSelectionModel;
 
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
+import swen302.automaton.AlgorithmFinder;
 import swen302.automaton.IncrementalVisualizationAlgorithm;
-import swen302.automaton.KTailsAlgorithm;
+import swen302.automaton.AlgorithmParameters;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
@@ -427,7 +428,7 @@ public class MainWindow {
 								JOptionPane.PLAIN_MESSAGE));
 						if (k > 0) {
 							valid = true;
-							KTailsAlgorithm.k = k;
+							AlgorithmParameters.K = k;
 						}
 					} catch (Exception ex) {
 						valid = false;
@@ -474,7 +475,7 @@ public class MainWindow {
 		tree.addMouseListener(ml);
 
 		cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
-		for (Class<? extends VisualizationAlgorithm> algClass : VisualizationAlgorithm.ALGORITHMS) {
+		for (Class<? extends VisualizationAlgorithm> algClass : AlgorithmFinder.getAlgorithmClasses()) {
 			cmbAlgorithm.addItem(new AlgorithmComboBoxWrapper(algClass));
 		}
 		cmbAlgorithm.addItemListener(new ItemListener() {
@@ -935,7 +936,7 @@ public class MainWindow {
 		conf.graphSpringStrength = springStrengthSlider.getValue();
 		conf.graphSpringLength = springLengthSlider.getValue();
 
-		conf.k = KTailsAlgorithm.k;
+		conf.k = AlgorithmParameters.K;
 
 		conf.continuousUpdating = chkContinuousUpdating.isSelected();
 	}
@@ -1004,7 +1005,7 @@ public class MainWindow {
 			springLengthSlider.setValue(conf.graphSpringLength, false);
 		}
 
-		KTailsAlgorithm.k = conf.k;
+		AlgorithmParameters.K = conf.k;
 
 		executions = new ArrayList<ExecutionData>(conf.executions);
 

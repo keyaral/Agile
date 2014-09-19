@@ -2,6 +2,7 @@ package swen302.automaton;
 
 import java.util.Stack;
 
+import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.LabelFormatOptions;
 import swen302.graph.Node;
@@ -70,13 +71,13 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 			stack.push(currentNode);
 			currentNode = new Node(String.format("%d", nodeCount++));
 			graph.addNode(currentNode);
-			graph.addEdge(new Method(line.getLongMethodName(), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName(), line.arguments), stack.peek(), currentNode));
+			graph.addEdge(new Edge(line.getLongMethodName(), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName(), line.arguments), stack.peek(), currentNode));
 
 		} else if(stack.size() > 1) { // Reads an instance of return call.
 
 			Node temp = currentNode;
 			currentNode = stack.pop();
-			graph.addEdge(new Return(line.getLongMethodName(), LabelFormatOptions.displayMethod ? "Return" : "", temp, currentNode));
+			graph.addEdge(new Edge(line.getLongMethodName(), LabelFormatOptions.displayMethod ? "Return" : "", temp, currentNode));
 		}
 
 		return true;

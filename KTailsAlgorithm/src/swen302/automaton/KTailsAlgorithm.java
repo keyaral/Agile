@@ -27,8 +27,6 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	private Map<String, Node> nodes = new HashMap<>();
 	private Set<String> addedEdges = new HashSet<String>();
 
-	public static int k = 3;
-
 	private static class MethodCall {
 		String method;
 		List<State> arguments;
@@ -38,7 +36,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	private MethodCall[] prev;
 
 	private void startTrace() {
-		prev = new MethodCall[k];
+		prev = new MethodCall[AlgorithmParameters.K];
 	}
 
 	@Override
@@ -52,6 +50,7 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	}
 
 	private void processCall(MethodCall methodIdentifier) {
+		int k = AlgorithmParameters.K;
 		MethodCall[] old = Arrays.copyOf(prev, k);
 
 		for(int i = 1; i < k; i++)
