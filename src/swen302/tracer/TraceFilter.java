@@ -21,4 +21,11 @@ public interface TraceFilter {
 	 * @return True if calls to <var>m</var> should appear in the trace.
 	 */
 	public boolean isMethodTraced(MethodKey m);
+
+	/**
+	 * Returns whether a parameter's value should be recorded.
+	 * @param p The parameter.
+	 * @return True if values of <var>p</var> should appear in the trace.
+	 */
+	public boolean isParameterTraced(ParameterKey p);
 }

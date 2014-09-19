@@ -13,7 +13,7 @@ import java.util.zip.ZipEntry;
 public class JarLoader {
     public static JarData loadJarFile(File file) {
     	JarData fileData = null;
-    	
+
 		ArrayList<Class<?>> classData = new ArrayList<Class<?>>();
 
 		JarFile zip = null;
@@ -47,19 +47,19 @@ public class JarLoader {
 		{
 			exception.printStackTrace();
 		}
-		
+
 		return fileData;
 		//createNodes(top, classData);
 		//doTraceAndAnalysis();
 	}
-    
+
     public static class JarData
     {
     	public String name;
     	public File file;
     	public Manifest manifest;
     	public ArrayList<Class<?>> data;
-    	
+
     	public JarData(String name, File file, Manifest manifest, ArrayList<Class<?>> data)
     	{
     		this.name = name;

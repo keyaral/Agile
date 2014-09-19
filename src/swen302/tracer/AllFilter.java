@@ -13,4 +13,8 @@ public class AllFilter implements TraceFilter {
 	public boolean isMethodTraced(MethodKey m) {
 		return true;
 	}
+	@Override
+	public boolean isParameterTraced(ParameterKey p) {
+		return true;
+	}
 }

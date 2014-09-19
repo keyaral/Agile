@@ -69,7 +69,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 			List<State> arguments = callEntry.arguments;
 
 			if (finalState != null && initialState != null) {
-				String edgeID = initialState.getID()+" "+finalState.getID()+" "+line.getLongMethodName();
+				String edgeID = initialState.getID()+" "+finalState.getID()+" "+line.getLongMethodName()+" "+callEntry.arguments;
 				if(addedEdges.add(edgeID)) { // don't add duplicate edges
 
 					graph.addEdge(new Edge(String.valueOf(nodeCount++), AutomatonGraphUtils.createMethodLabelObject(line.getLongMethodName(), arguments), initialState, finalState));

@@ -161,8 +161,16 @@ public class Tracer {
 									// see http://bugs.java.com/view_bug.do?bug_id=6810565
 									if(!event2.method().isNative()) {
 										te.arguments = new ArrayList<>();
-										for(Value v : frame.getArgumentValues()) {
-											te.arguments.add(valueToState(filter, v, new HashMap<ObjectReference, swen302.tracer.state.State>()));
+
+										List<Value> argValues = frame.getArgumentValues();
+										for(int k = 0; k < argValues.size(); k++) {
+											Value v = argValues.get(k);
+
+											if(filter.isParameterTraced(new ParameterKey(te.method, k))) {
+												te.arguments.add(valueToState(filter, v, new HashMap<ObjectReference, swen302.tracer.state.State>()));
+											} else {
+												te.arguments.add(null);
+											}
 										}
 									}
 

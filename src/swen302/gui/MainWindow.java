@@ -680,6 +680,7 @@ public class MainWindow {
 		return new TraceFilter() {
 			private Set<MethodKey> selectedMethods = new HashSet<MethodKey>();
 			private Set<FieldKey> selectedFields = new HashSet<FieldKey>();
+			private Set<ParameterKey> selectedParameters = new HashSet<ParameterKey>();
 
 			{
 				for (MethodTreeItem i : allMethodTreeItems)
@@ -689,6 +690,10 @@ public class MainWindow {
 				for (FieldTreeItem i : allFieldTreeItems)
 					if (i.checked)
 						selectedFields.add(new FieldKey(i.field));
+
+				for (ParameterTreeItem i : allParameterTreeItems)
+					if (i.checked)
+						selectedParameters.add(new ParameterKey(i.parent.method, i.argNum));
 			}
 
 			@Override
@@ -699,6 +704,11 @@ public class MainWindow {
 			@Override
 			public boolean isFieldTraced(FieldKey f) {
 				return selectedFields.contains(f);
+			}
+
+			@Override
+			public boolean isParameterTraced(ParameterKey p) {
+				return selectedParameters.contains(p);
 			}
 		};
 	}
@@ -762,6 +772,10 @@ public class MainWindow {
 							@Override
 							public boolean isFieldTraced(FieldKey f) {
 								return loadedClasses.contains(f.className);
+							}
+							@Override
+							public boolean isParameterTraced(ParameterKey p) {
+								return true;
 							}
 						};
 					}

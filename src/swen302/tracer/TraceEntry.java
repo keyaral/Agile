@@ -17,6 +17,7 @@ public class TraceEntry implements Serializable{
 	/**
 	 * The arguments to the current method call.
 	 * Null if the method is native, or if this is a return entry.
+	 * Contains nulls in place of parameters that aren't recorded.
 	 */
 	public List<State> arguments;
 
