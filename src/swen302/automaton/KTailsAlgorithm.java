@@ -125,7 +125,11 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 		return toReturn;
 	}
 
-	private Object getMethodStateObject(final String[] edges) {
+	private Object getMethodStateObject(String[] edges2) {
+		final String[] edges = new String[edges2.length];
+		for(int k = 0; k < edges.length; k++)
+			edges[k] = edges2[k];
+
 		return new Object() {
 			@Override
 			public String toString() {
