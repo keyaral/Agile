@@ -69,7 +69,7 @@ import swen302.automaton.KTailsAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
-import swen302.graph.GraphSaver;
+import swen302.graph.LabelFormatOptions;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
 import swen302.gui.classtree.FieldTreeItem;
@@ -228,7 +228,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayID = displayID.isSelected();
+				LabelFormatOptions.displayID = displayID.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -237,7 +237,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayState = displayState.isSelected();
+				LabelFormatOptions.displayState = displayState.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -246,7 +246,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayClass = displayClass.isSelected();
+				LabelFormatOptions.displayClass = displayClass.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -255,7 +255,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayMethod = displayMethod.isSelected();
+				LabelFormatOptions.displayMethod = displayMethod.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -264,7 +264,7 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GraphSaver.displayParams = displayParams.isSelected();
+				LabelFormatOptions.displayParams = displayParams.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -905,11 +905,11 @@ public class MainWindow {
 		conf.algorithmClassName = algorithm.algClass.getName();
 
 		conf.executions = executions;
-		conf.displayID = GraphSaver.displayID;
-		conf.displayState = GraphSaver.displayState;
-		conf.displayClass = GraphSaver.displayClass;
-		conf.displayMethod = GraphSaver.displayMethod;
-		conf.displayParams = GraphSaver.displayParams;
+		conf.displayID = LabelFormatOptions.displayID;
+		conf.displayState = LabelFormatOptions.displayState;
+		conf.displayClass = LabelFormatOptions.displayClass;
+		conf.displayMethod = LabelFormatOptions.displayMethod;
+		conf.displayParams = LabelFormatOptions.displayParams;
 
 		conf.haveGraphPhysicsSettings = true;
 		conf.graphElectricStrength = electricStrengthSlider.getValue();
@@ -960,16 +960,16 @@ public class MainWindow {
 			cmbAlgorithm.setSelectedIndex(0);
 
 		// Set display settings
-		GraphSaver.displayID = conf.displayID;
-		displayID.setState(GraphSaver.displayID);
-		GraphSaver.displayState = conf.displayState;
-		displayState.setState(GraphSaver.displayState);
-		GraphSaver.displayClass = conf.displayClass;
-		displayClass.setState(GraphSaver.displayClass);
-		GraphSaver.displayMethod = conf.displayMethod;
-		displayMethod.setState(GraphSaver.displayMethod);
-		GraphSaver.displayParams = conf.displayParams;
-		displayParams.setState(GraphSaver.displayParams);
+		LabelFormatOptions.displayID = conf.displayID;
+		displayID.setState(LabelFormatOptions.displayID);
+		LabelFormatOptions.displayState = conf.displayState;
+		displayState.setState(LabelFormatOptions.displayState);
+		LabelFormatOptions.displayClass = conf.displayClass;
+		displayClass.setState(LabelFormatOptions.displayClass);
+		LabelFormatOptions.displayMethod = conf.displayMethod;
+		displayMethod.setState(LabelFormatOptions.displayMethod);
+		LabelFormatOptions.displayParams = conf.displayParams;
+		displayParams.setState(LabelFormatOptions.displayParams);
 
 		// Set graph layout settings
 		if(conf.haveGraphPhysicsSettings) {

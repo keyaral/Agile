@@ -147,14 +147,14 @@ return count;
 	 * @return
 	 */
 	public String getLabel(){
-		if(!GraphSaver.displayState) {
-			if(GraphSaver.displayID)
+		if(!LabelFormatOptions.displayState) {
+			if(LabelFormatOptions.displayID)
 				return id;
 			else
 				return "";
 
 		} else {
-			if(GraphSaver.displayID)
+			if(LabelFormatOptions.displayID)
 				return id+": "+state;
 			else
 				return String.valueOf(state);

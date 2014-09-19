@@ -2,7 +2,7 @@ package swen302.automaton;
 
 import java.util.List;
 
-import swen302.graph.GraphSaver;
+import swen302.graph.LabelFormatOptions;
 import swen302.tracer.state.State;
 
 public class AutomatonGraphUtils {
@@ -12,7 +12,7 @@ public class AutomatonGraphUtils {
 	 * @param longMethodName A method name in the format "pkg.classname methodname(argtype1,argtype2,argtype3)" (as it appears in a trace file)
 	 * @return The short human-readable method name.
 	 */
-	public static String formatMethodLabel(String longMethodName) {
+	public static String formatMethodLabel(String longMethodName, List<State> arguments) {
 
 		try{
 			String packageAndClass = longMethodName.split(" ")[0];
@@ -34,14 +34,18 @@ public class AutomatonGraphUtils {
 			}
 
 			String toReturn = "";
-			toReturn += GraphSaver.displayClass?className+(GraphSaver.displayMethod?".":" "):"";
-			toReturn += GraphSaver.displayMethod?methodName:"";
-			toReturn += GraphSaver.displayParams?args:"";
+			toReturn += LabelFormatOptions.displayClass?className+(LabelFormatOptions.displayMethod?".":" "):"";
+			toReturn += LabelFormatOptions.displayMethod?methodName:"";
+			toReturn += LabelFormatOptions.displayParams?args:"";
 
 			return toReturn.trim();
 		}catch(ArrayIndexOutOfBoundsException e){
 			return longMethodName;
 		}
+	}
+
+	public static String formatMethodLabel(final String longMethodName) {
+		return formatMethodLabel(longMethodName, null);
 	}
 
 
@@ -53,18 +57,7 @@ public class AutomatonGraphUtils {
 		return new Object() {
 			@Override
 			public String toString() {
-				StringBuilder rv = new StringBuilder();
-				rv.append(formatMethodLabel(longMethodName));
-
-				if(arguments != null) {
-					rv.append("(");
-					for(State s : arguments) {
-						rv.append(", ");
-						rv.append(s.toString());
-					}
-					rv.append(")");
-				}
-				return rv.toString();
+				return formatMethodLabel(longMethodName, arguments);
 			}
 		};
 	}

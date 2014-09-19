@@ -3,7 +3,7 @@ package swen302.automaton;
 import java.util.Stack;
 
 import swen302.graph.Graph;
-import swen302.graph.GraphSaver;
+import swen302.graph.LabelFormatOptions;
 import swen302.graph.Node;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceEntry;
@@ -76,7 +76,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 
 			Node temp = currentNode;
 			currentNode = stack.pop();
-			graph.addEdge(new Return(line.getLongMethodName(), GraphSaver.displayMethod ? "Return" : "", temp, currentNode));
+			graph.addEdge(new Return(line.getLongMethodName(), LabelFormatOptions.displayMethod ? "Return" : "", temp, currentNode));
 		}
 
 		return true;
