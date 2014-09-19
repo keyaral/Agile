@@ -86,8 +86,7 @@ import swen302.tracer.ParameterKey;
 import swen302.tracer.RealtimeTraceConsumer;
 import swen302.tracer.Trace;
 import swen302.tracer.TraceEntry;
-import swen302.tracer.TraceFieldFilter;
-import swen302.tracer.TraceMethodFilter;
+import swen302.tracer.TraceFilter;
 import swen302.tracer.Tracer;
 
 public class MainWindow {
@@ -677,33 +676,24 @@ public class MainWindow {
 		window.setVisible(visible);
 	}
 
-	private TraceMethodFilter getSelectedMethodFilter() {
-		return new TraceMethodFilter() {
+	private TraceFilter getSelectionFilter() {
+		return new TraceFilter() {
 			private Set<MethodKey> selectedMethods = new HashSet<MethodKey>();
+			private Set<FieldKey> selectedFields = new HashSet<FieldKey>();
 
 			{
 				for (MethodTreeItem i : allMethodTreeItems)
 					if (i.checked)
 						selectedMethods.add(i.method);
+
+				for (FieldTreeItem i : allFieldTreeItems)
+					if (i.checked)
+						selectedFields.add(new FieldKey(i.field));
 			}
 
 			@Override
 			public boolean isMethodTraced(MethodKey m) {
 				return selectedMethods.contains(m);
-			}
-
-		};
-	}
-
-	private TraceFieldFilter getSelectedFieldFilter() {
-		return new TraceFieldFilter() {
-			private Set<FieldKey> selectedFields = new HashSet<FieldKey>();
-
-			{
-				for (FieldTreeItem i : allFieldTreeItems) {
-					if (i.checked)
-						selectedFields.add(new FieldKey(i.field));
-				}
 			}
 
 			@Override
@@ -717,8 +707,7 @@ public class MainWindow {
 		if (jarData == null)
 			return;
 
-		final TraceMethodFilter methodFilter = getSelectedMethodFilter();
-		final TraceFieldFilter fieldFilter = getSelectedFieldFilter();
+		final TraceFilter filter = getSelectionFilter();
 
 		final String path = jarData.file.getAbsolutePath();
 		final String mainClass = jarData.manifest.getMainAttributes().getValue(
@@ -760,20 +749,16 @@ public class MainWindow {
 				try {
 
 					// The filters to use when tracing
-					TraceMethodFilter initialMethodFilter;
-					TraceFieldFilter initialFieldFilter;
+					TraceFilter initialFilter;
 
 					if (savedTraceFile == null) {
-						initialMethodFilter = methodFilter;
-						initialFieldFilter = fieldFilter;
+						initialFilter = filter;
 					} else {
-						initialMethodFilter = new TraceMethodFilter() {
+						initialFilter = new TraceFilter() {
 							@Override
 							public boolean isMethodTraced(MethodKey m) {
 								return loadedClasses.contains(m.className);
 							}
-						};
-						initialFieldFilter = new TraceFieldFilter() {
 							@Override
 							public boolean isFieldTraced(FieldKey f) {
 								return loadedClasses.contains(f.className);
@@ -797,7 +782,7 @@ public class MainWindow {
 
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 								mainClass + " " + ed.commandLineArguments,
-								methodFilter, fieldFilter,
+								filter,
 								new RealtimeTraceConsumer() {
 
 									@Override
@@ -827,7 +812,7 @@ public class MainWindow {
 							FutureTraceConsumer future = new FutureTraceConsumer();
 							Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 									mainClass + " " + ed.commandLineArguments,
-									initialMethodFilter, initialFieldFilter,
+									initialFilter,
 									future);
 							traces[k] = future.get();
 						}
@@ -865,11 +850,9 @@ public class MainWindow {
 	private void processTraces(Trace[] traces) throws IOException,
 			InterruptedException {
 
-		TraceMethodFilter methodFilter = getSelectedMethodFilter();
-		TraceFieldFilter fieldFilter = getSelectedFieldFilter();
+		TraceFilter filter = getSelectionFilter();
 		for (Trace t : traces) {
-			t.filterMethods(methodFilter);
-			t.filterFields(fieldFilter);
+			t.applyFilter(filter);
 		}
 
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();

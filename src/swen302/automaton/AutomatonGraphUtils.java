@@ -33,7 +33,7 @@ public class AutomatonGraphUtils {
 
 				for(int k = 0; k < argtypes.length; k++) {
 					String argtype = argtypes[k];
-					State value = (arguments == null ? null : arguments.get(k));
+					State value = (arguments == null || arguments.size() <= k ? null : arguments.get(k));
 
 					int last$ = argtype.lastIndexOf('$');
 					int lastDot = argtype.lastIndexOf('.');

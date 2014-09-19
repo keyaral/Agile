@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import swen302.tracer.FieldKey;
-import swen302.tracer.TraceFieldFilter;
+import swen302.tracer.TraceFilter;
 
 public class ObjectState extends State {
 	private static final long serialVersionUID = 1L;
@@ -58,7 +58,7 @@ public class ObjectState extends State {
 	}
 
 	@Override
-	public void filterFields(TraceFieldFilter f) {
+	public void filterFields(TraceFilter f) {
 		Iterator<Map.Entry<FieldKey, State>> it = fields.entrySet().iterator();
 		while(it.hasNext()) {
 			Map.Entry<FieldKey, State> entry = it.next();

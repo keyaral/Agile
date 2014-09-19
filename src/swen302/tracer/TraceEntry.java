@@ -43,7 +43,7 @@ public class TraceEntry implements Serializable{
 	}
 
 
-	public void filterFields(TraceFieldFilter f) {
+	public void filterFields(TraceFilter f) {
 		state.filterFields(f);
 	}
 }

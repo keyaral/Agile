@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import swen302.tracer.TraceFieldFilter;
+import swen302.tracer.TraceFilter;
 
 public class ArrayState extends State {
 	private static final long serialVersionUID = 1L;
@@ -35,7 +35,7 @@ public class ArrayState extends State {
 	}
 
 	@Override
-	public void filterFields(TraceFieldFilter f) {
+	public void filterFields(TraceFilter f) {
 		for(State s : values)
 			s.filterFields(f);
 	}

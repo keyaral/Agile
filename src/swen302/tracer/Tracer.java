@@ -68,17 +68,16 @@ public class Tracer {
 	 *
 	 * @param vmOptions The arguments passed into the Virtual Machine
 	 * @param mainClass The Main class of the given application
-	 * @param methodFilter The method filter to use
-	 * @param fieldFilter The field filter to use
+	 * @param filter The trace filter to use
 	 * @param consumer The trace consumer
 	 * @return A string representation of the program trace
 	 * @throws Exception This becomes your problem if thrown
 	 */
-	public static void launchAndTraceAsync(String vmOptions, String mainClass, TraceMethodFilter methodFilter, TraceFieldFilter fieldFilter, RealtimeTraceConsumer consumer) throws Exception
+	public static void launchAndTraceAsync(String vmOptions, String mainClass, TraceFilter filter, RealtimeTraceConsumer consumer) throws Exception
 	{
 		VirtualMachine vm = launchTracee(mainClass, vmOptions);
 
-		TraceAsync(vm, methodFilter, fieldFilter, consumer);
+		TraceAsync(vm, filter, consumer);
 	}
 
 	/**
@@ -87,11 +86,10 @@ public class Tracer {
 	 * This method traces asynchronously. Trace lines are delivered to the given consumer.
 	 *
 	 * @param vm The VM to trace.
-	 * @param methodFilter The method filter to use.
-	 * @param fieldFilter The field filter to use.
+	 * @param filter The trace filter to use.
 	 * @param consumer The consumer that trace lines will be sent to.
 	 */
-	public static void TraceAsync(final VirtualMachine vm, final TraceMethodFilter methodFilter, final TraceFieldFilter fieldFilter, final RealtimeTraceConsumer consumer) {
+	public static void TraceAsync(final VirtualMachine vm, final TraceFilter filter, final RealtimeTraceConsumer consumer) {
 		Thread thread = new Thread() {
 			@Override
 			public void run() {
@@ -122,7 +120,7 @@ public class Tracer {
 
 								ReferenceType type = event2.referenceType();
 								if(!knownTraceableClasses.containsKey(type)) {
-									boolean traceable = doesClassHaveTraceableMethods(methodFilter, type);
+									boolean traceable = doesClassHaveTraceableMethods(filter, type);
 									knownTraceableClasses.put(type, traceable);
 									if(traceable) {
 										MethodEntryRequest entryRequest = vm.eventRequestManager().createMethodEntryRequest();
@@ -143,7 +141,7 @@ public class Tracer {
 							if(event instanceof MethodEntryEvent) {
 								MethodEntryEvent event2 = (MethodEntryEvent)event;
 
-								if(methodFilter.isMethodTraced(new MethodKey(event2.method()))) {
+								if(filter.isMethodTraced(new MethodKey(event2.method()))) {
 
 									// Handle a method entry
 									StackFrame frame = event2.thread().frame(0);
@@ -155,7 +153,7 @@ public class Tracer {
 									if(_this == null)
 										te.state = null;
 									else
-										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
+										te.state = valueToState(filter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
 
 									te.isReturn = false;
 
@@ -164,7 +162,7 @@ public class Tracer {
 									if(!event2.method().isNative()) {
 										te.arguments = new ArrayList<>();
 										for(Value v : frame.getArgumentValues()) {
-											te.arguments.add(valueToState(fieldFilter, v, new HashMap<ObjectReference, swen302.tracer.state.State>()));
+											te.arguments.add(valueToState(filter, v, new HashMap<ObjectReference, swen302.tracer.state.State>()));
 										}
 									}
 
@@ -178,7 +176,7 @@ public class Tracer {
 								// Handle a method return
 								MethodExitEvent event2 = (MethodExitEvent)event;
 
-								if(methodFilter.isMethodTraced(new MethodKey(event2.method()))) {
+								if(filter.isMethodTraced(new MethodKey(event2.method()))) {
 									StackFrame frame = event2.thread().frame(0);
 									ObjectReference _this = frame.thisObject();
 
@@ -188,7 +186,7 @@ public class Tracer {
 									if(_this == null)
 										te.state = null;
 									else
-										te.state = valueToState(fieldFilter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
+										te.state = valueToState(filter, _this, new HashMap<ObjectReference, swen302.tracer.state.State>());
 
 									te.isReturn = true;
 									consumer.onTraceLine(te);
@@ -220,9 +218,9 @@ public class Tracer {
 		thread.start();
 	}
 
-	private static boolean doesClassHaveTraceableMethods(TraceMethodFilter methodFilter, ReferenceType type) {
+	private static boolean doesClassHaveTraceableMethods(TraceFilter filter, ReferenceType type) {
 		for(Method m : type.methods())
-			if(methodFilter.isMethodTraced(new MethodKey(m)))
+			if(filter.isMethodTraced(new MethodKey(m)))
 				return true;
 		return false;
 	}
@@ -230,7 +228,7 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of an object, in some human-readable format.
 	 */
-	private static State objectToState(TraceFieldFilter filter, ObjectReference object, Map<ObjectReference, State> alreadySeenObjects) {
+	private static State objectToState(TraceFilter filter, ObjectReference object, Map<ObjectReference, State> alreadySeenObjects) {
 
 		if(alreadySeenObjects.containsKey(object))
 			return alreadySeenObjects.get(object);
@@ -295,7 +293,7 @@ public class Tracer {
 	/**
 	 * Returns a string containing the relevant state of any value, in some human-readable format.
 	 */
-	private static State valueToState(TraceFieldFilter filter, Value value, Map<ObjectReference, State> alreadySeenObjects) {
+	private static State valueToState(TraceFilter filter, Value value, Map<ObjectReference, State> alreadySeenObjects) {
 		if(value == null)
 			return new NullState();
 		if(value instanceof ObjectReference)

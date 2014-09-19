@@ -12,15 +12,13 @@ public class Trace implements Serializable {
 	/** This is temporary - at some point this should probably be changed to a List<TraceEntry> (where TraceEntry is a new class) or similar */
 	public List<TraceEntry> lines = new ArrayList<TraceEntry>();
 
-	public void filterMethods(TraceMethodFilter f) {
+	public void applyFilter(TraceFilter f) {
 		Iterator<TraceEntry> it = lines.iterator();
 		while(it.hasNext()) {
 			if(!f.isMethodTraced(it.next().method))
 				it.remove();
 		}
-	}
 
-	public void filterFields(TraceFieldFilter f) {
 		for(TraceEntry te : lines)
 			te.filterFields(f);
 	}

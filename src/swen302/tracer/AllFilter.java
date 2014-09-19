@@ -2,9 +2,9 @@ package swen302.tracer;
 
 
 /**
- * A method or field filter that traces everything.
+ * A filter that traces everything.
  */
-public class AllFilter implements TraceFieldFilter, TraceMethodFilter {
+public class AllFilter implements TraceFilter {
 	@Override
 	public boolean isFieldTraced(FieldKey f) {
 		return true;
