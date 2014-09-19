@@ -15,6 +15,7 @@ import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.GraphListener;
 import swen302.graph.Node;
+import swen302.gui.VertexGraphPane;
 
 public class EadesSpringEmbedder {
 
@@ -28,6 +29,7 @@ public class EadesSpringEmbedder {
 	private int mouseY;
 	private boolean mouseAttractive;
 	private Node selectedNode = null;
+	private VertexGraphPane graphPane;
 
 	public double WALL_CHARGE = 5;
 
@@ -44,7 +46,7 @@ public class EadesSpringEmbedder {
 		}
 	};
 
-	public EadesSpringEmbedder(Graph graph, int width, int height, Graphics g){
+	public EadesSpringEmbedder(Graph graph, int width, int height, Graphics g, VertexGraphPane gp){
 		synchronized(graph) {
 			this.graph = graph;
 			graphics = g;
@@ -52,6 +54,7 @@ public class EadesSpringEmbedder {
 			this.height = height;
 			graph.generateInitialLayout(800, 600, g);
 			graph.addListener(graphListener);
+			graphPane = gp;
 		}
 	}
 
@@ -220,7 +223,7 @@ public class EadesSpringEmbedder {
 			double diffY = this.height/2 -centerY;
 
 			for(Node n : graph.nodes){
-				n.setPosition(n.getPosition().add(new Vector2D(diffX, diffY)));
+				n.setPosition(n.getPosition().add(new Vector2D(diffX, diffY).add(graphPane.getPosDiff())));
 			}
 
 			graphics.setColor(Color.BLACK);
@@ -387,10 +390,12 @@ public class EadesSpringEmbedder {
 		selectedNode = null;
 	}
 
-	public void moveNode(int pMouseX, int pMouseY, int mouseX, int mouseY){
+	public boolean moveNode(int pMouseX, int pMouseY, int mouseX, int mouseY){
 		if(selectedNode != null){
 			selectedNode.setPosition(new Vector2D(mouseX, mouseY));
+			return true;
 		}
+		return false;
 	}
 
 	public void addForce(int mouseX, int mouseY, boolean mouseAttractive) {

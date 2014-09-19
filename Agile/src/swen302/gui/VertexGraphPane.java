@@ -14,6 +14,8 @@ import java.awt.event.MouseEvent;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 import swen302.graph.Graph;
 import swen302.gui.graphlayouts.EadesSpringEmbedder;
 
@@ -22,10 +24,13 @@ public class VertexGraphPane extends JPanel {
 	private Timer timer;
 	private int mouseX;
 	private int mouseY;
+	private int xDiff,yDiff;
 	public EadesSpringEmbedder graph;
 
 	public VertexGraphPane(){
 		super();
+		xDiff = 0;
+		yDiff = 0;
 
 		MouseAdapter ma = new MouseAdapter() {
 			@Override
@@ -43,8 +48,12 @@ public class VertexGraphPane extends JPanel {
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				if(graph != null)
-					graph.moveNode(mouseX, mouseY, e.getX(), e.getY());
+				if(graph != null){
+					if(!graph.moveNode(mouseX, mouseY, e.getX(), e.getY())){
+						xDiff -= mouseX - e.getX();
+						yDiff -= mouseY - e.getY();
+					}
+				}
 				mouseX = e.getX();
 				mouseY = e.getY();
 			}
@@ -94,9 +103,13 @@ public class VertexGraphPane extends JPanel {
 	public void setGraph(Graph graph) {
 
 		if(graph != null){
-			this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight(), this.getGraphics());
+			this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight(), this.getGraphics(),this);
 			timer.start();
 		}
+	}
+
+	public Vector2D getPosDiff(){
+		return new Vector2D(xDiff, yDiff);
 	}
 
 	private boolean labelsChanged = false;
