@@ -98,7 +98,7 @@ public class EditExecutionsDialog extends JDialog {
 		listControl = new JList<>(listModel);
 		listControl.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 		listControl.setVisibleRowCount(15);
-		argumentScroller = new JScrollPane(listControl);
+		argumentScroller = new JScrollPane(listControl,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		argumentScroller.setPreferredSize(new Dimension(250,500));
 
 

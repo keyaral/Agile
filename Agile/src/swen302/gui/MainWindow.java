@@ -583,7 +583,10 @@ public class MainWindow {
 
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
-		treePanel.add(new JScrollPane(tree), BorderLayout.CENTER);
+		tree.setPreferredSize(null);
+		tree.setMinimumSize(null);
+		tree.setMaximumSize(null);
+		treePanel.add(new JScrollPane(tree,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
 		treePanel.add(configPanel, BorderLayout.SOUTH);
 
 		graphPane = new VertexGraphPane();
