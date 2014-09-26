@@ -142,6 +142,8 @@ public class MainWindow {
 	private List<ExecutionData> executions = new ArrayList<>(
 			Arrays.asList(new ExecutionData()));
 
+	private MiniMap minimap;
+
 	/**
 	 * Instances of this are used in the combo box's item list, as they
 	 * implement toString.
@@ -271,7 +273,8 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParamTypes = displayParamTypes.isSelected();
+				LabelFormatOptions.displayParamTypes = displayParamTypes
+						.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -279,7 +282,8 @@ public class MainWindow {
 		displayParamValues.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParamValues = displayParamValues.isSelected();
+				LabelFormatOptions.displayParamValues = displayParamValues
+						.isSelected();
 				graphPane.onLabelsChanged();
 			}
 		});
@@ -571,6 +575,11 @@ public class MainWindow {
 			}
 		};
 
+		minimap = new MiniMap();
+		minimap.setPreferredSize(new Dimension(300, 300));
+		minimap.setMinimumSize(new Dimension(300, 300));
+		minimap.setMaximumSize(new Dimension(300, 300));
+
 		graphConfigPanel = new JPanel();
 		graphConfigPanel.setBorder(BorderFactory
 				.createEmptyBorder(3, 10, 3, 10));
@@ -580,16 +589,20 @@ public class MainWindow {
 		graphConfigPanel.add(springStrengthSlider);
 		graphConfigPanel.add(springLengthSlider);
 		graphConfigPanel.add(Box.createVerticalGlue());
+		graphConfigPanel.add(minimap);
 
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
 		tree.setPreferredSize(null);
 		tree.setMinimumSize(null);
 		tree.setMaximumSize(null);
-		treePanel.add(new JScrollPane(tree,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
+		treePanel.add(new JScrollPane(tree,
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
+				BorderLayout.CENTER);
 		treePanel.add(configPanel, BorderLayout.SOUTH);
 
-		graphPane = new VertexGraphPane();
+		graphPane = new VertexGraphPane(this.minimap);
 
 		splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitter.add(treePanel);
@@ -696,7 +709,8 @@ public class MainWindow {
 
 				for (ParameterTreeItem i : allParameterTreeItems)
 					if (i.checked)
-						selectedParameters.add(new ParameterKey(i.parent.method, i.argNum));
+						selectedParameters.add(new ParameterKey(
+								i.parent.method, i.argNum));
 			}
 
 			@Override
@@ -772,10 +786,12 @@ public class MainWindow {
 							public boolean isMethodTraced(MethodKey m) {
 								return loadedClasses.contains(m.className);
 							}
+
 							@Override
 							public boolean isFieldTraced(FieldKey f) {
 								return loadedClasses.contains(f.className);
 							}
+
 							@Override
 							public boolean isParameterTraced(ParameterKey p) {
 								return true;
@@ -799,8 +815,7 @@ public class MainWindow {
 
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 								mainClass + " " + ed.commandLineArguments,
-								filter,
-								new RealtimeTraceConsumer() {
+								filter, new RealtimeTraceConsumer() {
 
 									@Override
 									public void onTracerCrash(Throwable t) {
@@ -829,8 +844,7 @@ public class MainWindow {
 							FutureTraceConsumer future = new FutureTraceConsumer();
 							Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 									mainClass + " " + ed.commandLineArguments,
-									initialFilter,
-									future);
+									initialFilter, future);
 							traces[k] = future.get();
 						}
 
@@ -918,7 +932,8 @@ public class MainWindow {
 		for (FieldTreeItem fti : allFieldTreeItems)
 			conf.selectedFields.put(new FieldKey(fti.field), fti.checked);
 		for (ParameterTreeItem pti : allParameterTreeItems)
-			conf.selectedParameters.put(new ParameterKey(pti.parent.method, pti.argNum), pti.checked);
+			conf.selectedParameters.put(new ParameterKey(pti.parent.method,
+					pti.argNum), pti.checked);
 
 		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper) cmbAlgorithm
 				.getSelectedItem();
@@ -957,7 +972,8 @@ public class MainWindow {
 		}
 
 		for (ParameterTreeItem pti : allParameterTreeItems) {
-			Boolean saved = conf.selectedParameters.get(new ParameterKey(pti.parent.method, pti.argNum));
+			Boolean saved = conf.selectedParameters.get(new ParameterKey(
+					pti.parent.method, pti.argNum));
 			pti.checked = (saved != null ? saved : DEFAULT_PARAMETER_SELECTED);
 		}
 
@@ -1001,7 +1017,7 @@ public class MainWindow {
 		displayParamValues.setState(LabelFormatOptions.displayParamValues);
 
 		// Set graph layout settings
-		if(conf.haveGraphPhysicsSettings) {
+		if (conf.haveGraphPhysicsSettings) {
 			electricStrengthSlider.setValue(conf.graphElectricStrength, false);
 			springStrengthSlider.setValue(conf.graphSpringStrength, false);
 			springLengthSlider.setValue(conf.graphSpringLength, false);
@@ -1101,17 +1117,19 @@ public class MainWindow {
 		}
 
 		for (Method method : data.getDeclaredMethods()) {
-			MethodTreeItem treeItem = new MethodTreeItem(classItem, new MethodKey(method), method);
+			MethodTreeItem treeItem = new MethodTreeItem(classItem,
+					new MethodKey(method), method);
 			if (method.isSynthetic() && !treeItem.isCheckable())
 				continue;
 
-			DefaultMutableTreeNode methodNode = new DefaultMutableTreeNode(treeItem);
+			DefaultMutableTreeNode methodNode = new DefaultMutableTreeNode(
+					treeItem);
 			classNode.add(methodNode);
 
 			allMethodTreeItems.add(treeItem);
 
 			int numArgs = method.getParameterTypes().length;
-			for(int k = 0; k < numArgs; k++) {
+			for (int k = 0; k < numArgs; k++) {
 				ParameterTreeItem pti = new ParameterTreeItem(treeItem, k);
 				allParameterTreeItems.add(pti);
 				methodNode.add(new DefaultMutableTreeNode(pti));

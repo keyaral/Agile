@@ -28,11 +28,13 @@ public class VertexGraphPane extends JPanel {
 	private int mouseY;
 	private int xDiff,yDiff;
 	public EadesSpringEmbedder graph;
+	private MiniMap minimap;
 
-	public VertexGraphPane(){
+	public VertexGraphPane(MiniMap m){
 		super();
 		xDiff = 0;
 		yDiff = 0;
+		this.minimap = m;
 
 		MouseAdapter ma = new MouseAdapter() {
 			@Override
@@ -100,6 +102,7 @@ public class VertexGraphPane extends JPanel {
 		    	graph.step(0.1, mouseX, mouseY);
 
 		        repaint();
+		        minimap.repaint();
 		    }
 		});
 
@@ -126,6 +129,7 @@ public class VertexGraphPane extends JPanel {
 
 		if(graph != null){
 			this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight(), this.getGraphics(),this);
+			this.minimap.changeGraph(this.graph.graph);
 			timer.start();
 		}
 	}

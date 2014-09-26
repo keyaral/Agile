@@ -239,6 +239,7 @@ public class EadesSpringEmbedder {
 				n.setPosition(n.getPosition().add(new Vector2D(diffX, diffY).add(graphPane.getPosDiff())));
 			}
 
+
 			graphics.setColor(Color.BLACK);
 
 			for (Node n : graph.nodes) {
