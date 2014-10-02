@@ -3,14 +3,14 @@ package swen302.gui.graphlayouts;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D.Double;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
@@ -28,8 +28,8 @@ public class EadesSpringEmbedder {
 	public static double SPRING_STRENGTH = -1.6;
 	public static double SPRING_LENGTH = 100;
 	private boolean mouseForce;
-	private int mouseX;
-	private int mouseY;
+	private double mouseX;
+	private double mouseY;
 	private boolean mouseAttractive;
 	private Node selectedNode = null;
 	private VertexGraphPane graphPane;
@@ -68,12 +68,15 @@ public class EadesSpringEmbedder {
 		}
 	}
 
-	public void step(double timeStep, int mouseX, int mouseY){
+	public void step(double timeStep, int pixelMouseX, int pixelMouseY){
 
 		synchronized(graph) {
 
-			this.mouseX = mouseX;
-			this.mouseY = mouseY;
+			{
+				Point2D mouseGraphSpaceCoords = transformMouseCoords(new Point2D.Double(pixelMouseX, pixelMouseY));
+				this.mouseX = mouseGraphSpaceCoords.getX();
+				this.mouseY = mouseGraphSpaceCoords.getY();
+			}
 
 			Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
@@ -139,16 +142,17 @@ public class EadesSpringEmbedder {
 		}
 	}
 
-	private Node pointInNode(int x, int y){
+	private Node pointInNode(double x, double y){
 
 		synchronized(graph) {
+			Vector2D mousePt = new Vector2D(x, y);
 			for(Node n : graph.nodes) {
 				double xPos = n.getPosition().getX();
 				double yPos = n.getPosition().getY();
 
 				Vector2D nCenter = new Vector2D(xPos, yPos);
 
-				if (nCenter.distance(new Vector2D(x, y)) < 10)
+				if (nCenter.distance(mousePt) < 10)
 					return n;
 			}
 		}
@@ -400,7 +404,8 @@ public class EadesSpringEmbedder {
 	}
 
 	public void selectNode(int mouseX, int mouseY){
-		selectedNode = pointInNode(mouseX, mouseY);
+		Point2D mouseGraphSpaceCoords = transformMouseCoords(new Point2D.Double(mouseX, mouseY));
+		selectedNode = pointInNode(mouseGraphSpaceCoords.getX(), mouseGraphSpaceCoords.getY());
 	}
 
 	public void releaseNode(){
@@ -408,18 +413,12 @@ public class EadesSpringEmbedder {
 	}
 
 	public boolean moveNode(int pMouseX, int pMouseY, int mouseX, int mouseY){
+		Point2D mouseGraphSpaceCoords = transformMouseCoords(new Point2D.Double(mouseX, mouseY));
 		if(selectedNode != null){
-			selectedNode.setPosition(new Vector2D(mouseX, mouseY));
+			selectedNode.setPosition(new Vector2D(mouseGraphSpaceCoords.getX(), mouseGraphSpaceCoords.getY()));
 			return true;
 		}
 		return false;
-	}
-
-	public void addForce(int mouseX, int mouseY, boolean mouseAttractive) {
-		mouseForce= true;
-		this.mouseX = mouseX;
-		this.mouseY = mouseY;
-		this.mouseAttractive = mouseAttractive;
 	}
 
 	public void setSize(int width, int height) {
@@ -427,4 +426,17 @@ public class EadesSpringEmbedder {
 		this.height = height;
 	}
 
+	/**
+	 * @param mouse The mouse coordinates, in pixels.
+	 * @return The mouse coordinates in "graph space" - i.e. before the <var>afm</var> transform is applied.
+	 */
+	public Point2D transformMouseCoords(Point2D mouse) {
+		try {
+			return afm.inverseTransform(mouse, new Point2D.Double());
+		} catch(NoninvertibleTransformException ex) {
+			// transform shouldn't be noninvertible; something went wrong, so reset it
+			afm = new AffineTransform();
+			return mouse;
+		}
+	}
 }

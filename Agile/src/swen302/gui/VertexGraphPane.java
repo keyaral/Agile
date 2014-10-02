@@ -12,6 +12,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -78,13 +81,22 @@ public class VertexGraphPane extends JPanel {
 					graph.scaleY = e.getY();
 					graph.scale += 0.1*e.getWheelRotation()*-1;
 
-					graph.afm.translate(e.getX(), e.getY());
+					Point2D.Double graphSpaceMouseCoords = new Point2D.Double();
+					try {
+						graph.afm.inverseTransform(new Point2D.Double(e.getX(), e.getY()), graphSpaceMouseCoords);
+					} catch(NoninvertibleTransformException ex) {
+						// transform shouldn't be noninvertible; something went wrong, so reset it
+						graph.afm = new AffineTransform();
+						graphSpaceMouseCoords.setLocation(e.getX(), e.getY());
+					}
+
+					graph.afm.translate(graphSpaceMouseCoords.getX(), graphSpaceMouseCoords.getY());
 					if(e.getWheelRotation() == 1) {
 						graph.afm.scale(0.9, 0.9);
 					} else {
 						graph.afm.scale(1.1, 1.1);
 					}
-					graph.afm.translate(-e.getX(), -e.getY());
+					graph.afm.translate(-graphSpaceMouseCoords.getX(), -graphSpaceMouseCoords.getY());
 				}
 			}
 		});
