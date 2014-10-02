@@ -4,10 +4,13 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D.Double;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
@@ -30,6 +33,11 @@ public class EadesSpringEmbedder {
 	private boolean mouseAttractive;
 	private Node selectedNode = null;
 	private VertexGraphPane graphPane;
+
+
+	public AffineTransform afm;
+	public double scale;
+	public double scaleX,scaleY;
 
 	public double WALL_CHARGE = 5;
 
@@ -55,6 +63,8 @@ public class EadesSpringEmbedder {
 			graph.generateInitialLayout(800, 600, g);
 			graph.addListener(graphListener);
 			graphPane = gp;
+			scale = 1;
+			afm = new AffineTransform();
 		}
 	}
 
@@ -202,12 +212,14 @@ public class EadesSpringEmbedder {
 	public void draw(Graphics2D graphics) {
 
 		synchronized(graph) {
+			graphics.setTransform(afm);
 
 			//calc bounding box of graph
 			double minX = Integer.MAX_VALUE;
 			double maxX = Integer.MIN_VALUE;
 			double minY = Integer.MAX_VALUE;
 			double maxY = Integer.MIN_VALUE;
+
 			for(Node n : graph.nodes){
 				double xPos = n.getPosition().getX();
 				double yPos = n.getPosition().getY();
@@ -216,6 +228,7 @@ public class EadesSpringEmbedder {
 				minY = Math.min(minY, yPos);
 				maxY = Math.max(maxY, yPos);
 			}
+
 			double centerX = (maxX + minX)/2;
 			double centerY = (maxY + minY)/2;
 
@@ -225,6 +238,7 @@ public class EadesSpringEmbedder {
 			for(Node n : graph.nodes){
 				n.setPosition(n.getPosition().add(new Vector2D(diffX, diffY).add(graphPane.getPosDiff())));
 			}
+
 
 			graphics.setColor(Color.BLACK);
 
@@ -258,12 +272,25 @@ public class EadesSpringEmbedder {
 					Vector2D p2v2 = v1.subtract(perp);
 				    Vector2D p2v3 = lineMid.subtract(perp);
 
-					path.curveTo(p1v2.getX(), p1v2.getY(), p1v3.getX(), p1v3.getY(), lineMid.getX(), lineMid.getY());
+					path.curveTo(
+							p1v2.getX(),
+							p1v2.getY(),
+							p1v3.getX(),
+							p1v3.getY(),
+							lineMid.getX(),
+							lineMid.getY()
+					);
 
-					path.curveTo(p2v3.getX(), p2v3.getY(), p2v2.getX(), p2v2.getY(), v1.getX(), v1.getY());
+					path.curveTo(
+							p2v3.getX(),
+							p2v3.getY(),
+							p2v2.getX(),
+							p2v2.getY(),
+							v1.getX(),
+							v1.getY()
+					);
 
 					labelPos = v1.add(new Vector2D(20*scalecount, 0));
-
 				}
 				else {
 					Vector2D diff = v1.subtract(v4);
@@ -276,16 +303,6 @@ public class EadesSpringEmbedder {
 					v2 = v1.add(perp);
 					v3 =  cn.node2.getPosition().add(perp);
 
-//					if (v4.getX() > v1.getX() )
-//					{
-//						 v2 = v1.add(perp);
-//						 v3 =  cn.node2.getPosition().add(perp);
-//					}
-//					else {
-//						v2 = v1.subtract(perp);
-//						v3 =  cn.node2.getPosition().subtract(perp);
-//					}
-
 					path.curveTo(
 							v2.getX(),
 							v2.getY(),
@@ -296,21 +313,19 @@ public class EadesSpringEmbedder {
 					);
 
 					double t = 0.45;
+
 					labelPos = v1.scalarMultiply((1-t)*(1-t)*(1-t)).add(v2.scalarMultiply((1-t)*(1-t)*t*3)).add(v3.scalarMultiply((1-t)*t*t*3)).add(v4.scalarMultiply(t*t*t));
 				}
 
+				graphics.drawString(String.valueOf(cn.label), (int)labelPos.getX(), (int)labelPos.getY());
 
-				graphics.drawString(String.valueOf(cn.label), (int)labelPos.getX() , (int) labelPos.getY());
 				graphics.draw(path);
 
+				}
 			}
-		}
-
-
 			for (Node n : graph.nodes) {
-
-				double xPos = n.getPosition().getX();
-				double yPos = n.getPosition().getY();
+				int xPos = (int)n.getPosition().getX();
+				int yPos = (int)n.getPosition().getY();
 
 				Vector2D nCenter = new Vector2D(xPos, yPos);
 				if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
@@ -318,17 +333,19 @@ public class EadesSpringEmbedder {
 				else
 					graphics.setColor(Color.LIGHT_GRAY);
 
-				graphics.fillOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
+				graphics.fillOval((int)xPos-10, (int)yPos-10, 20, 20);
+
 				graphics.setColor(Color.BLACK);
-				graphics.drawOval((int)n.getPosition().getX()-10, (int)n.getPosition().getY()-10, 20, 20);
+				graphics.drawOval((int)xPos-10, (int)yPos-10, 20, 20);
 
 				Rectangle2D stringBounds = n.labelBounds;
 
 				graphics.setColor(new Color(200, 240, 240, 100));
-				graphics.fillRect((int)(n.getPosition().getX()+10  - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-20,
+				graphics.fillRect((xPos+10  - (int)(n.labelBounds.getWidth()/2)), yPos-20,
 						(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
+
 				graphics.setColor(Color.black);
-				graphics.drawString(n.getLabel(), (int)(n.getPosition().getX()+10 - n.labelBounds.getWidth()/2), (int)n.getPosition().getY()-10);
+				graphics.drawString(n.getLabel(), xPos - (int)(n.labelBounds.getWidth()/2), yPos-10);
 
 				//Draw the arrows on the edges
 				for (Edge e : n.getConnections()) {

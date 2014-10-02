@@ -10,6 +10,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -26,11 +28,13 @@ public class VertexGraphPane extends JPanel {
 	private int mouseY;
 	private int xDiff,yDiff;
 	public EadesSpringEmbedder graph;
+	private MiniMap minimap;
 
-	public VertexGraphPane(){
+	public VertexGraphPane(MiniMap m){
 		super();
 		xDiff = 0;
 		yDiff = 0;
+		this.minimap = m;
 
 		MouseAdapter ma = new MouseAdapter() {
 			@Override
@@ -65,6 +69,26 @@ public class VertexGraphPane extends JPanel {
 			}
 		};
 
+		this.addMouseWheelListener(new MouseWheelListener() {
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if(graph != null){
+					graph.scaleX = e.getX();
+					graph.scaleY = e.getY();
+					graph.scale += 0.1*e.getWheelRotation()*-1;
+
+					graph.afm.translate(e.getX(), e.getY());
+					if(e.getWheelRotation() == 1) {
+						graph.afm.scale(0.9, 0.9);
+					} else {
+						graph.afm.scale(1.1, 1.1);
+					}
+					graph.afm.translate(-e.getX(), -e.getY());
+				}
+			}
+		});
+
 		this.addMouseListener(ma);
 		this.addMouseMotionListener(ma);
 
@@ -78,6 +102,7 @@ public class VertexGraphPane extends JPanel {
 		    	graph.step(0.1, mouseX, mouseY);
 
 		        repaint();
+		        minimap.repaint();
 		    }
 		});
 
@@ -104,6 +129,7 @@ public class VertexGraphPane extends JPanel {
 
 		if(graph != null){
 			this.graph = new EadesSpringEmbedder(graph, getWidth(), getHeight(), this.getGraphics(),this);
+			this.minimap.changeGraph(this.graph.graph);
 			timer.start();
 		}
 	}
