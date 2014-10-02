@@ -1,5 +1,7 @@
 package swen302.graph;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 
 /**
  *SuperClass to describe the relation between two nodes to represent a trace call
@@ -14,6 +16,9 @@ public class Edge {
 	public Object label;
 	public final Node node1, node2;
 	public int duplicateCount = 0;
+
+	public Vector2D arrowAngle; // used by EadesSpringEmbedder only
+	public Vector2D arrowPt; // used by EadesSpringEmbedder only
 
 
 	public Edge(String id, Object label, Node node1, Node node2){

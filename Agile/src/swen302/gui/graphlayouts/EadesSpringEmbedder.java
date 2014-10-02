@@ -248,82 +248,73 @@ public class EadesSpringEmbedder {
 
 			for (Node n : graph.nodes) {
 
-			for (Edge cn : n.getConnections()){
+				for (Edge cn : n.getConnections()) {
 
-				Path2D.Double path = new Path2D.Double();
-				path.moveTo(cn.node1.getPosition().getX(), cn.node1.getPosition().getY());
+					Path2D.Double path = new Path2D.Double();
+					path.moveTo(cn.node1.getPosition().getX(), cn.node1
+							.getPosition().getY());
 
-				int scalecount = cn.duplicateCount + 1;
+					int scalecount = cn.duplicateCount + 1;
 
+					Vector2D v1 = cn.node1.getPosition();
+					Vector2D v2 = v1;
+					Vector2D v4 = cn.node2.getPosition();
+					Vector2D v3 = v4;
 
-				Vector2D v1 = cn.node1.getPosition();
-				Vector2D v2 = v1;
-				Vector2D v4 =  cn.node2.getPosition();
-				Vector2D v3 =  v4;
+					Vector2D labelPos = null;
 
-				Vector2D labelPos = null;
+					if (cn.node1.equals(cn.node2)) {
 
+						Vector2D lineMid = v1.add(new Vector2D(20 * scalecount, 0));
 
-				if ( cn.node1.equals(cn.node2) ){
+						Vector2D perp = new Vector2D(0, -15 * scalecount);
 
-					Vector2D lineMid = v1.add(new Vector2D(20*scalecount, 0));
+						Vector2D p1v2 = v1.add(perp);
+						Vector2D p1v3 = lineMid.add(perp);
 
-					Vector2D perp = new Vector2D(0, -15 *scalecount);
+						Vector2D p2v2 = v1.subtract(perp);
+						Vector2D p2v3 = lineMid.subtract(perp);
 
-					Vector2D p1v2 = v1.add(perp);
-					Vector2D p1v3 = lineMid.add(perp);
+						path.curveTo(p1v2.getX(), p1v2.getY(), p1v3.getX(),
+								p1v3.getY(), lineMid.getX(), lineMid.getY());
 
-					Vector2D p2v2 = v1.subtract(perp);
-				    Vector2D p2v3 = lineMid.subtract(perp);
+						path.curveTo(p2v3.getX(), p2v3.getY(), p2v2.getX(),
+								p2v2.getY(), v1.getX(), v1.getY());
 
-					path.curveTo(
-							p1v2.getX(),
-							p1v2.getY(),
-							p1v3.getX(),
-							p1v3.getY(),
-							lineMid.getX(),
-							lineMid.getY()
-					);
+						labelPos = v1.add(new Vector2D(20 * scalecount, 0));
+					} else {
+						Vector2D diff = v1.subtract(v4);
 
-					path.curveTo(
-							p2v3.getX(),
-							p2v3.getY(),
-							p2v2.getX(),
-							p2v2.getY(),
-							v1.getX(),
-							v1.getY()
-					);
+						Vector2D perp = new Vector2D(diff.getY() * -1,
+								diff.getX());
 
-					labelPos = v1.add(new Vector2D(20*scalecount, 0));
-				}
-				else {
-					Vector2D diff = v1.subtract(v4);
+						perp = perp.normalize();
+						perp = perp.scalarMultiply(scalecount * 20);
 
-					Vector2D perp = new Vector2D(diff.getY() * -1, diff.getX());
+						v2 = v1.add(perp);
+						v3 = cn.node2.getPosition().add(perp);
 
-					perp = perp.normalize();
-					perp = perp.scalarMultiply(scalecount * 20);
+						path.curveTo(v2.getX(), v2.getY(), v3.getX(),
+								v3.getY(), v4.getX(), v4.getY());
 
-					v2 = v1.add(perp);
-					v3 =  cn.node2.getPosition().add(perp);
+						double t = 0.45;
 
-					path.curveTo(
-							v2.getX(),
-							v2.getY(),
-							v3.getX(),
-							v3.getY(),
-							v4.getX(),
-							v4.getY()
-					);
+						labelPos = v1
+								.scalarMultiply((1 - t) * (1 - t) * (1 - t))
+								.add(v2.scalarMultiply((1 - t) * (1 - t) * t
+										* 3))
+								.add(v3.scalarMultiply((1 - t) * t * t * 3))
+								.add(v4.scalarMultiply(t * t * t));
 
-					double t = 0.45;
+						double intersectionT = findBezierCircleIntersection(v1,v2,v3,v4, cn.node2.getPosition(), 10);
+						cn.arrowPt = evalBezierCurve(v1,v2,v3,v4, intersectionT);
+						cn.arrowAngle = evalBezierCurveDirection(v1,v2,v3,v4, intersectionT).scalarMultiply(-1);
+					}
 
-					labelPos = v1.scalarMultiply((1-t)*(1-t)*(1-t)).add(v2.scalarMultiply((1-t)*(1-t)*t*3)).add(v3.scalarMultiply((1-t)*t*t*3)).add(v4.scalarMultiply(t*t*t));
-				}
+					graphics.drawString(String.valueOf(cn.label),
+							(int) labelPos.getX(), (int) labelPos.getY());
 
-				graphics.drawString(String.valueOf(cn.label), (int)labelPos.getX(), (int)labelPos.getY());
-
-				graphics.draw(path);
+					graphics.draw(path);
 
 				}
 			}
@@ -351,38 +342,24 @@ public class EadesSpringEmbedder {
 				graphics.setColor(Color.black);
 				graphics.drawString(n.getLabel(), xPos - (int)(n.labelBounds.getWidth()/2), yPos-10);
 
+				int[] arrowXPoints = new int[] {0, 5, 5};
+				int[] arrowYPoints = new int[] {0, -5, 5};
+
 				//Draw the arrows on the edges
 				for (Edge e : n.getConnections()) {
 
-					Vector2D node1 = n.getPosition();
-					Vector2D node2 = e.getOtherNode(n).getPosition();
+					Vector2D v = e.arrowAngle;
+					double angle = Math.atan2(v.getY(), v.getX());
 
-					Vector2D tipOfArrow = node1;
-					Vector2D bottomOfArrow = node1;
+					Vector2D arrowPt = e.arrowPt.add(e.arrowAngle.scalarMultiply(0));
 
-					tipOfArrow = node1.subtract(node2);
-					if (tipOfArrow.getNorm() == 0) { continue; }
-					tipOfArrow = tipOfArrow.normalize().scalarMultiply(node1.distance(node2)-10);
-					tipOfArrow = node1.subtract(tipOfArrow);
-
-					bottomOfArrow = node1.subtract(node2);
-					if (bottomOfArrow.getNorm() == 0) { continue; }
-					bottomOfArrow = bottomOfArrow.normalize().scalarMultiply(node1.distance(node2)-20);
-					bottomOfArrow = node1.subtract(bottomOfArrow);
-
-					int[] xPoints = new int[] {0, -5, 5};
-					int[] yPoints = new int[] {0, 5, 5};
-
-					Vector2D v = node1.subtract(node2);
-					double angle = Math.atan2(v.getY(), v.getX())-Math.PI/2;
-
-					graphics.translate(tipOfArrow.getX(), tipOfArrow.getY());
+					AffineTransform oldTransform = graphics.getTransform();
+					graphics.translate(arrowPt.getX(), arrowPt.getY());
 					graphics.rotate(angle);
 
-					graphics.fillPolygon(xPoints, yPoints, 3);
+					graphics.fillPolygon(arrowXPoints, arrowYPoints, 3);
 
-					graphics.rotate(-angle);
-					graphics.translate(-tipOfArrow.getX(), -tipOfArrow.getY());
+					graphics.setTransform(oldTransform);
 				}
 
 			}
@@ -401,6 +378,29 @@ public class EadesSpringEmbedder {
 						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
 			}
 		}
+	}
+
+	private static Vector2D evalBezierCurve(Vector2D v1, Vector2D v2, Vector2D v3, Vector2D v4, double t) {
+		return v1.scalarMultiply((1 - t) * (1 - t) * (1 - t))
+				.add(v2.scalarMultiply((1 - t) * (1 - t) * t * 3))
+				.add(v3.scalarMultiply((1 - t) * t * t * 3))
+				.add(v4.scalarMultiply(t * t * t));
+	}
+	private static Vector2D evalBezierCurveDirection(Vector2D v1, Vector2D v2, Vector2D v3, Vector2D v4, double t) {
+		return evalBezierCurve(v1,v2,v3,v4, t+0.001).subtract(evalBezierCurve(v1,v2,v3,v4, t-0.001)).normalize();
+	}
+	private static double findBezierCircleIntersection(Vector2D v1, Vector2D v2, Vector2D v3, Vector2D v4, Vector2D centre, double radius) {
+		// binary search
+		double maxT = 1, minT = 0;
+		while(maxT - minT > 0.001) {
+			double midT = (maxT + minT) * 0.5;
+			double midRadius = evalBezierCurve(v1, v2, v3, v4, midT).distance(centre);
+			if(midRadius > radius)
+				minT = midT;
+			else
+				maxT = midT;
+		}
+		return (minT + maxT) * 0.5;
 	}
 
 	public void selectNode(int mouseX, int mouseY){
