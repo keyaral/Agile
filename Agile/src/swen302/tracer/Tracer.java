@@ -21,6 +21,7 @@ import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InternalException;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
@@ -164,7 +165,20 @@ public class Tracer {
 									if(!event2.method().isNative()) {
 										te.arguments = new ArrayList<>();
 
-										List<Value> argValues = frame.getArgumentValues();
+										List<Value> argValues = new ArrayList<>();
+
+										try {
+											argValues = frame.getArgumentValues();
+
+										} catch(InternalException e) {
+											// https://netbeans.org/bugzilla/show_bug.cgi?id=194822
+											if(!e.getMessage().equals("Unexpected JDWP Error: 35"))
+												throw e;
+
+											while(argValues.size() < te.method.argTypes.length)
+												argValues.add(null);
+										}
+
 										for(int k = 0; k < argValues.size(); k++) {
 											Value v = argValues.get(k);
 
