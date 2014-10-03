@@ -132,13 +132,13 @@ public class EadesSpringEmbedder {
 				n.force = tempForce;
 			}
 			for (Node n : graph.nodes) {
-				if(n == selectedNode) continue;
 				n.updatePosition(timeStep);
 				//Stop calculating, will probably leave out.
 				//This is so the graph can be made interactive
 			}
 
 			mouseForce = false;
+
 		}
 	}
 
@@ -242,6 +242,15 @@ public class EadesSpringEmbedder {
 			for(Node n : graph.nodes){
 				n.setPosition(n.getPosition().add(new Vector2D(diffX, diffY).add(graphPane.getPosDiff())));
 			}
+
+
+
+
+			if(selectedNode!=null){
+				selectedNode.setPosition(new Vector2D(mouseX, mouseY));
+			}
+
+
 
 
 			graphics.setColor(Color.BLACK);
