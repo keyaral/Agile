@@ -13,6 +13,7 @@ import swen302.tracer.state.NullState;
 import swen302.tracer.state.ObjectState;
 import swen302.tracer.state.SimpleState;
 import swen302.tracer.state.State;
+import swen302.tracer.state.StringState;
 
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
@@ -24,6 +25,7 @@ import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
@@ -259,6 +261,9 @@ public class Tracer {
 					return new EnumState("<uninitialized-enum>"); // TODO should this be a separate class?
 				throw new AssertionError("failed to find enum constant name");
 			}
+
+			if(object instanceof StringReference)
+				return new StringState(((StringReference)object).value());
 
 			//if(((ClassType)object.type()).name().equals("java.lang.String")) {
 			//	return "<string>";
