@@ -18,6 +18,7 @@ import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.GraphListener;
 import swen302.graph.Node;
+import swen302.graph.PetriTransitionNode;
 import swen302.gui.VertexGraphPane;
 
 public class EadesSpringEmbedder {
@@ -81,6 +82,8 @@ public class EadesSpringEmbedder {
 			Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
 			for (Edge e : graph.edges) {
+
+				if(true) continue;
 
 				Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
@@ -337,10 +340,16 @@ public class EadesSpringEmbedder {
 				else
 					graphics.setColor(Color.LIGHT_GRAY);
 
-				graphics.fillOval((int)xPos-10, (int)yPos-10, 20, 20);
+				if(n instanceof PetriTransitionNode)
+					graphics.fillRect((int)xPos-10, (int)yPos-10, 20, 20);
+				else
+					graphics.fillOval((int)xPos-10, (int)yPos-10, 20, 20);
 
 				graphics.setColor(Color.BLACK);
-				graphics.drawOval((int)xPos-10, (int)yPos-10, 20, 20);
+				if(n instanceof PetriTransitionNode)
+					graphics.drawRect((int)xPos-10, (int)yPos-10, 20, 20);
+				else
+					graphics.drawOval((int)xPos-10, (int)yPos-10, 20, 20);
 
 				Rectangle2D stringBounds = n.labelBounds;
 
@@ -373,7 +382,7 @@ public class EadesSpringEmbedder {
 				}
 
 			}
-			//Lol variable name
+
 			Node npm = this.pointInNode(mouseX, mouseY);
 			npm = selectedNode != null ? selectedNode : npm;
 			if (npm != null) {
