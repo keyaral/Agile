@@ -81,9 +81,8 @@ public class EadesSpringEmbedder {
 
 			Set<Node> virtualNodes = new HashSet<Node>(graph.nodes);
 
+			if(false) // This is broken and makes graphs spin endlessly
 			for (Edge e : graph.edges) {
-
-				if(true) continue;
 
 				Vector2D vecResult = e.node1.getPosition().subtract(e.node2.getPosition()); //The vector between the two nodes
 
