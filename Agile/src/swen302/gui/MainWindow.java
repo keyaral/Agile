@@ -347,7 +347,7 @@ public class MainWindow {
 								.setUserObject(new JarTreeItem(openTraceFile
 										.getName()));
 					} catch (IOException | InterruptedException exc) {
-						throw new RuntimeException(exc); // TODO handle error
+						throw new RuntimeException(exc);
 					}
 				}
 			}
@@ -751,7 +751,7 @@ public class MainWindow {
 				TraceFile tf = TraceFile.read(openTraceFile);
 				processTraces(tf.traces);
 			} catch (IOException | InterruptedException e) {
-				throw new RuntimeException(e); // TODO handle error
+				throw new RuntimeException(e);
 			}
 			return;
 		}
