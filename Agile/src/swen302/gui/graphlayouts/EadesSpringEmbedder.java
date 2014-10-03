@@ -349,6 +349,7 @@ public class EadesSpringEmbedder {
 				for (Edge e : n.getConnections()) {
 
 					Vector2D v = e.arrowAngle;
+					if(v == null) continue;
 					double angle = Math.atan2(v.getY(), v.getX());
 
 					Vector2D arrowPt = e.arrowPt.add(e.arrowAngle.scalarMultiply(0));

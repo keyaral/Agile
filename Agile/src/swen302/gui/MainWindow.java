@@ -143,7 +143,7 @@ public class MainWindow {
 	private List<ExecutionData> executions = new ArrayList<>(
 			Arrays.asList(new ExecutionData()));
 
-	private MiniMap minimap;
+	//private MiniMap minimap;
 
 	/**
 	 * Instances of this are used in the combo box's item list, as they
@@ -576,10 +576,10 @@ public class MainWindow {
 			}
 		};
 
-		minimap = new MiniMap();
-		minimap.setPreferredSize(new Dimension(300, 300));
-		minimap.setMinimumSize(new Dimension(300, 300));
-		minimap.setMaximumSize(new Dimension(300, 300));
+		//minimap = new MiniMap();
+		//minimap.setPreferredSize(new Dimension(300, 300));
+		//minimap.setMinimumSize(new Dimension(300, 300));
+		//minimap.setMaximumSize(new Dimension(300, 300));
 
 		graphConfigPanel = new JPanel();
 		graphConfigPanel.setBorder(BorderFactory
@@ -590,7 +590,7 @@ public class MainWindow {
 		graphConfigPanel.add(springStrengthSlider);
 		graphConfigPanel.add(springLengthSlider);
 		graphConfigPanel.add(Box.createVerticalGlue());
-		graphConfigPanel.add(minimap);
+		//graphConfigPanel.add(minimap);
 
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
@@ -603,7 +603,7 @@ public class MainWindow {
 				BorderLayout.CENTER);
 		treePanel.add(configPanel, BorderLayout.SOUTH);
 
-		graphPane = new VertexGraphPane(this.minimap);
+		graphPane = new VertexGraphPane(/*this.minimap*/);
 
 		splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitter.add(treePanel);
