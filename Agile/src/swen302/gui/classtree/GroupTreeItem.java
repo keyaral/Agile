@@ -22,6 +22,6 @@ public class GroupTreeItem extends AbstractTreeItem {
 
 	@Override
 	public Icon getIcon() {
-		return Icons.classPublicIcon;
+		return Icons.fieldGroupIcon;
 	}
 }

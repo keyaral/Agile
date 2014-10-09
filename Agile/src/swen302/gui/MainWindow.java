@@ -243,8 +243,7 @@ public class MainWindow {
 
 				DefaultMutableTreeNode selectedNode = getSelectedTreeNode();
 
-				//TODO Make this add a group
-				GroupTreeItem groupItem = new GroupTreeItem("Lol", ((ClassTreeItem)selectedNode.getUserObject()).getTreeClass());
+				GroupTreeItem groupItem = new GroupTreeItem("Field group", ((ClassTreeItem)selectedNode.getUserObject()).getTreeClass());
 				DefaultMutableTreeNode groupNode = new DefaultMutableTreeNode(groupItem);
 
 				((DefaultTreeModel)tree.getModel()).insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
