@@ -240,11 +240,13 @@ public class MainWindow {
 		popupAddGroup.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				//TODO Make this add a group
-				GroupTreeItem groupItem = new GroupTreeItem("Lol");
-				DefaultMutableTreeNode groupNode = new DefaultMutableTreeNode(groupItem);
 
 				DefaultMutableTreeNode selectedNode = getSelectedTreeNode();
+
+				//TODO Make this add a group
+				GroupTreeItem groupItem = new GroupTreeItem("Lol", ((ClassTreeItem)selectedNode.getUserObject()).getTreeClass());
+				DefaultMutableTreeNode groupNode = new DefaultMutableTreeNode(groupItem);
+
 				((DefaultTreeModel)tree.getModel()).insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
 			}
 		});
@@ -511,12 +513,24 @@ public class MainWindow {
 						AbstractTreeItem draggedItem = (AbstractTreeItem)((DefaultMutableTreeNode)draggedPath.getLastPathComponent()).getUserObject();
 						AbstractTreeItem dropItem = (AbstractTreeItem)((DefaultMutableTreeNode)dropPath.getLastPathComponent()).getUserObject();
 
-						if(draggedItem instanceof FieldTreeItem && dropItem instanceof GroupTreeItem) {
-							((DefaultTreeModel)tree.getModel()).removeNodeFromParent(draggedNode);
-							((DefaultTreeModel)tree.getModel()).insertNodeInto(draggedNode, dropNode, dropNode.getChildCount());
+						if(draggedItem instanceof FieldTreeItem && (dropItem instanceof ClassTreeItem || dropItem instanceof GroupTreeItem)) {
 
+							Class<?> dropClass;
 
-							tree.expandPath(new TreePath(((DefaultTreeModel)tree.getModel()).getPathToRoot(dropNode)));
+							if(dropItem instanceof ClassTreeItem) {
+								dropClass = ((ClassTreeItem)dropItem).getTreeClass();
+							} else if(dropItem instanceof GroupTreeItem) {
+								dropClass = ((GroupTreeItem)dropItem).getOwnerClass();
+							} else {
+								dropClass = null;
+							}
+
+							if(dropClass != null && dropClass == ((FieldTreeItem)draggedItem).field.getDeclaringClass()) {
+								((DefaultTreeModel)tree.getModel()).removeNodeFromParent(draggedNode);
+								((DefaultTreeModel)tree.getModel()).insertNodeInto(draggedNode, dropNode, dropNode.getChildCount());
+
+								tree.expandPath(new TreePath(((DefaultTreeModel)tree.getModel()).getPathToRoot(dropNode)));
+							}
 						}
 					}
 				}

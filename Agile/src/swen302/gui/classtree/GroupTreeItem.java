@@ -4,9 +4,15 @@ import javax.swing.Icon;
 
 public class GroupTreeItem extends AbstractTreeItem {
 	String name;
+	Class<?> ownerClass;
 
-	public GroupTreeItem(String name) {
+	public GroupTreeItem(String name, Class<?> ownerClass) {
 		this.name= name;
+		this.ownerClass = ownerClass;
+	}
+
+	public Class<?> getOwnerClass() {
+		return ownerClass;
 	}
 
 	@Override
