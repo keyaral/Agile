@@ -9,6 +9,9 @@ public class AutomatonGraphUtils {
 
 	/**
 	 * Converts a long method name to a human-readable string.
+	 *
+	 * TODO refactor this and related method to take a MethodKey, not a String with a weird format.
+	 *
 	 * @param longMethodName A method name in the format "pkg.classname methodname(argtype1,argtype2,argtype3)" (as it appears in a trace file)
 	 * @return The short human-readable method name.
 	 */

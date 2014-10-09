@@ -69,4 +69,14 @@ public class ObjectState extends State {
 		}
 	}
 
+	@Override
+	public int hashCode() {
+		return 0; // TODO
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof ObjectState && ((ObjectState)obj).fields.equals(fields);
+	}
+
 }

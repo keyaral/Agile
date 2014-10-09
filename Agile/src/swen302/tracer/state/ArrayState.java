@@ -39,4 +39,14 @@ public class ArrayState extends State {
 		for(State s : values)
 			s.filterFields(f);
 	}
+
+	@Override
+	public int hashCode() {
+		return 0; // TODO
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof ArrayState && ((ArrayState)obj).values.equals(values);
+	}
 }
