@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -66,15 +68,17 @@ import javax.swing.tree.TreeSelectionModel;
 import swen302.analysis.JarLoader;
 import swen302.analysis.JarLoader.JarData;
 import swen302.automaton.AlgorithmFinder;
-import swen302.automaton.IncrementalVisualizationAlgorithm;
 import swen302.automaton.AlgorithmParameters;
+import swen302.automaton.IncrementalVisualizationAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
 import swen302.graph.LabelFormatOptions;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
+import swen302.gui.classtree.FieldInGroupTreeItem;
 import swen302.gui.classtree.FieldTreeItem;
+import swen302.gui.classtree.GroupTreeItem;
 import swen302.gui.classtree.JarTreeItem;
 import swen302.gui.classtree.MethodTreeItem;
 import swen302.gui.classtree.PackageTreeItem;
@@ -116,12 +120,13 @@ public class MainWindow {
 	private JCheckBoxMenuItem displayID, displayState, displayClass,
 			displayMethod, displayParamTypes, displayParamValues;
 	private JTree tree;
+	private DefaultTreeModel treeModel;
 	private JPanel treePanel;
 	private JPanel configPanel;
 	private JPanel graphConfigPanel;
 	private VertexGraphPane graphPane;
 	private JPopupMenu treePopup;
-	private JMenuItem popupSelect, popupDeselect;
+	private JMenuItem popupSelect, popupDeselect, popupAddGroup;
 	private JLabel currentTraceFileLabel;
 	private JComboBox<AlgorithmComboBoxWrapper> cmbAlgorithm;
 	private JCheckBox chkContinuousUpdating;
@@ -138,7 +143,7 @@ public class MainWindow {
 	private File lastConfigDirectory = new File(".");
 	private File lastTraceDirectory = new File(".");
 
-	private TreePath selectedPath;
+	private TreePath selectedPath, draggedPath;
 
 	private List<ExecutionData> executions = new ArrayList<>(
 			Arrays.asList(new ExecutionData()));
@@ -217,6 +222,8 @@ public class MainWindow {
 		treePopup = new JPopupMenu();
 		popupSelect = treePopup.add("Select All");
 		popupDeselect = treePopup.add("Deselect All");
+		popupAddGroup = treePopup.add("Add group");
+
 
 		popupSelect.addActionListener(new ActionListener() {
 
@@ -231,6 +238,20 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				checkAllBoxes(selectedPath, false);
+			}
+		});
+
+		popupAddGroup.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				DefaultMutableTreeNode selectedNode = getSelectedTreeNode();
+
+				GroupTreeItem groupNode = new GroupTreeItem(((ClassTreeItem)selectedNode).getTreeClass());
+
+				allGroupTreeItems.add(groupNode);
+
+				treeModel.insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
 			}
 		});
 
@@ -343,7 +364,7 @@ public class MainWindow {
 
 						updateCheckboxesEnabled();
 
-						((DefaultMutableTreeNode) tree.getModel().getRoot())
+						((DefaultMutableTreeNode) treeModel.getRoot())
 								.setUserObject(new JarTreeItem(openTraceFile
 										.getName()));
 					} catch (IOException | InterruptedException exc) {
@@ -444,8 +465,8 @@ public class MainWindow {
 		menuBar.add(fileMenu);
 		menuBar.add(displayMenu);
 
-		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem(
-				"No file loaded")));
+		treeModel = new DefaultTreeModel(new JarTreeItem("No file loaded"));
+		tree = new JTree(treeModel);
 		tree.setCellRenderer(new ClassTreeCellRenderer());
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
@@ -456,12 +477,19 @@ public class MainWindow {
 
 		MouseListener ml = new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
+				tree.requestFocusInWindow();
+
 				int selRow = tree.getRowForLocation(e.getX(), e.getY());
 				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
 				selectedPath = selPath;
+				draggedPath = selPath;
 				if (selRow != -1) {
 					if (e.getClickCount() == 1) {
 						if (e.getButton() == MouseEvent.BUTTON3) {
+							AbstractTreeItem item = getSelectedTreeNode();
+
+							popupAddGroup.setEnabled(item instanceof ClassTreeItem);
+
 							treePopup.show(tree, e.getX(), e.getY());
 						}
 					} else if (e.getClickCount() == 2) {
@@ -475,8 +503,68 @@ public class MainWindow {
 					}
 				}
 			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				int selRow = tree.getRowForLocation(e.getX(), e.getY());
+				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+				TreePath dropPath = selPath;
+
+				if (selRow != -1 && draggedPath != null) {
+					if (e.getButton() == MouseEvent.BUTTON1) {
+
+						AbstractTreeItem draggedItem = (AbstractTreeItem)draggedPath.getLastPathComponent();
+						AbstractTreeItem dropItem = (AbstractTreeItem)dropPath.getLastPathComponent();
+
+						if(draggedItem instanceof FieldTreeItem && (dropItem instanceof ClassTreeItem || dropItem instanceof GroupTreeItem)) {
+
+							Class<?> dropClass;
+
+							if(dropItem instanceof ClassTreeItem) {
+								dropClass = ((ClassTreeItem)dropItem).getTreeClass();
+							} else if(dropItem instanceof GroupTreeItem) {
+								dropClass = ((GroupTreeItem)dropItem).getOwnerClass();
+							} else {
+								dropClass = null;
+							}
+
+							if(draggedItem.isCheckable() && dropClass != null && dropClass == ((FieldTreeItem)draggedItem).field.getDeclaringClass()) {
+
+								FieldInGroupTreeItem figNode = new FieldInGroupTreeItem(((FieldTreeItem)draggedItem).field);
+
+								treeModel.insertNodeInto(figNode, dropItem, dropItem.getChildCount());
+
+								tree.expandPath(new TreePath(treeModel.getPathToRoot(dropItem)));
+							}
+						}
+					}
+				}
+
+				draggedPath = null;
+			}
 		};
 		tree.addMouseListener(ml);
+
+		tree.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.getKeyCode() != KeyEvent.VK_DELETE)
+					return;
+
+				TreePath selPath = tree.getSelectionPath();
+				if(selPath == null)
+					return;
+
+				AbstractTreeItem node = (AbstractTreeItem)selPath.getLastPathComponent();
+				if(node instanceof FieldInGroupTreeItem) {
+					treeModel.removeNodeFromParent(node);
+				}
+				if(node instanceof GroupTreeItem) {
+					treeModel.removeNodeFromParent(node);
+					allGroupTreeItems.remove(node);
+				}
+			}
+		});
 
 		cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
 		for (Class<? extends VisualizationAlgorithm> algClass : AlgorithmFinder.getAlgorithmClasses()) {
@@ -592,6 +680,7 @@ public class MainWindow {
 		graphConfigPanel.add(Box.createVerticalGlue());
 		//graphConfigPanel.add(minimap);
 
+
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
 		tree.setPreferredSize(null);
@@ -646,14 +735,11 @@ public class MainWindow {
 		Enumeration<TreeNode> children = ((DefaultMutableTreeNode) selPath
 				.getLastPathComponent()).breadthFirstEnumeration();
 		while (children.hasMoreElements()) {
-			TreeNode child = children.nextElement();
-			Object currentNode = ((DefaultMutableTreeNode) child)
-					.getUserObject();
-			// cast your currentNode to the check box and set selected or
+			AbstractTreeItem child = (AbstractTreeItem)children.nextElement();
+			// cast your child to the check box and set selected or
 			// unselected.
-			if (currentNode instanceof AbstractTreeItem
-					&& ((AbstractTreeItem) currentNode).isCheckable()) {
-				((AbstractTreeItem) currentNode).checked = check;
+			if(child.isCheckable()) {
+				child.checked = check;
 			}
 		}
 		tree.repaint();
@@ -676,13 +762,11 @@ public class MainWindow {
 
 		updateCheckboxesEnabled();
 
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(
-				new JarTreeItem(jarfile.getName()));
+		DefaultMutableTreeNode top = new JarTreeItem(jarfile.getName());
 		((DefaultTreeModel) tree.getModel()).setRoot(top);
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				tree.expandPath(new TreePath(new Object[] { tree.getModel()
-						.getRoot() }));
+				tree.expandPath(new TreePath(new Object[] { treeModel.getRoot() }));
 			}
 		});
 
@@ -721,6 +805,8 @@ public class MainWindow {
 
 			@Override
 			public boolean isFieldTraced(FieldKey f) {
+				if(f.className.startsWith("__g"))
+					return true;
 				return selectedFields.contains(f);
 			}
 
@@ -769,6 +855,8 @@ public class MainWindow {
 		for (Class<?> cl : jarData.data)
 			loadedClasses.add(cl.getName());
 
+		final List<Group> groups = getConfiguredGroups();
+
 		Thread thread = new Thread() {
 
 			@Override
@@ -780,7 +868,7 @@ public class MainWindow {
 					TraceFilter initialFilter;
 
 					if (savedTraceFile == null) {
-						initialFilter = filter;
+						initialFilter = addGroupContainedFieldsToFilter(filter, groups);
 					} else {
 						initialFilter = new TraceFilter() {
 							@Override
@@ -826,6 +914,8 @@ public class MainWindow {
 									@Override
 									public void onTraceLine(TraceEntry line) {
 										synchronized (graph) {
+											for(Group g : groups)
+												g.updateLine(line);
 											iva.processLine(line);
 										}
 									}
@@ -871,6 +961,30 @@ public class MainWindow {
 		thread.start();
 	}
 
+	protected TraceFilter addGroupContainedFieldsToFilter(final TraceFilter filter, List<Group> groups) {
+		final Set<FieldKey> groupContainedFields = new HashSet<FieldKey>();
+		for(Group g : groups)
+			groupContainedFields.addAll(g.fields);
+		return new TraceFilter() {
+			@Override
+			public boolean isMethodTraced(MethodKey m) {
+				return filter.isMethodTraced(m);
+			}
+
+			@Override
+			public boolean isFieldTraced(FieldKey f) {
+				if(groupContainedFields.contains(f))
+					return true;
+				return filter.isFieldTraced(f);
+			}
+
+			@Override
+			public boolean isParameterTraced(ParameterKey p) {
+				return filter.isParameterTraced(p);
+			}
+		};
+	}
+
 	/**
 	 * Called after a set of traces is either traced, or loaded from a file.
 	 *
@@ -883,8 +997,16 @@ public class MainWindow {
 			InterruptedException {
 
 		TraceFilter filter = getSelectionFilter();
+		List<Group> groups = getConfiguredGroups();
+
 		for (Trace t : traces) {
+			for(TraceEntry e : t.lines)
+				for(Group g : groups)
+					g.updateLine(e);
+
 			t.applyFilter(filter);
+
+			System.out.println(t.lines.get(0).state);
 		}
 
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
@@ -926,6 +1048,21 @@ public class MainWindow {
 		}
 	}
 
+	public List<Group> getConfiguredGroups() {
+		List<Group> groups = new ArrayList<Group>();
+		for(GroupTreeItem gti : allGroupTreeItems) {
+			Group g = new Group();
+
+			for(int k = 0; k < gti.getChildCount(); k++) {
+				FieldInGroupTreeItem child = (FieldInGroupTreeItem)gti.getChildAt(k);
+
+				g.fields.add(child.getFieldKey());
+			}
+			groups.add(g);
+		}
+		return groups;
+	}
+
 	public void saveToConfiguration(TracerConfiguration conf) {
 		conf.jarFile = jarData.file;
 		for (MethodTreeItem mti : allMethodTreeItems)
@@ -935,6 +1072,8 @@ public class MainWindow {
 		for (ParameterTreeItem pti : allParameterTreeItems)
 			conf.selectedParameters.put(new ParameterKey(pti.parent.method,
 					pti.argNum), pti.checked);
+
+		conf.groups = getConfiguredGroups();
 
 		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper) cmbAlgorithm
 				.getSelectedItem();
@@ -959,6 +1098,13 @@ public class MainWindow {
 		conf.continuousUpdating = chkContinuousUpdating.isSelected();
 	}
 
+	public ClassTreeItem getClassTreeItem(String name) {
+		for(ClassTreeItem cti : allClassTreeItems)
+			if(cti.getTreeClass().getName().equals(name))
+				return cti;
+		return null;
+	}
+
 	public void loadFromConfiguration(TracerConfiguration conf) {
 		loadJarFile(conf.jarFile);
 
@@ -976,6 +1122,30 @@ public class MainWindow {
 			Boolean saved = conf.selectedParameters.get(new ParameterKey(
 					pti.parent.method, pti.argNum));
 			pti.checked = (saved != null ? saved : DEFAULT_PARAMETER_SELECTED);
+		}
+
+		if(conf.groups != null) {
+			for(Group g : conf.groups) {
+				if(g.fields.isEmpty())
+					continue;
+
+				String className = g.fields.get(0).className;
+				ClassTreeItem cti = getClassTreeItem(className);
+				if(cti == null)
+					continue;
+
+				GroupTreeItem gti = new GroupTreeItem(cti.getTreeClass());
+				for(FieldKey field : g.fields) {
+					try {
+						FieldInGroupTreeItem figti = new FieldInGroupTreeItem(cti.getTreeClass().getDeclaredField(field.name));
+						treeModel.insertNodeInto(figti, gti, gti.getChildCount());
+					} catch(NoSuchFieldException e) {
+						// Do nothing; don't insert field into group
+					}
+				}
+				allGroupTreeItems.add(gti);
+				treeModel.insertNodeInto(gti, cti, cti.getChildCount());
+			}
 		}
 
 		boolean foundAlgorithm = false;
@@ -1037,15 +1207,19 @@ public class MainWindow {
 			doTraceAndAnalysis();
 	}
 
+	private List<ClassTreeItem> allClassTreeItems = new ArrayList<ClassTreeItem>();
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
 	private List<ParameterTreeItem> allParameterTreeItems = new ArrayList<ParameterTreeItem>();
+	private List<GroupTreeItem> allGroupTreeItems = new ArrayList<GroupTreeItem>();
 
 	private void createNodes(DefaultMutableTreeNode top,
 			ArrayList<Class<?>> classData) {
 		allMethodTreeItems.clear();
 		allFieldTreeItems.clear();
 		allParameterTreeItems.clear();
+		allGroupTreeItems.clear();
+		allClassTreeItems.clear();
 
 		Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 
@@ -1073,8 +1247,7 @@ public class MainWindow {
 				DefaultMutableTreeNode packageNode = packages.get(packageName);
 				if (packageNode == null) {
 					// If no node exists for this package, create one
-					packageNode = new DefaultMutableTreeNode(
-							new PackageTreeItem(packageName));
+					packageNode = new PackageTreeItem(packageName);
 					packages.put(packageName, packageNode);
 					top.add(packageNode);
 				}
@@ -1107,36 +1280,38 @@ public class MainWindow {
 	private DefaultMutableTreeNode createClassNodes(Class<?> data) {
 		ClassTreeItem classItem = new ClassTreeItem(data);
 
-		DefaultMutableTreeNode classNode = new DefaultMutableTreeNode(classItem);
+		allClassTreeItems.add(classItem);
 
 		for (Field field : data.getDeclaredFields()) {
 			FieldTreeItem fti = new FieldTreeItem(field);
 			if (field.isSynthetic() && !fti.isCheckable())
 				continue;
 			allFieldTreeItems.add(fti);
-			classNode.add(new DefaultMutableTreeNode(fti));
+			classItem.add(fti);
 		}
 
 		for (Method method : data.getDeclaredMethods()) {
-			MethodTreeItem treeItem = new MethodTreeItem(classItem,
+			MethodTreeItem methodNode = new MethodTreeItem(classItem,
 					new MethodKey(method), method);
-			if (method.isSynthetic() && !treeItem.isCheckable())
+			if (method.isSynthetic() && !methodNode.isCheckable())
 				continue;
 
-			DefaultMutableTreeNode methodNode = new DefaultMutableTreeNode(
-					treeItem);
-			classNode.add(methodNode);
+			classItem.add(methodNode);
 
-			allMethodTreeItems.add(treeItem);
+			allMethodTreeItems.add(methodNode);
 
 			int numArgs = method.getParameterTypes().length;
 			for (int k = 0; k < numArgs; k++) {
-				ParameterTreeItem pti = new ParameterTreeItem(treeItem, k);
+				ParameterTreeItem pti = new ParameterTreeItem(methodNode, k);
 				allParameterTreeItems.add(pti);
-				methodNode.add(new DefaultMutableTreeNode(pti));
+				methodNode.add(pti);
 			}
 		}
-		return classNode;
+		return classItem;
+	}
+
+	private AbstractTreeItem getSelectedTreeNode() {
+		return (AbstractTreeItem)selectedPath.getLastPathComponent();
 	}
 
 	private class CheckBoxIconPanel extends JPanel {
@@ -1163,22 +1338,16 @@ public class MainWindow {
 		public Component getTreeCellRendererComponent(JTree tree, Object value,
 				boolean selected, boolean expanded, boolean leaf, int row,
 				boolean hasFocus) {
-			value = ((DefaultMutableTreeNode) value).getUserObject();
-			try {
-				AbstractTreeItem item = (AbstractTreeItem) value;
-				if (item.isCheckable()) {
-					checkBoxPanel.label.setIcon(item.getIcon());
-					checkBoxPanel.checkBox.setSelected(item.checked);
-					checkBoxPanel.checkBox.setText(value.toString());
-					return checkBoxPanel;
-				} else {
-					label.setIcon(item.getIcon());
-					label.setText(value.toString());
-					return label;
-				}
-			} catch (StackOverflowError e) {
-				System.exit(1);
-				return null;
+			AbstractTreeItem item = (AbstractTreeItem)value;
+			if (item.isCheckable()) {
+				checkBoxPanel.label.setIcon(item.getIcon());
+				checkBoxPanel.checkBox.setSelected(item.checked);
+				checkBoxPanel.checkBox.setText(value.toString());
+				return checkBoxPanel;
+			} else {
+				label.setIcon(item.getIcon());
+				label.setText(value.toString());
+				return label;
 			}
 		}
 	}
@@ -1201,7 +1370,7 @@ public class MainWindow {
 			final Component rv = new ClassTreeCellRenderer()
 					.getTreeCellRendererComponent(tree, value_, selected,
 							expanded, leaf, row, true);
-			this.value = ((DefaultMutableTreeNode) value_).getUserObject();
+			this.value = (AbstractTreeItem)value_;
 			if (rv instanceof CheckBoxIconPanel) {
 				((CheckBoxIconPanel) rv).checkBox
 						.addItemListener(new ItemListener() {

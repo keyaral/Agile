@@ -14,4 +14,14 @@ public class StringState extends State {
 	public String toString() {
 		return "\""+stringValue.replace("\"","\\\"")+"\"";
 	}
+
+	@Override
+	public int hashCode() {
+		return stringValue.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof StringState && ((StringState)obj).stringValue.equals(stringValue);
+	}
 }

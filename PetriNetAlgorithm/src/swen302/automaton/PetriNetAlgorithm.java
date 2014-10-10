@@ -1,37 +1,146 @@
 package swen302.automaton;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
 import swen302.graph.Edge;
 import swen302.graph.Graph;
+import swen302.graph.LabelFormatOptions;
 import swen302.graph.Node;
 import swen302.graph.PetriTransitionNode;
+import swen302.tracer.FieldKey;
+import swen302.tracer.MethodKey;
 import swen302.tracer.Trace;
+import swen302.tracer.TraceEntry;
+import swen302.tracer.state.ObjectState;
+import swen302.tracer.state.State;
 
 public class PetriNetAlgorithm implements VisualizationAlgorithm {
 
+	private Graph graph;
+	private Map<FieldValueKey, Node> nodes;
+	private int nextNodeID;
+
+	private static class FieldValueKey {
+		public final FieldKey field;
+		public final State value;
+		public FieldValueKey(FieldKey f, State v) {
+			field = f;
+			value = v;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if(!(obj instanceof FieldValueKey))
+				return false;
+			FieldValueKey o = (FieldValueKey)obj;
+			return o.field.equals(field) && o.value.equals(value);
+		}
+		@Override
+		public int hashCode() {
+			return field.hashCode() ^ value.hashCode();
+		}
+	}
+
+	private Node getFieldNode(final FieldKey field, final State state) {
+		FieldValueKey fvk = new FieldValueKey(field, state);
+		Node node = nodes.get(fvk);
+		if(node != null)
+			return node;
+
+		node = new Node(String.valueOf(nextNodeID++));
+		node.setState(new Object() {
+			@Override
+			public String toString() {
+				if(!LabelFormatOptions.displayState)
+					return "";
+				return (!LabelFormatOptions.displayClass ? field.name : field)+"="+state;
+			}
+		});
+
+		nodes.put(fvk, node);
+		graph.addNode(node);
+		return node;
+	}
+
+	class TransitionKey {
+		MethodKey method;
+		Map<FieldKey, State> beforeValues = new HashMap<FieldKey, State>();
+		Map<FieldKey, State> afterValues = new HashMap<FieldKey, State>();
+
+		@Override
+		public boolean equals(Object obj) {
+			if(!(obj instanceof TransitionKey)) return false;
+
+			TransitionKey o = (TransitionKey)obj;
+			return method.equals(o.method) && beforeValues.equals(o.beforeValues) && afterValues.equals(o.afterValues);
+		}
+
+		@Override
+		public int hashCode() {
+			return ((method.hashCode()*37 + beforeValues.hashCode()) * 37 + afterValues.hashCode());
+		}
+	}
+
+	private Set<TransitionKey> seenTransitions = new HashSet<TransitionKey>();
+
+	private void processTransition(State before_, State after_, MethodKey method, String longMethodName) {
+		if(before_ instanceof ObjectState && after_ instanceof ObjectState) {
+			ObjectState before = (ObjectState)before_;
+			ObjectState after = (ObjectState)after_;
+
+			// avoid duplicates
+			TransitionKey key = new TransitionKey();
+			key.method = method;
+
+			for(FieldKey field : before.fields.keySet()) {
+				State beforeValue = before.fields.get(field);
+				State afterValue = after.fields.get(field);
+				if(!beforeValue.equals(afterValue)) {
+					key.beforeValues.put(field, beforeValue);
+					key.afterValues.put(field, afterValue);
+				}
+			}
+
+			if(!seenTransitions.add(key))
+				return; // already added an identical transition
+
+			Node transition = new PetriTransitionNode(String.valueOf(nextNodeID++));
+			transition.setState(AutomatonGraphUtils.createMethodLabelObject(longMethodName));
+			graph.addNode(transition);
+
+			for(FieldKey field : key.beforeValues.keySet()) {
+				State beforeValue = before.fields.get(field);
+				State afterValue = after.fields.get(field);
+				graph.addEdge(new Edge(String.valueOf(nextNodeID++), "", getFieldNode(field, before.fields.get(field)), transition));
+				graph.addEdge(new Edge(String.valueOf(nextNodeID++), "", transition, getFieldNode(field, after.fields.get(field))));
+			}
+		}
+	}
+
 	@Override
 	public Graph generateGraph(Trace[] trace) {
-		Node a = new Node("a");
-		Node b = new Node("b");
-		Node c = new Node("c");
-		Node d = new Node("d");
-		PetriTransitionNode t1 = new PetriTransitionNode("t1");
-		PetriTransitionNode t2 = new PetriTransitionNode("t2");
-		a.setState("a");
-		b.setState("b");
-		c.setState("c");
-		d.setState("d");
-		t1.setState("t1");
-		t2.setState("t2");
+		graph = new Graph();
+		nodes = new HashMap<>();
+		nextNodeID = 0;
 
-		Graph g = new Graph();
-		g.addNode(a); g.addNode(b); g.addNode(c); g.addNode(d); g.addNode(t1); g.addNode(t2);
-		g.addEdge(new Edge("e1", "e1", a, t1));
-		g.addEdge(new Edge("e2", "e2", b, t1));
-		g.addEdge(new Edge("e3", "e3", t1, c));
-		g.addEdge(new Edge("e4", "e4", c, t2));
-		g.addEdge(new Edge("e5", "e5", t2, d));
-		g.addEdge(new Edge("e6", "e6", d, t2));
-		return g;
+		for(Trace t : trace) {
+			Stack<State> stack = new Stack<State>();
+			for(TraceEntry entry : t.lines) {
+				stack.add(entry.state);
+
+				if(entry.isReturn) {
+					State after = stack.pop();
+					State before = stack.pop();
+
+					processTransition(before, after, entry.method, entry.getLongMethodName());
+				}
+			}
+		}
+
+		return graph;
 	}
 
 	@Override

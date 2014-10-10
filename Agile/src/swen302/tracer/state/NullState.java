@@ -7,4 +7,14 @@ public class NullState extends State {
 	public String toString() {
 		return "null";
 	}
+
+	@Override
+	public int hashCode() {
+		return 0x1274742F;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof NullState;
+	}
 }

@@ -11,4 +11,14 @@ public class SimpleState extends State {
 	public String toString() {
 		return stringValue;
 	}
+
+	@Override
+	public int hashCode() {
+		return stringValue.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof SimpleState && ((SimpleState)obj).stringValue.equals(stringValue);
+	}
 }

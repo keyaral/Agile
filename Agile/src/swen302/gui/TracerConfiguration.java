@@ -31,6 +31,8 @@ public class TracerConfiguration implements Serializable {
 	public Map<FieldKey, Boolean> selectedFields = new HashMap<>();
 	public Map<ParameterKey, Boolean> selectedParameters = new HashMap<>();
 
+	public List<Group> groups = new ArrayList<>();
+
 	public String algorithmClassName;
 	public String algorithmName;
 

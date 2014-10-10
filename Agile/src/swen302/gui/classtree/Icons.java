@@ -25,4 +25,5 @@ public class Icons {
 	public static final Icon fieldPrivateIcon = getIcon("field_private_obj");
 	public static final Icon fieldDefaultIcon = getIcon("field_default_obj");
 	public static final Icon fieldProtectedIcon = getIcon("field_protected_obj");
+	public static final Icon fieldGroupIcon = getIcon("packagefolder_obj");
 }

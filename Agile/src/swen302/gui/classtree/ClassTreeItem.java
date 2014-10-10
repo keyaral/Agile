@@ -16,6 +16,10 @@ public class ClassTreeItem extends AbstractTreeItem {
 		return clazz.getSimpleName();
 	}
 
+	public Class<?> getTreeClass() {
+		return clazz;
+	}
+
 	@Override
 	public Icon getIcon() {
 		boolean isPublic = (clazz.getModifiers() & Modifier.PUBLIC) != 0;

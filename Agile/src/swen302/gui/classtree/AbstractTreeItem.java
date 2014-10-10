@@ -1,12 +1,13 @@
 package swen302.gui.classtree;
 
 import javax.swing.Icon;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  * An item in the class tree (left side of the GUI)
  * @author campbealex2
  */
-public class AbstractTreeItem {
+public class AbstractTreeItem extends DefaultMutableTreeNode {
 	/**
 	 * Returns the icon for this item, or null to not display an icon.
 	 */

@@ -1,7 +1,7 @@
 package swen302.tracer.state;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +14,7 @@ public class ArrayState extends State {
 
 	@Override
 	public String toString() {
-		return toString(new HashMap<State, String>());
+		return toString(new IdentityHashMap<State, String>());
 	}
 
 	public String toString(Map<State, String> alreadySeenObjects) {
@@ -38,5 +38,15 @@ public class ArrayState extends State {
 	public void filterFields(TraceFilter f) {
 		for(State s : values)
 			s.filterFields(f);
+	}
+
+	@Override
+	public int hashCode() {
+		return 0; // TODO
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof ArrayState && ((ArrayState)obj).values.equals(values);
 	}
 }
