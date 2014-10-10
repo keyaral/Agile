@@ -357,7 +357,8 @@ public class EadesSpringEmbedder {
 				graphics.fill(new Rectangle2D.Double(xPos  - n.labelBounds.getWidth()/2, yPos-20, stringBounds.getWidth(), stringBounds.getHeight()));
 
 				graphics.setColor(Color.black);
-				graphics.drawString(n.getLabel(), (float)(xPos - (n.labelBounds.getWidth()/2)), (float)(yPos-10));
+				drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
+
 
 				int[] arrowXPoints = new int[] {0, 5, 5};
 				int[] arrowYPoints = new int[] {0, -5, 5};
@@ -385,17 +386,35 @@ public class EadesSpringEmbedder {
 			Node npm = this.pointInNode(mouseX, mouseY);
 			npm = selectedNode != null ? selectedNode : npm;
 			if (npm != null) {
-				Rectangle2D stringBounds = npm.labelBounds;
-
-				graphics.setColor(new Color(100, 215, 215));
-				graphics.fillRect((int)(npm.getPosition().getX() - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
-						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
-				graphics.setColor(Color.black);
-				graphics.drawString(npm.getLabel(), (int)(npm.getPosition().getX() - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-8);
-				graphics.drawRect((int)(npm.getPosition().getX() - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
-						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
+				drawNodeLabel(graphics, npm.getPosition(), npm.getLabel(), true);
 			}
 		}
+	}
+
+	private static void drawNodeLabel(Graphics2D graphics, Vector2D pos, String label, boolean highlighted) {
+		AffineTransform oldTr = graphics.getTransform();
+		Point2D labelBottomCentre = oldTr.transform(new Point2D.Double(pos.getX(), pos.getY()), null);
+
+		AffineTransform newTr = new AffineTransform();
+		newTr.translate(labelBottomCentre.getX(), labelBottomCentre.getY() - 10);
+		graphics.setTransform(newTr);
+
+		Rectangle2D textRect = graphics.getFontMetrics().getStringBounds(label, graphics);
+
+		textRect.add(-textRect.getWidth()/2, 0);
+
+		if(highlighted) {
+			graphics.setColor(new Color(100, 215, 215));
+			graphics.fill(textRect);
+			graphics.setColor(Color.black);
+		}
+
+		graphics.drawString(label, (float)textRect.getX(), 0);
+
+		if(highlighted)
+			graphics.draw(textRect);
+
+		graphics.setTransform(oldTr);
 	}
 
 	private static Vector2D evalBezierCurve(Vector2D v1, Vector2D v2, Vector2D v3, Vector2D v4, double t) {
