@@ -120,6 +120,7 @@ public class MainWindow {
 	private JCheckBoxMenuItem displayID, displayState, displayClass,
 			displayMethod, displayParamTypes, displayParamValues;
 	private JTree tree;
+	private DefaultTreeModel treeModel;
 	private JPanel treePanel;
 	private JPanel configPanel;
 	private JPanel graphConfigPanel;
@@ -246,10 +247,9 @@ public class MainWindow {
 
 				DefaultMutableTreeNode selectedNode = getSelectedTreeNode();
 
-				GroupTreeItem groupItem = new GroupTreeItem("Field group", ((ClassTreeItem)selectedNode.getUserObject()).getTreeClass());
-				DefaultMutableTreeNode groupNode = new DefaultMutableTreeNode(groupItem);
+				GroupTreeItem groupNode = new GroupTreeItem("Field group", ((ClassTreeItem)selectedNode).getTreeClass());
 
-				((DefaultTreeModel)tree.getModel()).insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
+				treeModel.insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
 			}
 		});
 
@@ -362,7 +362,7 @@ public class MainWindow {
 
 						updateCheckboxesEnabled();
 
-						((DefaultMutableTreeNode) tree.getModel().getRoot())
+						((DefaultMutableTreeNode) treeModel.getRoot())
 								.setUserObject(new JarTreeItem(openTraceFile
 										.getName()));
 					} catch (IOException | InterruptedException exc) {
@@ -463,8 +463,8 @@ public class MainWindow {
 		menuBar.add(fileMenu);
 		menuBar.add(displayMenu);
 
-		tree = new JTree(new DefaultMutableTreeNode(new JarTreeItem(
-				"No file loaded")));
+		treeModel = new DefaultTreeModel(new JarTreeItem("No file loaded"));
+		tree = new JTree(treeModel);
 		tree.setCellRenderer(new ClassTreeCellRenderer());
 		tree.setCellEditor(new ClassTreeCellEditor());
 		tree.setEditable(true);
@@ -484,7 +484,7 @@ public class MainWindow {
 				if (selRow != -1) {
 					if (e.getClickCount() == 1) {
 						if (e.getButton() == MouseEvent.BUTTON3) {
-							AbstractTreeItem item = getSelectedTreeItem();
+							AbstractTreeItem item = getSelectedTreeNode();
 
 							popupAddGroup.setEnabled(item instanceof ClassTreeItem);
 
@@ -511,11 +511,8 @@ public class MainWindow {
 				if (selRow != -1 && draggedPath != null) {
 					if (e.getButton() == MouseEvent.BUTTON1) {
 
-						DefaultMutableTreeNode draggedNode = (DefaultMutableTreeNode)draggedPath.getLastPathComponent();
-						DefaultMutableTreeNode dropNode = (DefaultMutableTreeNode)dropPath.getLastPathComponent();
-
-						AbstractTreeItem draggedItem = (AbstractTreeItem)((DefaultMutableTreeNode)draggedPath.getLastPathComponent()).getUserObject();
-						AbstractTreeItem dropItem = (AbstractTreeItem)((DefaultMutableTreeNode)dropPath.getLastPathComponent()).getUserObject();
+						AbstractTreeItem draggedItem = (AbstractTreeItem)draggedPath.getLastPathComponent();
+						AbstractTreeItem dropItem = (AbstractTreeItem)dropPath.getLastPathComponent();
 
 						if(draggedItem instanceof FieldTreeItem && (dropItem instanceof ClassTreeItem || dropItem instanceof GroupTreeItem)) {
 
@@ -531,12 +528,11 @@ public class MainWindow {
 
 							if(draggedItem.isCheckable() && dropClass != null && dropClass == ((FieldTreeItem)draggedItem).field.getDeclaringClass()) {
 
-								FieldInGroupTreeItem figItem = new FieldInGroupTreeItem(((FieldTreeItem)draggedItem).field);
-								DefaultMutableTreeNode figNode = new DefaultMutableTreeNode(figItem);
+								FieldInGroupTreeItem figNode = new FieldInGroupTreeItem(((FieldTreeItem)draggedItem).field);
 
-								((DefaultTreeModel)tree.getModel()).insertNodeInto(figNode, dropNode, dropNode.getChildCount());
+								treeModel.insertNodeInto(figNode, dropItem, dropItem.getChildCount());
 
-								tree.expandPath(new TreePath(((DefaultTreeModel)tree.getModel()).getPathToRoot(dropNode)));
+								tree.expandPath(new TreePath(treeModel.getPathToRoot(dropItem)));
 							}
 						}
 					}
@@ -557,13 +553,12 @@ public class MainWindow {
 				if(selPath == null)
 					return;
 
-				DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
-				AbstractTreeItem ati = (AbstractTreeItem)node.getUserObject();
-				if(ati instanceof FieldInGroupTreeItem) {
-					((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
+				AbstractTreeItem node = (AbstractTreeItem)selPath.getLastPathComponent();
+				if(node instanceof FieldInGroupTreeItem) {
+					treeModel.removeNodeFromParent(node);
 				}
-				if(ati instanceof GroupTreeItem) {
-					((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
+				if(node instanceof GroupTreeItem) {
+					treeModel.removeNodeFromParent(node);
 				}
 			}
 		});
@@ -737,14 +732,11 @@ public class MainWindow {
 		Enumeration<TreeNode> children = ((DefaultMutableTreeNode) selPath
 				.getLastPathComponent()).breadthFirstEnumeration();
 		while (children.hasMoreElements()) {
-			TreeNode child = children.nextElement();
-			Object currentNode = ((DefaultMutableTreeNode) child)
-					.getUserObject();
-			// cast your currentNode to the check box and set selected or
+			AbstractTreeItem child = (AbstractTreeItem)children.nextElement();
+			// cast your child to the check box and set selected or
 			// unselected.
-			if (currentNode instanceof AbstractTreeItem
-					&& ((AbstractTreeItem) currentNode).isCheckable()) {
-				((AbstractTreeItem) currentNode).checked = check;
+			if(child.isCheckable()) {
+				child.checked = check;
 			}
 		}
 		tree.repaint();
@@ -767,13 +759,11 @@ public class MainWindow {
 
 		updateCheckboxesEnabled();
 
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode(
-				new JarTreeItem(jarfile.getName()));
+		DefaultMutableTreeNode top = new JarTreeItem(jarfile.getName());
 		((DefaultTreeModel) tree.getModel()).setRoot(top);
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				tree.expandPath(new TreePath(new Object[] { tree.getModel()
-						.getRoot() }));
+				tree.expandPath(new TreePath(new Object[] { treeModel.getRoot() }));
 			}
 		});
 
@@ -1164,8 +1154,7 @@ public class MainWindow {
 				DefaultMutableTreeNode packageNode = packages.get(packageName);
 				if (packageNode == null) {
 					// If no node exists for this package, create one
-					packageNode = new DefaultMutableTreeNode(
-							new PackageTreeItem(packageName));
+					packageNode = new PackageTreeItem(packageName);
 					packages.put(packageName, packageNode);
 					top.add(packageNode);
 				}
@@ -1198,47 +1187,36 @@ public class MainWindow {
 	private DefaultMutableTreeNode createClassNodes(Class<?> data) {
 		ClassTreeItem classItem = new ClassTreeItem(data);
 
-		DefaultMutableTreeNode classNode = new DefaultMutableTreeNode(classItem);
-
 		for (Field field : data.getDeclaredFields()) {
 			FieldTreeItem fti = new FieldTreeItem(field);
 			if (field.isSynthetic() && !fti.isCheckable())
 				continue;
 			allFieldTreeItems.add(fti);
-			classNode.add(new DefaultMutableTreeNode(fti));
+			classItem.add(fti);
 		}
 
 		for (Method method : data.getDeclaredMethods()) {
-			MethodTreeItem treeItem = new MethodTreeItem(classItem,
+			MethodTreeItem methodNode = new MethodTreeItem(classItem,
 					new MethodKey(method), method);
-			if (method.isSynthetic() && !treeItem.isCheckable())
+			if (method.isSynthetic() && !methodNode.isCheckable())
 				continue;
 
-			DefaultMutableTreeNode methodNode = new DefaultMutableTreeNode(
-					treeItem);
-			classNode.add(methodNode);
+			classItem.add(methodNode);
 
-			allMethodTreeItems.add(treeItem);
+			allMethodTreeItems.add(methodNode);
 
 			int numArgs = method.getParameterTypes().length;
 			for (int k = 0; k < numArgs; k++) {
-				ParameterTreeItem pti = new ParameterTreeItem(treeItem, k);
+				ParameterTreeItem pti = new ParameterTreeItem(methodNode, k);
 				allParameterTreeItems.add(pti);
-				methodNode.add(new DefaultMutableTreeNode(pti));
+				methodNode.add(pti);
 			}
 		}
-		return classNode;
+		return classItem;
 	}
 
-	private AbstractTreeItem getSelectedTreeItem() {
-		DefaultMutableTreeNode treeNode = getSelectedTreeNode();
-		AbstractTreeItem item = (AbstractTreeItem)treeNode.getUserObject();
-		return item;
-	}
-
-	private DefaultMutableTreeNode getSelectedTreeNode() {
-		DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)selectedPath.getLastPathComponent();
-		return selectedNode;
+	private AbstractTreeItem getSelectedTreeNode() {
+		return (AbstractTreeItem)selectedPath.getLastPathComponent();
 	}
 
 	private class CheckBoxIconPanel extends JPanel {
@@ -1265,22 +1243,16 @@ public class MainWindow {
 		public Component getTreeCellRendererComponent(JTree tree, Object value,
 				boolean selected, boolean expanded, boolean leaf, int row,
 				boolean hasFocus) {
-			value = ((DefaultMutableTreeNode) value).getUserObject();
-			try {
-				AbstractTreeItem item = (AbstractTreeItem) value;
-				if (item.isCheckable()) {
-					checkBoxPanel.label.setIcon(item.getIcon());
-					checkBoxPanel.checkBox.setSelected(item.checked);
-					checkBoxPanel.checkBox.setText(value.toString());
-					return checkBoxPanel;
-				} else {
-					label.setIcon(item.getIcon());
-					label.setText(value.toString());
-					return label;
-				}
-			} catch (StackOverflowError e) {
-				System.exit(1);
-				return null;
+			AbstractTreeItem item = (AbstractTreeItem)value;
+			if (item.isCheckable()) {
+				checkBoxPanel.label.setIcon(item.getIcon());
+				checkBoxPanel.checkBox.setSelected(item.checked);
+				checkBoxPanel.checkBox.setText(value.toString());
+				return checkBoxPanel;
+			} else {
+				label.setIcon(item.getIcon());
+				label.setText(value.toString());
+				return label;
 			}
 		}
 	}
@@ -1303,7 +1275,7 @@ public class MainWindow {
 			final Component rv = new ClassTreeCellRenderer()
 					.getTreeCellRendererComponent(tree, value_, selected,
 							expanded, leaf, row, true);
-			this.value = ((DefaultMutableTreeNode) value_).getUserObject();
+			this.value = (AbstractTreeItem)value_;
 			if (rv instanceof CheckBoxIconPanel) {
 				((CheckBoxIconPanel) rv).checkBox
 						.addItemListener(new ItemListener() {
