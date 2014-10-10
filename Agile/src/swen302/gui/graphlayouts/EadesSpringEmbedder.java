@@ -3,7 +3,9 @@ package swen302.gui.graphlayouts;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -330,8 +332,8 @@ public class EadesSpringEmbedder {
 				}
 			}
 			for (Node n : graph.nodes) {
-				int xPos = (int)n.getPosition().getX();
-				int yPos = (int)n.getPosition().getY();
+				double xPos = n.getPosition().getX();
+				double yPos = n.getPosition().getY();
 
 				Vector2D nCenter = new Vector2D(xPos, yPos);
 				if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
@@ -339,25 +341,23 @@ public class EadesSpringEmbedder {
 				else
 					graphics.setColor(Color.LIGHT_GRAY);
 
+				Shape nodeShape;
 				if(n instanceof PetriTransitionNode)
-					graphics.fillRect((int)xPos-10, (int)yPos-10, 20, 20);
+					nodeShape = new Rectangle2D.Double(xPos-10, yPos-10, 20, 20);
 				else
-					graphics.fillOval((int)xPos-10, (int)yPos-10, 20, 20);
+					nodeShape = new Ellipse2D.Double(xPos-10, yPos-10, 20, 20);
 
+				graphics.fill(nodeShape);
 				graphics.setColor(Color.BLACK);
-				if(n instanceof PetriTransitionNode)
-					graphics.drawRect((int)xPos-10, (int)yPos-10, 20, 20);
-				else
-					graphics.drawOval((int)xPos-10, (int)yPos-10, 20, 20);
+				graphics.draw(nodeShape);
 
 				Rectangle2D stringBounds = n.labelBounds;
 
 				graphics.setColor(new Color(200, 240, 240, 100));
-				graphics.fillRect((xPos  - (int)(n.labelBounds.getWidth()/2)), yPos-20,
-						(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
+				graphics.fill(new Rectangle2D.Double(xPos  - n.labelBounds.getWidth()/2, yPos-20, stringBounds.getWidth(), stringBounds.getHeight()));
 
 				graphics.setColor(Color.black);
-				graphics.drawString(n.getLabel(), xPos - (int)(n.labelBounds.getWidth()/2), yPos-10);
+				graphics.drawString(n.getLabel(), (float)(xPos - (n.labelBounds.getWidth()/2)), (float)(yPos-10));
 
 				int[] arrowXPoints = new int[] {0, 5, 5};
 				int[] arrowYPoints = new int[] {0, -5, 5};
