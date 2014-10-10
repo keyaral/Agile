@@ -353,9 +353,6 @@ public class EadesSpringEmbedder {
 
 				Rectangle2D stringBounds = n.labelBounds;
 
-				graphics.setColor(new Color(200, 240, 240, 100));
-				graphics.fill(new Rectangle2D.Double(xPos  - n.labelBounds.getWidth()/2, yPos-20, stringBounds.getWidth(), stringBounds.getHeight()));
-
 				graphics.setColor(Color.black);
 				drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
 
@@ -396,23 +393,20 @@ public class EadesSpringEmbedder {
 		Point2D labelBottomCentre = oldTr.transform(new Point2D.Double(pos.getX(), pos.getY()), null);
 
 		AffineTransform newTr = new AffineTransform();
-		newTr.translate(labelBottomCentre.getX(), labelBottomCentre.getY() - 10);
+		newTr.translate(labelBottomCentre.getX(), labelBottomCentre.getY() - 20);
 		graphics.setTransform(newTr);
 
 		Rectangle2D textRect = graphics.getFontMetrics().getStringBounds(label, graphics);
 
-		textRect.add(-textRect.getWidth()/2, 0);
+		textRect.setRect(textRect.getX()-textRect.getWidth()/2, textRect.getY(), textRect.getWidth(), textRect.getHeight());
 
-		if(highlighted) {
-			graphics.setColor(new Color(100, 215, 215));
-			graphics.fill(textRect);
-			graphics.setColor(Color.black);
-		}
+		graphics.setColor(highlighted ? new Color(100, 215, 215) : new Color(200, 240, 240, 100));
+		graphics.fill(textRect);
+		graphics.setColor(Color.black);
 
 		graphics.drawString(label, (float)textRect.getX(), 0);
 
-		if(highlighted)
-			graphics.draw(textRect);
+		graphics.draw(textRect);
 
 		graphics.setTransform(oldTr);
 	}
