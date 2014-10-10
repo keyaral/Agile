@@ -1,7 +1,7 @@
 package swen302.tracer.state;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +14,7 @@ public class ArrayState extends State {
 
 	@Override
 	public String toString() {
-		return toString(new HashMap<State, String>());
+		return toString(new IdentityHashMap<State, String>());
 	}
 
 	public String toString(Map<State, String> alreadySeenObjects) {

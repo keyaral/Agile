@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class ObjectState extends State {
 
 	@Override
 	public String toString() {
-		return toString(new HashMap<State, String>());
+		return toString(new IdentityHashMap<State, String>());
 	}
 
 	public String toString(Map<State, String> alreadySeenObjects) {
@@ -77,6 +78,10 @@ public class ObjectState extends State {
 	@Override
 	public boolean equals(Object obj) {
 		return obj instanceof ObjectState && ((ObjectState)obj).fields.equals(fields);
+	}
+
+	public String getClassName() {
+		return className;
 	}
 
 }

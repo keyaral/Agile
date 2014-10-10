@@ -805,6 +805,8 @@ public class MainWindow {
 
 			@Override
 			public boolean isFieldTraced(FieldKey f) {
+				if(f.className.startsWith("__g"))
+					return true;
 				return selectedFields.contains(f);
 			}
 
@@ -853,6 +855,8 @@ public class MainWindow {
 		for (Class<?> cl : jarData.data)
 			loadedClasses.add(cl.getName());
 
+		final List<Group> groups = getConfiguredGroups();
+
 		Thread thread = new Thread() {
 
 			@Override
@@ -864,7 +868,7 @@ public class MainWindow {
 					TraceFilter initialFilter;
 
 					if (savedTraceFile == null) {
-						initialFilter = filter;
+						initialFilter = addGroupContainedFieldsToFilter(filter, groups);
 					} else {
 						initialFilter = new TraceFilter() {
 							@Override
@@ -910,6 +914,8 @@ public class MainWindow {
 									@Override
 									public void onTraceLine(TraceEntry line) {
 										synchronized (graph) {
+											for(Group g : groups)
+												g.updateLine(line);
 											iva.processLine(line);
 										}
 									}
@@ -955,6 +961,30 @@ public class MainWindow {
 		thread.start();
 	}
 
+	protected TraceFilter addGroupContainedFieldsToFilter(final TraceFilter filter, List<Group> groups) {
+		final Set<FieldKey> groupContainedFields = new HashSet<FieldKey>();
+		for(Group g : groups)
+			groupContainedFields.addAll(g.fields);
+		return new TraceFilter() {
+			@Override
+			public boolean isMethodTraced(MethodKey m) {
+				return filter.isMethodTraced(m);
+			}
+
+			@Override
+			public boolean isFieldTraced(FieldKey f) {
+				if(groupContainedFields.contains(f))
+					return true;
+				return filter.isFieldTraced(f);
+			}
+
+			@Override
+			public boolean isParameterTraced(ParameterKey p) {
+				return filter.isParameterTraced(p);
+			}
+		};
+	}
+
 	/**
 	 * Called after a set of traces is either traced, or loaded from a file.
 	 *
@@ -967,8 +997,16 @@ public class MainWindow {
 			InterruptedException {
 
 		TraceFilter filter = getSelectionFilter();
+		List<Group> groups = getConfiguredGroups();
+
 		for (Trace t : traces) {
+			for(TraceEntry e : t.lines)
+				for(Group g : groups)
+					g.updateLine(e);
+
 			t.applyFilter(filter);
+
+			System.out.println(t.lines.get(0).state);
 		}
 
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
@@ -1010,6 +1048,21 @@ public class MainWindow {
 		}
 	}
 
+	public List<Group> getConfiguredGroups() {
+		List<Group> groups = new ArrayList<Group>();
+		for(GroupTreeItem gti : allGroupTreeItems) {
+			Group g = new Group();
+
+			for(int k = 0; k < gti.getChildCount(); k++) {
+				FieldInGroupTreeItem child = (FieldInGroupTreeItem)gti.getChildAt(k);
+
+				g.fields.add(child.getFieldKey());
+			}
+			groups.add(g);
+		}
+		return groups;
+	}
+
 	public void saveToConfiguration(TracerConfiguration conf) {
 		conf.jarFile = jarData.file;
 		for (MethodTreeItem mti : allMethodTreeItems)
@@ -1020,16 +1073,7 @@ public class MainWindow {
 			conf.selectedParameters.put(new ParameterKey(pti.parent.method,
 					pti.argNum), pti.checked);
 
-		for(GroupTreeItem gti : allGroupTreeItems) {
-			Group g = new Group();
-
-			for(int k = 0; k < gti.getChildCount(); k++) {
-				FieldInGroupTreeItem child = (FieldInGroupTreeItem)gti.getChildAt(k);
-
-				g.fields.add(child.getFieldKey());
-			}
-			conf.groups.add(g);
-		}
+		conf.groups = getConfiguredGroups();
 
 		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper) cmbAlgorithm
 				.getSelectedItem();
@@ -1099,6 +1143,7 @@ public class MainWindow {
 						// Do nothing; don't insert field into group
 					}
 				}
+				allGroupTreeItems.add(gti);
 				treeModel.insertNodeInto(gti, cti, cti.getChildCount());
 			}
 		}
