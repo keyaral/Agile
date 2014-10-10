@@ -247,7 +247,9 @@ public class MainWindow {
 
 				DefaultMutableTreeNode selectedNode = getSelectedTreeNode();
 
-				GroupTreeItem groupNode = new GroupTreeItem("Field group", ((ClassTreeItem)selectedNode).getTreeClass());
+				GroupTreeItem groupNode = new GroupTreeItem(((ClassTreeItem)selectedNode).getTreeClass());
+
+				allGroupTreeItems.add(groupNode);
 
 				treeModel.insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
 			}
@@ -559,6 +561,7 @@ public class MainWindow {
 				}
 				if(node instanceof GroupTreeItem) {
 					treeModel.removeNodeFromParent(node);
+					allGroupTreeItems.remove(node);
 				}
 			}
 		});
@@ -1017,6 +1020,17 @@ public class MainWindow {
 			conf.selectedParameters.put(new ParameterKey(pti.parent.method,
 					pti.argNum), pti.checked);
 
+		for(GroupTreeItem gti : allGroupTreeItems) {
+			Group g = new Group();
+
+			for(int k = 0; k < gti.getChildCount(); k++) {
+				FieldInGroupTreeItem child = (FieldInGroupTreeItem)gti.getChildAt(k);
+
+				g.fields.add(child.getFieldKey());
+			}
+			conf.groups.add(g);
+		}
+
 		AlgorithmComboBoxWrapper algorithm = (AlgorithmComboBoxWrapper) cmbAlgorithm
 				.getSelectedItem();
 		conf.algorithmName = algorithm.name;
@@ -1040,6 +1054,13 @@ public class MainWindow {
 		conf.continuousUpdating = chkContinuousUpdating.isSelected();
 	}
 
+	public ClassTreeItem getClassTreeItem(String name) {
+		for(ClassTreeItem cti : allClassTreeItems)
+			if(cti.getTreeClass().getName().equals(name))
+				return cti;
+		return null;
+	}
+
 	public void loadFromConfiguration(TracerConfiguration conf) {
 		loadJarFile(conf.jarFile);
 
@@ -1057,6 +1078,29 @@ public class MainWindow {
 			Boolean saved = conf.selectedParameters.get(new ParameterKey(
 					pti.parent.method, pti.argNum));
 			pti.checked = (saved != null ? saved : DEFAULT_PARAMETER_SELECTED);
+		}
+
+		if(conf.groups != null) {
+			for(Group g : conf.groups) {
+				if(g.fields.isEmpty())
+					continue;
+
+				String className = g.fields.get(0).className;
+				ClassTreeItem cti = getClassTreeItem(className);
+				if(cti == null)
+					continue;
+
+				GroupTreeItem gti = new GroupTreeItem(cti.getTreeClass());
+				for(FieldKey field : g.fields) {
+					try {
+						FieldInGroupTreeItem figti = new FieldInGroupTreeItem(cti.getTreeClass().getDeclaredField(field.name));
+						treeModel.insertNodeInto(figti, gti, gti.getChildCount());
+					} catch(NoSuchFieldException e) {
+						// Do nothing; don't insert field into group
+					}
+				}
+				treeModel.insertNodeInto(gti, cti, cti.getChildCount());
+			}
 		}
 
 		boolean foundAlgorithm = false;
@@ -1118,15 +1162,19 @@ public class MainWindow {
 			doTraceAndAnalysis();
 	}
 
+	private List<ClassTreeItem> allClassTreeItems = new ArrayList<ClassTreeItem>();
 	private List<MethodTreeItem> allMethodTreeItems = new ArrayList<MethodTreeItem>();
 	private List<FieldTreeItem> allFieldTreeItems = new ArrayList<FieldTreeItem>();
 	private List<ParameterTreeItem> allParameterTreeItems = new ArrayList<ParameterTreeItem>();
+	private List<GroupTreeItem> allGroupTreeItems = new ArrayList<GroupTreeItem>();
 
 	private void createNodes(DefaultMutableTreeNode top,
 			ArrayList<Class<?>> classData) {
 		allMethodTreeItems.clear();
 		allFieldTreeItems.clear();
 		allParameterTreeItems.clear();
+		allGroupTreeItems.clear();
+		allClassTreeItems.clear();
 
 		Map<String, DefaultMutableTreeNode> packages = new HashMap<>();
 
@@ -1186,6 +1234,8 @@ public class MainWindow {
 	/** Creates a subtree of the class tree from one class. */
 	private DefaultMutableTreeNode createClassNodes(Class<?> data) {
 		ClassTreeItem classItem = new ClassTreeItem(data);
+
+		allClassTreeItems.add(classItem);
 
 		for (Field field : data.getDeclaredFields()) {
 			FieldTreeItem fti = new FieldTreeItem(field);

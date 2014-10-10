@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 
 import javax.swing.Icon;
 
+import swen302.tracer.FieldKey;
+
 
 public class FieldInGroupTreeItem extends AbstractTreeItem {
 	Field field;
@@ -20,5 +22,9 @@ public class FieldInGroupTreeItem extends AbstractTreeItem {
 	@Override
 	public Icon getIcon() {
 		return FieldTreeItem.getIcon(field);
+	}
+
+	public FieldKey getFieldKey() {
+		return new FieldKey(field);
 	}
 }
