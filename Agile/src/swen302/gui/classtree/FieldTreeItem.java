@@ -18,11 +18,19 @@ public class FieldTreeItem extends AbstractTreeItem {
 
 	@Override
 	public String toString() {
+		return toString(field);
+	}
+
+	public static String toString(Field field) {
 		return field.getName()+" : "+field.getType().getSimpleName();
 	}
 
 	@Override
 	public Icon getIcon() {
+		return getIcon(field);
+	}
+
+	public static Icon getIcon(Field field) {
 		int modifiers = field.getModifiers();
 		if((modifiers & Modifier.PUBLIC) != 0)
 			return Icons.fieldPublicIcon;

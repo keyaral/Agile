@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -74,6 +76,7 @@ import swen302.graph.Graph;
 import swen302.graph.LabelFormatOptions;
 import swen302.gui.classtree.AbstractTreeItem;
 import swen302.gui.classtree.ClassTreeItem;
+import swen302.gui.classtree.FieldInGroupTreeItem;
 import swen302.gui.classtree.FieldTreeItem;
 import swen302.gui.classtree.GroupTreeItem;
 import swen302.gui.classtree.JarTreeItem;
@@ -472,6 +475,8 @@ public class MainWindow {
 
 		MouseListener ml = new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
+				tree.requestFocusInWindow();
+
 				int selRow = tree.getRowForLocation(e.getX(), e.getY());
 				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
 				selectedPath = selPath;
@@ -524,9 +529,12 @@ public class MainWindow {
 								dropClass = null;
 							}
 
-							if(dropClass != null && dropClass == ((FieldTreeItem)draggedItem).field.getDeclaringClass()) {
-								((DefaultTreeModel)tree.getModel()).removeNodeFromParent(draggedNode);
-								((DefaultTreeModel)tree.getModel()).insertNodeInto(draggedNode, dropNode, dropNode.getChildCount());
+							if(draggedItem.isCheckable() && dropClass != null && dropClass == ((FieldTreeItem)draggedItem).field.getDeclaringClass()) {
+
+								FieldInGroupTreeItem figItem = new FieldInGroupTreeItem(((FieldTreeItem)draggedItem).field);
+								DefaultMutableTreeNode figNode = new DefaultMutableTreeNode(figItem);
+
+								((DefaultTreeModel)tree.getModel()).insertNodeInto(figNode, dropNode, dropNode.getChildCount());
 
 								tree.expandPath(new TreePath(((DefaultTreeModel)tree.getModel()).getPathToRoot(dropNode)));
 							}
@@ -538,6 +546,27 @@ public class MainWindow {
 			}
 		};
 		tree.addMouseListener(ml);
+
+		tree.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.getKeyCode() != KeyEvent.VK_DELETE)
+					return;
+
+				TreePath selPath = tree.getSelectionPath();
+				if(selPath == null)
+					return;
+
+				DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
+				AbstractTreeItem ati = (AbstractTreeItem)node.getUserObject();
+				if(ati instanceof FieldInGroupTreeItem) {
+					((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
+				}
+				if(ati instanceof GroupTreeItem) {
+					((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
+				}
+			}
+		});
 
 		cmbAlgorithm = new JComboBox<AlgorithmComboBoxWrapper>();
 		for (Class<? extends VisualizationAlgorithm> algClass : AlgorithmFinder.getAlgorithmClasses()) {
