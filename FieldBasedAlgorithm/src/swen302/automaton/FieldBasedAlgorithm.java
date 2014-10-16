@@ -38,8 +38,8 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	}
 
 	@Override
-	public Graph getCurrentGraph() {
-		return graph;
+	public Graph[] getCurrentGraphs() {
+		return new Graph[] {graph};
 	}
 
 	private Node getStateNode(String state) {
@@ -87,7 +87,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 
 
 	@Override
-	public Graph generateGraph(Trace[] trace) {
+	public Graph[] generateGraph(Trace[] trace) {
 		startIncremental();
 
 		// can just concatenate multiple traces with this algorithm
@@ -95,7 +95,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 			for(TraceEntry l : t.lines)
 				processLine(l);
 
-		return getCurrentGraph();
+		return getCurrentGraphs();
 	}
 
 	@Override

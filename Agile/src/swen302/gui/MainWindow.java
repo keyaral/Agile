@@ -898,9 +898,9 @@ public class MainWindow {
 
 						iva.startIncremental();
 
-						final Graph graph = iva.getCurrentGraph();
+						final Graph[] graphs = iva.getCurrentGraphs();
 
-						graphPane.setGraph(graph);
+						setGraphs(graphs);
 
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 								mainClass + " " + ed.commandLineArguments,
@@ -913,7 +913,7 @@ public class MainWindow {
 
 									@Override
 									public void onTraceLine(TraceEntry line) {
-										synchronized (graph) {
+										synchronized (graphs) {
 											for(Group g : groups)
 												g.updateLine(line);
 											iva.processLine(line);
@@ -1010,18 +1010,21 @@ public class MainWindow {
 		}
 
 		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
-		final Graph graph = algorithm.generateGraph(traces);
-
-		// File pngfile = new File("tempAnalysis.png");
-		// GraphSaver.save(graph, pngfile);
-		// final BufferedImage image = ImageIO.read(pngfile);
+		final Graph[] graphs = algorithm.generateGraph(traces);
 
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				graphPane.setGraph(graph);
+				setGraphs(graphs);
 			}
 		});
+	}
+
+	protected void setGraphs(Graph[] graphs) {
+		if(graphs.length == 1)
+			graphPane.setGraph(graphs[0]);
+		else
+			throw new RuntimeException("Cannot display "+graphs.length+" graphs at a time"); // TODO: support multiple graphs
 	}
 
 	/**

@@ -1,15 +1,12 @@
 package swen302.automaton;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 
 import swen302.graph.Graph;
@@ -20,10 +17,8 @@ import be.ac.ulg.montefiore.run.jahmm.Observation;
 import be.ac.ulg.montefiore.run.jahmm.ObservationInteger;
 import be.ac.ulg.montefiore.run.jahmm.Opdf;
 import be.ac.ulg.montefiore.run.jahmm.OpdfInteger;
-import be.ac.ulg.montefiore.run.jahmm.OpdfIntegerFactory;
 import be.ac.ulg.montefiore.run.jahmm.draw.GenericHmmDrawerDot;
 import be.ac.ulg.montefiore.run.jahmm.learn.BaumWelchLearner;
-import be.ac.ulg.montefiore.run.jahmm.learn.KMeansLearner;
 
 /**
  *Main Method to read a given trace file and produce a graph of nodes
@@ -49,13 +44,13 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 	}
 
 	@Override
-	public Graph getCurrentGraph() {
+	public Graph[] getCurrentGraphs() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Graph generateGraph(Trace[] traces) {
+	public Graph[] generateGraph(Trace[] traces) {
 		Graph g = new Graph();
 
 		//TODO gather initial data
@@ -154,7 +149,7 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 			e.printStackTrace();
 		}
 
-		return g;
+		return new Graph[] {g};
 	}
 
 
