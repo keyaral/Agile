@@ -90,25 +90,6 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 
 		String filename = "test.txt";
 		try {
-			/*PrintStream print = new PrintStream(new File(filename));
-			//TODO print to file
-			print.println("Hmm v1.0");
-			print.println();
-			print.println("NbStates "+callHierarchy.size());
-			print.println();
-			for(String call : callHierarchy){
-				State curState = states.get(call);
-				print.println("State");
-				print.println("Pi "+(curState.first?"1":"0"));
-				print.print("A ");
-				for(float f : curState.processMethodCallProbs()){
-					print.print(f+" ");
-				}
-				print.print("\n");
-				print.println("IntegerOPDF [0.5 0.5 ]");
-				print.println();
-			}
-			print.close();*/
 			double[] pi = new double[callHierarchy.size()];
 			double[][] a = new double[callHierarchy.size()][callHierarchy.size()];
 			List<OpdfInteger> opdfs = new ArrayList<OpdfInteger>();
@@ -128,7 +109,6 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 
 			Hmm<Observation> hmm = new Hmm<Observation>(pi, a, (List<? extends Opdf<Observation>>) opdfs);
 
-			//TODO run algorithm
 			BaumWelchLearner learner = new BaumWelchLearner();
 			learner.setNbIterations(500);
 			ArrayList<List<Observation>> sequen = new ArrayList<List<Observation>>();
@@ -137,15 +117,8 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 			for(int i=0; i<callHierarchy.size(); i++){
 				obs.add(new ObservationInteger(1));
 			}
-			//for(String s : callHierarchy){
 				sequen.add(obs);
-			//}
 			Hmm<Observation> newhmm = learner.learn(hmm, sequen);
-
-			//Scanner scan = new Scanner(new File(filename));
-			//TODO Build graph
-			//scan.close();
-			//new File(filename).delete();
 			new GenericHmmDrawerDot().write(newhmm, "newhmm.dot");
 			new GenericHmmDrawerDot().write(hmm, "hmmorig.dot");
 		} catch (FileNotFoundException e) {
@@ -155,6 +128,11 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 		}
 
 		return g;
+	}
+
+	@Override
+	public String toString(){
+		return "HMM Algorithm";
 	}
 
 
