@@ -31,93 +31,41 @@ import be.ac.ulg.montefiore.run.jahmm.learn.KMeansLearner;
  *
  */
 
-public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualizationAlgorithm {
+public class HMMAlgorithm implements VisualizationAlgorithm{
 
 	public static Set<String> callHierarchy = new HashSet<String>();
 	public Map<String,State> states = new HashMap<String,State>();
 
-	@Override
-	public void startIncremental() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public boolean processLine(TraceEntry line) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public Graph getCurrentGraph() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public List<List<ObservationInteger>> multipleTraces = new ArrayList<List<ObservationInteger>>();
+	public Map<String,Integer> methodMapping = new HashMap<String,Integer>();
 
 	@Override
 	public Graph generateGraph(Trace[] traces) {
-		Graph g = new Graph();
-
-		//TODO gather initial data
-		String prevMethod = null;
-		for(Trace trace : traces){
-			for(TraceEntry entry : trace.lines){
-				if(prevMethod == null){
-					prevMethod = entry.method.name;
-					State state = new State();
-					state.stateName = prevMethod;
-					state.first = true;
-					states.put(prevMethod, state);
-				}else{
-					String name = entry.method.name;
-					if(!name.equals(prevMethod)){
-						states.get(prevMethod).methodCalls.add(name);
-						if(states.containsKey(name)){
-							prevMethod = name;
-						}else{
-							prevMethod = entry.method.name;
-							State state = new State();
-							state.stateName = prevMethod;
-							states.put(prevMethod, state);
-						}
-					}else{
-						states.get(prevMethod).methodCalls.add(name);
-					}
-				}
-				callHierarchy.add(prevMethod);
-			}
-		}
 
 		try {
-			double[] pi = new double[callHierarchy.size()];
-			double[][] a = new double[callHierarchy.size()][callHierarchy.size()];
-			List<OpdfInteger> opdfs = new ArrayList<OpdfInteger>();
 
-			int index = 0;
-			for(String call : callHierarchy){
-				State curState = states.get(call);
-				pi[index] = curState.first?1:0;
-				int index2 = 0;
-				for(float f : curState.processMethodCallProbs()){
-					a[index][index2] = f;
-					index2++;
+
+			String prevMethod = null;
+			int count = 0;
+			for(Trace trace : traces){
+				List<ObservationInteger> curTrace = new ArrayList<ObservationInteger>();
+				for(TraceEntry entry : trace.lines){
+					String s = entry.method.name;
+					if(methodMapping.containsKey(s)){
+						curTrace.add(new ObservationInteger(methodMapping.get(s)));
+					}else{
+						methodMapping.put(s, count++);
+						curTrace.add(new ObservationInteger(methodMapping.get(s)));
+					}
 				}
-				opdfs.add(index, new OpdfInteger(new double[]{0.5,0.5}));
-				index++;
+				multipleTraces.add(curTrace);
 			}
 
-			Hmm<Observation> hmm = new Hmm<Observation>(pi, a, (List<? extends Opdf<Observation>>) opdfs);
+			KMeansLearner<ObservationInteger> kml = new KMeansLearner<ObservationInteger>(10, new OpdfIntegerFactory(11), (List<? extends List<? extends ObservationInteger>>) multipleTraces);
 
-			BaumWelchLearner learner = new BaumWelchLearner();
-			learner.setNbIterations(500);
-			ArrayList<List<Observation>> sequen = new ArrayList<List<Observation>>();
-			List<Observation> obs = new ArrayList<Observation>();
 
-			for(int i=0; i<callHierarchy.size(); i++){
-				obs.add(new ObservationInteger(1));
-			}
-				sequen.add(obs);
-			Hmm<Observation> newhmm = learner.learn(hmm, sequen);
+
+			Hmm<ObservationInteger> newhmm = kml.learn();
 			new GenericHmmDrawerDot().write(newhmm, "hmm.dot");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -125,7 +73,7 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 			e.printStackTrace();
 		}
 
-		return g;
+		return null;
 	}
 
 	@Override
