@@ -3,7 +3,9 @@ package swen302.gui.graphlayouts;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -330,8 +332,8 @@ public class EadesSpringEmbedder {
 				}
 			}
 			for (Node n : graph.nodes) {
-				int xPos = (int)n.getPosition().getX();
-				int yPos = (int)n.getPosition().getY();
+				double xPos = n.getPosition().getX();
+				double yPos = n.getPosition().getY();
 
 				Vector2D nCenter = new Vector2D(xPos, yPos);
 				if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
@@ -339,25 +341,21 @@ public class EadesSpringEmbedder {
 				else
 					graphics.setColor(Color.LIGHT_GRAY);
 
+				Shape nodeShape;
 				if(n instanceof PetriTransitionNode)
-					graphics.fillRect((int)xPos-10, (int)yPos-10, 20, 20);
+					nodeShape = new Rectangle2D.Double(xPos-10, yPos-10, 20, 20);
 				else
-					graphics.fillOval((int)xPos-10, (int)yPos-10, 20, 20);
+					nodeShape = new Ellipse2D.Double(xPos-10, yPos-10, 20, 20);
 
+				graphics.fill(nodeShape);
 				graphics.setColor(Color.BLACK);
-				if(n instanceof PetriTransitionNode)
-					graphics.drawRect((int)xPos-10, (int)yPos-10, 20, 20);
-				else
-					graphics.drawOval((int)xPos-10, (int)yPos-10, 20, 20);
+				graphics.draw(nodeShape);
 
 				Rectangle2D stringBounds = n.labelBounds;
 
-				graphics.setColor(new Color(200, 240, 240, 100));
-				graphics.fillRect((xPos  - (int)(n.labelBounds.getWidth()/2)), yPos-20,
-						(int)stringBounds.getWidth(), (int)stringBounds.getHeight());
-
 				graphics.setColor(Color.black);
-				graphics.drawString(n.getLabel(), xPos - (int)(n.labelBounds.getWidth()/2), yPos-10);
+				drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
+
 
 				int[] arrowXPoints = new int[] {0, 5, 5};
 				int[] arrowYPoints = new int[] {0, -5, 5};
@@ -385,17 +383,32 @@ public class EadesSpringEmbedder {
 			Node npm = this.pointInNode(mouseX, mouseY);
 			npm = selectedNode != null ? selectedNode : npm;
 			if (npm != null) {
-				Rectangle2D stringBounds = npm.labelBounds;
-
-				graphics.setColor(new Color(100, 215, 215));
-				graphics.fillRect((int)(npm.getPosition().getX() - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
-						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
-				graphics.setColor(Color.black);
-				graphics.drawString(npm.getLabel(), (int)(npm.getPosition().getX() - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-8);
-				graphics.drawRect((int)(npm.getPosition().getX() - npm.labelBounds.getWidth()/2), (int)npm.getPosition().getY()-22,
-						(int)stringBounds.getWidth()+4, (int)stringBounds.getHeight()+4);
+				drawNodeLabel(graphics, npm.getPosition(), npm.getLabel(), true);
 			}
 		}
+	}
+
+	private static void drawNodeLabel(Graphics2D graphics, Vector2D pos, String label, boolean highlighted) {
+		AffineTransform oldTr = graphics.getTransform();
+		Point2D labelBottomCentre = oldTr.transform(new Point2D.Double(pos.getX(), pos.getY()), null);
+
+		AffineTransform newTr = new AffineTransform();
+		newTr.translate(labelBottomCentre.getX(), labelBottomCentre.getY() - 20);
+		graphics.setTransform(newTr);
+
+		Rectangle2D textRect = graphics.getFontMetrics().getStringBounds(label, graphics);
+
+		textRect.setRect(textRect.getX()-textRect.getWidth()/2, textRect.getY(), textRect.getWidth(), textRect.getHeight());
+
+		graphics.setColor(highlighted ? new Color(100, 215, 215) : new Color(200, 240, 240, 100));
+		graphics.fill(textRect);
+		graphics.setColor(Color.black);
+
+		graphics.drawString(label, (float)textRect.getX(), 0);
+
+		graphics.draw(textRect);
+
+		graphics.setTransform(oldTr);
 	}
 
 	private static Vector2D evalBezierCurve(Vector2D v1, Vector2D v2, Vector2D v3, Vector2D v4, double t) {

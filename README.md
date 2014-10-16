@@ -1,4 +1,4 @@
 Agile
 =====
 
-A Program to analyse a java program to help visualise the execution flow. 
+A Program to analyse a Java program to help visualise the execution flow. 
