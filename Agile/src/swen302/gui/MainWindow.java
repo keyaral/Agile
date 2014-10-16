@@ -44,6 +44,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -124,7 +125,7 @@ public class MainWindow {
 	private JPanel treePanel;
 	private JPanel configPanel;
 	private JPanel graphConfigPanel;
-	private VertexGraphPane graphPane;
+	private MultiSplitPane graphPaneSplitter;
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect, popupAddGroup;
 	private JLabel currentTraceFileLabel;
@@ -260,7 +261,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayID = displayID.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -269,7 +271,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayState = displayState.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -278,7 +281,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayClass = displayClass.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -287,7 +291,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayMethod = displayMethod.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -295,18 +300,18 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParamTypes = displayParamTypes
-						.isSelected();
-				graphPane.onLabelsChanged();
+				LabelFormatOptions.displayParamTypes = displayParamTypes.isSelected();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
 		displayParamValues.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParamValues = displayParamValues
-						.isSelected();
-				graphPane.onLabelsChanged();
+				LabelFormatOptions.displayParamValues = displayParamValues.isSelected();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -338,7 +343,7 @@ public class MainWindow {
 					if (AUTO_RUN)
 						doTraceAndAnalysis();
 					else
-						graphPane.setGraph(null);
+						graphPaneSplitter.setContents(new JComponent[0]);
 				}
 			}
 		});
@@ -692,11 +697,11 @@ public class MainWindow {
 				BorderLayout.CENTER);
 		treePanel.add(configPanel, BorderLayout.SOUTH);
 
-		graphPane = new VertexGraphPane(/*this.minimap*/);
+		graphPaneSplitter = new MultiSplitPane();
 
 		splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitter.add(treePanel);
-		splitter.add(graphPane);
+		splitter.add(graphPaneSplitter);
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
@@ -1020,11 +1025,28 @@ public class MainWindow {
 		});
 	}
 
-	protected void setGraphs(Graph[] graphs) {
-		if(graphs.length == 1)
-			graphPane.setGraph(graphs[0]);
-		else
-			throw new RuntimeException("Cannot display "+graphs.length+" graphs at a time"); // TODO: support multiple graphs
+	protected void setGraphs(final Graph[] graphs) {
+
+		// FOR TESTING
+		//final Graph[] graphs = new Graph[graphs_.length*10];
+		//for(int k = 0; k < graphs.length; k++)
+		//	graphs[k]=graphs_[k%graphs_.length];
+
+		final VertexGraphPane[] graphPanes = new VertexGraphPane[graphs.length];
+
+		for(int k = 0; k < graphPanes.length; k++)
+			graphPanes[k] = new VertexGraphPane();
+
+		graphPaneSplitter.setContents(graphPanes);
+
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				// Because someone implemented it weirdly, setGraph will throw an NPE if called before the graph pane is rendered.
+				for(int k = 0; k < graphPanes.length; k++)
+					graphPanes[k].setGraph(graphs[k]);
+			}
+		});
 	}
 
 	/**
