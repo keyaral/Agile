@@ -88,7 +88,6 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 			}
 		}
 
-		String filename = "test.txt";
 		try {
 			double[] pi = new double[callHierarchy.size()];
 			double[][] a = new double[callHierarchy.size()][callHierarchy.size()];
@@ -119,8 +118,7 @@ public class HMMAlgorithm implements VisualizationAlgorithm, IncrementalVisualiz
 			}
 				sequen.add(obs);
 			Hmm<Observation> newhmm = learner.learn(hmm, sequen);
-			new GenericHmmDrawerDot().write(newhmm, "newhmm.dot");
-			new GenericHmmDrawerDot().write(hmm, "hmmorig.dot");
+			new GenericHmmDrawerDot().write(newhmm, "hmm.dot");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
