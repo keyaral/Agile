@@ -71,6 +71,7 @@ import swen302.analysis.JarLoader.JarData;
 import swen302.automaton.AlgorithmFinder;
 import swen302.automaton.AlgorithmParameters;
 import swen302.automaton.IncrementalVisualizationAlgorithm;
+import swen302.automaton.InteractiveVisualizationAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
@@ -905,7 +906,7 @@ public class MainWindow {
 
 						final Graph[] graphs = iva.getCurrentGraphs();
 
-						setGraphs(graphs);
+						setGraphs(graphs, algorithm);
 
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 								mainClass + " " + ed.commandLineArguments,
@@ -1014,18 +1015,18 @@ public class MainWindow {
 			System.out.println(t.lines.get(0).state);
 		}
 
-		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
+		final VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 		final Graph[] graphs = algorithm.generateGraph(traces);
 
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				setGraphs(graphs);
+				setGraphs(graphs, algorithm);
 			}
 		});
 	}
 
-	protected void setGraphs(final Graph[] graphs) {
+	protected void setGraphs(final Graph[] graphs, final VisualizationAlgorithm algorithm) {
 
 		// FOR TESTING
 		//final Graph[] graphs = new Graph[graphs_.length*10];
@@ -1045,6 +1046,9 @@ public class MainWindow {
 				// Because someone implemented it weirdly, setGraph will throw an NPE if called before the graph pane is rendered.
 				for(int k = 0; k < graphPanes.length; k++)
 					graphPanes[k].setGraph(graphs[k]);
+
+				if(algorithm instanceof InteractiveVisualizationAlgorithm)
+					((InteractiveVisualizationAlgorithm) algorithm).setupInteractiveFeatures(graphPanes);
 			}
 		});
 	}

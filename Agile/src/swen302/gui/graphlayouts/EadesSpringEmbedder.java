@@ -37,6 +37,9 @@ public class EadesSpringEmbedder {
 	private Node selectedNode = null;
 	private VertexGraphPane graphPane;
 
+	private static final Color HIGHLIGHTED_NODE_COLOUR = new Color(128, 192, 255);
+	private static final Color HIGHLIGHTED_NODE_LABEL_COLOUR = new Color(130, 230, 230);
+
 
 	public AffineTransform afm;
 	public double scale;
@@ -69,6 +72,11 @@ public class EadesSpringEmbedder {
 			scale = 1;
 			afm = new AffineTransform();
 		}
+	}
+
+	public Node findNodeAtPoint(int pixelX, int pixelY) {
+		Point2D graphSpaceCoords = transformMouseCoords(new Point2D.Double(pixelX, pixelY));
+		return pointInNode(graphSpaceCoords.getX(), graphSpaceCoords.getY());
 	}
 
 	public void step(double timeStep, int pixelMouseX, int pixelMouseY){
@@ -257,6 +265,9 @@ public class EadesSpringEmbedder {
 
 
 
+			Node hoveredNode = this.pointInNode(mouseX, mouseY);
+			hoveredNode = selectedNode != null ? selectedNode : hoveredNode;
+
 			graphics.setColor(Color.BLACK);
 
 			for (Node n : graph.nodes) {
@@ -336,8 +347,10 @@ public class EadesSpringEmbedder {
 				double yPos = n.getPosition().getY();
 
 				Vector2D nCenter = new Vector2D(xPos, yPos);
-				if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
+				if (n == hoveredNode)
 					graphics.setColor(Color.BLUE);
+				else if(n.highlighted)
+					graphics.setColor(HIGHLIGHTED_NODE_COLOUR);
 				else
 					graphics.setColor(Color.LIGHT_GRAY);
 
@@ -380,10 +393,12 @@ public class EadesSpringEmbedder {
 
 			}
 
-			Node npm = this.pointInNode(mouseX, mouseY);
-			npm = selectedNode != null ? selectedNode : npm;
-			if (npm != null) {
-				drawNodeLabel(graphics, npm.getPosition(), npm.getLabel(), true);
+			for(Node n : graph.nodes)
+				if(n.highlighted)
+					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), true);
+
+			if (hoveredNode != null) {
+				drawNodeLabel(graphics, hoveredNode.getPosition(), hoveredNode.getLabel(), true);
 			}
 		}
 	}
@@ -400,7 +415,7 @@ public class EadesSpringEmbedder {
 
 		textRect.setRect(textRect.getX()-textRect.getWidth()/2, textRect.getY(), textRect.getWidth(), textRect.getHeight());
 
-		graphics.setColor(highlighted ? new Color(100, 215, 215) : new Color(200, 240, 240, 100));
+		graphics.setColor(highlighted ? HIGHLIGHTED_NODE_LABEL_COLOUR : new Color(200, 240, 240, 100));
 		graphics.fill(textRect);
 		graphics.setColor(Color.black);
 

@@ -1,4 +1,4 @@
-package swen302.automaton;
+package swen302.automaton.petrinet;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -6,9 +6,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import swen302.automaton.AutomatonGraphUtils;
+import swen302.automaton.VisualizationAlgorithm;
 import swen302.graph.Edge;
 import swen302.graph.Graph;
-import swen302.graph.LabelFormatOptions;
 import swen302.graph.Node;
 import swen302.graph.PetriTransitionNode;
 import swen302.tracer.FieldKey;
@@ -24,26 +25,6 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 	private Map<FieldValueKey, Node> nodes;
 	private int nextNodeID;
 
-	private static class FieldValueKey {
-		public final FieldKey field;
-		public final State value;
-		public FieldValueKey(FieldKey f, State v) {
-			field = f;
-			value = v;
-		}
-		@Override
-		public boolean equals(Object obj) {
-			if(!(obj instanceof FieldValueKey))
-				return false;
-			FieldValueKey o = (FieldValueKey)obj;
-			return o.field.equals(field) && o.value.equals(value);
-		}
-		@Override
-		public int hashCode() {
-			return field.hashCode() ^ value.hashCode();
-		}
-	}
-
 	private Node getFieldNode(final FieldKey field, final State state) {
 		FieldValueKey fvk = new FieldValueKey(field, state);
 		Node node = nodes.get(fvk);
@@ -51,14 +32,7 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 			return node;
 
 		node = new Node(String.valueOf(nextNodeID++));
-		node.setState(new Object() {
-			@Override
-			public String toString() {
-				if(!LabelFormatOptions.displayState)
-					return "";
-				return (!LabelFormatOptions.displayClass ? field.name : field)+"="+state;
-			}
-		});
+		node.setState(fvk);
 
 		nodes.put(fvk, node);
 		graph.addNode(node);

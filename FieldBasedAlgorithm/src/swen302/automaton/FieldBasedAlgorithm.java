@@ -21,7 +21,7 @@ import swen302.tracer.state.State;
 public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalVisualizationAlgorithm {
 
 	private Graph graph;
-	private Map<String, Node> states;
+	private Map<State, Node> states;
 	private Stack<Node> stack;
 	private Set<String> addedEdges = new HashSet<String>();
 	private Stack<TraceEntry> callEntries;
@@ -31,7 +31,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	@Override
 	public void startIncremental() {
 		graph = new Graph();
-		states = new HashMap<String, Node>();
+		states = new HashMap<State, Node>();
 		nodeCount = 0;
 		stack = new Stack<Node>();
 		callEntries = new Stack<TraceEntry>();
@@ -42,7 +42,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 		return new Graph[] {graph};
 	}
 
-	private Node getStateNode(String state) {
+	private Node getStateNode(State state) {
 		if(!states.containsKey(state)){
 			Node n = new Node(String.valueOf(nodeCount++));
 			n.setState(state);
@@ -54,7 +54,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	@Override
 	public boolean processLine(TraceEntry line) {
 
-		stack.push(line.state == null ? null : getStateNode(line.state.toString()));
+		stack.push(line.state == null ? null : getStateNode(line.state));
 
 		if(!line.isReturn)
 			callEntries.push(line);

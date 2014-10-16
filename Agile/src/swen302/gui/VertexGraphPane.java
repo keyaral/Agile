@@ -15,6 +15,8 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -22,6 +24,7 @@ import javax.swing.Timer;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 import swen302.graph.Graph;
+import swen302.graph.Node;
 import swen302.gui.graphlayouts.EadesSpringEmbedder;
 
 public class VertexGraphPane extends JPanel {
@@ -32,6 +35,13 @@ public class VertexGraphPane extends JPanel {
 	private double xDiff,yDiff;
 	public EadesSpringEmbedder graph;
 	//private MiniMap minimap;
+
+	private List<GraphHoverListener> hoverListeners = new CopyOnWriteArrayList<>();
+	public void addHoverListener(GraphHoverListener l) {hoverListeners.add(l);}
+	private void fireHoverEvent(Node node) {
+		for(GraphHoverListener l : hoverListeners)
+			l.onMouseHover(node);
+	}
 
 	public VertexGraphPane(/*MiniMap m*/){
 		super();
@@ -46,11 +56,22 @@ public class VertexGraphPane extends JPanel {
 					graph.releaseNode();
 			}
 
+			private Node hoverNode = null;
+
+			private void checkHoverNode() {
+				Node newHN = (graph == null ? null : graph.findNodeAtPoint(mouseX, mouseY));
+				if(newHN != hoverNode) {
+					hoverNode = newHN;
+					fireHoverEvent(hoverNode);
+				}
+			}
+
 			public void mousePressed(MouseEvent e){
 				if(graph != null)
 					graph.selectNode(e.getX(), e.getY());
 				mouseX = e.getX();
 				mouseY = e.getY();
+				checkHoverNode();
 			}
 
 			@Override
@@ -63,12 +84,14 @@ public class VertexGraphPane extends JPanel {
 				}
 				mouseX = e.getX();
 				mouseY = e.getY();
+				checkHoverNode();
 			}
 
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				mouseX = e.getX();
 				mouseY = e.getY();
+				checkHoverNode();
 			}
 		};
 
