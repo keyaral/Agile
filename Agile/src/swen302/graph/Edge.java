@@ -17,6 +17,8 @@ public class Edge {
 	public final Node node1, node2;
 	public int duplicateCount = 0;
 
+	public boolean highlighted;
+
 	public Vector2D arrowAngle; // used by EadesSpringEmbedder only
 	public Vector2D arrowPt; // used by EadesSpringEmbedder only
 
@@ -26,7 +28,6 @@ public class Edge {
 		this.label = label;
 		this.node1 = node1;
 		this.node2 = node2;
-
 	}
 
 	public Edge(Edge copyFrom, Node node1, Node node2) {

@@ -5,6 +5,7 @@ import swen302.automaton.InteractiveVisualizationAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.automaton.petrinet.FieldValueKey;
 import swen302.automaton.petrinet.PetriNetAlgorithm;
+import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.Node;
 import swen302.graph.PetriTransitionNode;
@@ -70,6 +71,17 @@ public class SplitScreenPetriNetAlgorithm implements VisualizationAlgorithm, Int
 		pnGraphPane.addHoverListener(new GraphHoverListener() {
 			@Override
 			public void onMouseHover(Node node) {
+
+				if(node instanceof PetriTransitionNode) {
+					for(Node n : fbGraph.nodes)
+						n.highlighted = false;
+					for(Edge e : fbGraph.edges)
+						e.highlighted = e.label.equals(node.getState());
+					return;
+				}
+
+				for(Edge e : fbGraph.edges)
+					e.highlighted = false;
 
 				if(node == null || !(node.getState() instanceof FieldValueKey)) {
 					for(Node n : fbGraph.nodes)

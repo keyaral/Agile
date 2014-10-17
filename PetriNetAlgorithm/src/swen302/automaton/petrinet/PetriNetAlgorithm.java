@@ -2,6 +2,7 @@ package swen302.automaton.petrinet;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -60,7 +61,7 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 
 	private Set<TransitionKey> seenTransitions = new HashSet<TransitionKey>();
 
-	private void processTransition(State before_, State after_, MethodKey method, String longMethodName) {
+	private void processTransition(State before_, State after_, MethodKey method, String longMethodName, List<State> arguments) {
 		if(before_ instanceof ObjectState && after_ instanceof ObjectState) {
 			ObjectState before = (ObjectState)before_;
 			ObjectState after = (ObjectState)after_;
@@ -82,12 +83,12 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 				return; // already added an identical transition
 
 			Node transition = new PetriTransitionNode(String.valueOf(nextNodeID++));
-			transition.setState(AutomatonGraphUtils.createMethodLabelObject(longMethodName));
+			transition.setState(AutomatonGraphUtils.createMethodLabelObject(longMethodName, arguments));
 			graph.addNode(transition);
 
 			for(FieldKey field : key.beforeValues.keySet()) {
-				State beforeValue = before.fields.get(field);
-				State afterValue = after.fields.get(field);
+				//State beforeValue = before.fields.get(field);
+				//State afterValue = after.fields.get(field);
 				graph.addEdge(new Edge(String.valueOf(nextNodeID++), "", getFieldNode(field, before.fields.get(field)), transition));
 				graph.addEdge(new Edge(String.valueOf(nextNodeID++), "", transition, getFieldNode(field, after.fields.get(field))));
 			}
@@ -101,15 +102,15 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 		nextNodeID = 0;
 
 		for(Trace t : trace) {
-			Stack<State> stack = new Stack<State>();
+			Stack<TraceEntry> stack = new Stack<>();
 			for(TraceEntry entry : t.lines) {
-				stack.add(entry.state);
+				stack.add(entry);
 
 				if(entry.isReturn) {
-					State after = stack.pop();
-					State before = stack.pop();
+					TraceEntry after = stack.pop();
+					TraceEntry before = stack.pop();
 
-					processTransition(before, after, entry.method, entry.getLongMethodName());
+					processTransition(before.state, after.state, entry.method, entry.getLongMethodName(), before.arguments);
 				}
 			}
 		}

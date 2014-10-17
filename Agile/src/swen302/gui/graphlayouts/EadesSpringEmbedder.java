@@ -228,6 +228,8 @@ public class EadesSpringEmbedder {
 
 	public void draw(Graphics2D graphics) {
 
+		final Color HIGHLIGHTED_EDGE_COLOUR = new Color(64, 128, 192);
+
 		synchronized(graph) {
 			graphics.setTransform(afm);
 
@@ -269,11 +271,12 @@ public class EadesSpringEmbedder {
 			Node hoveredNode = this.pointInNode(mouseX, mouseY);
 			hoveredNode = selectedNode != null ? selectedNode : hoveredNode;
 
-			graphics.setColor(Color.BLACK);
 
 			for (Node n : graph.nodes) {
 
 				for (Edge cn : n.getConnections()) {
+
+					graphics.setColor(cn.highlighted ? HIGHLIGHTED_EDGE_COLOUR : Color.BLACK);
 
 					Path2D.Double path = new Path2D.Double();
 					path.moveTo(cn.node1.getPosition().getX(), cn.node1
@@ -366,8 +369,6 @@ public class EadesSpringEmbedder {
 				graphics.setColor(Color.BLACK);
 				graphics.draw(nodeShape);
 
-				Rectangle2D stringBounds = n.labelBounds;
-
 				graphics.setColor(Color.black);
 				if(n instanceof PetriTransitionNode ? LabelFormatOptions.displayUnselectedTransitionLabels : LabelFormatOptions.displayUnselectedNodeLabels)
 					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
@@ -388,6 +389,8 @@ public class EadesSpringEmbedder {
 					AffineTransform oldTransform = graphics.getTransform();
 					graphics.translate(arrowPt.getX(), arrowPt.getY());
 					graphics.rotate(angle);
+
+					graphics.setColor(e.highlighted ? HIGHLIGHTED_EDGE_COLOUR : Color.BLACK);
 
 					graphics.fillPolygon(arrowXPoints, arrowYPoints, 3);
 
