@@ -1,6 +1,7 @@
 package swen302.automaton;
 
 import java.util.List;
+import java.util.Objects;
 
 import swen302.graph.LabelFormatOptions;
 import swen302.tracer.state.State;
@@ -93,13 +94,33 @@ public class AutomatonGraphUtils {
 		return createMethodLabelObject(longMethodName, null);
 	}
 
+	private static class MethodLabelObject {
+		private String longMethodName;
+		private List<State> arguments;
+
+		@Override
+		public String toString() {
+			return formatMethodLabel(longMethodName, arguments);
+		}
+
+		@Override
+		public int hashCode() {
+			return 0; // currently unnecessary as this is never stored in a hashset
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj.getClass() != getClass())
+				return false;
+			MethodLabelObject o = (MethodLabelObject)obj;
+			return o.longMethodName.equals(longMethodName) && Objects.equals(o.arguments, arguments);
+		}
+	}
 	public static Object createMethodLabelObject(final String longMethodName, final List<State> arguments) {
-		return new Object() {
-			@Override
-			public String toString() {
-				return formatMethodLabel(longMethodName, arguments);
-			}
-		};
+		MethodLabelObject mlo = new MethodLabelObject();
+		mlo.longMethodName = longMethodName;
+		mlo.arguments = arguments;
+		return mlo;
 	}
 
 }

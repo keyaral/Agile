@@ -42,8 +42,8 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -70,6 +70,7 @@ import swen302.analysis.JarLoader.JarData;
 import swen302.automaton.AlgorithmFinder;
 import swen302.automaton.AlgorithmParameters;
 import swen302.automaton.IncrementalVisualizationAlgorithm;
+import swen302.automaton.InteractiveVisualizationAlgorithm;
 import swen302.automaton.VisualizationAlgorithm;
 import swen302.execution.ExecutionData;
 import swen302.graph.Graph;
@@ -116,15 +117,18 @@ public class MainWindow {
 	private JMenuItem fileLoadJAR, fileLoadTrace, fileLoadAdvanced,
 			fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit,
 			fileChangeK;
-	private JMenu displayMenu;
-	private JCheckBoxMenuItem displayID, displayState, displayClass,
-			displayMethod, displayParamTypes, displayParamValues;
+
+	private JCheckBox displayID, displayState, displayClass,
+		displayMethod, displayParamTypes, displayParamValues;
+	private JCheckBox displayUnselectedNodeLabels, displayEdgeLabels, displayUnselectedTransitionLabels;
+	private JPanel displayOptionsPanel;
+
 	private JTree tree;
 	private DefaultTreeModel treeModel;
 	private JPanel treePanel;
 	private JPanel configPanel;
 	private JPanel graphConfigPanel;
-	private VertexGraphPane graphPane;
+	private MultiSplitPane graphPaneSplitter;
 	private JPopupMenu treePopup;
 	private JMenuItem popupSelect, popupDeselect, popupAddGroup;
 	private JLabel currentTraceFileLabel;
@@ -204,21 +208,6 @@ public class MainWindow {
 		fileMenu.addSeparator();
 		fileExit = fileMenu.add("Exit");
 
-		displayMenu = new JMenu("Display");
-
-		displayID = new JCheckBoxMenuItem("ID", true);
-		displayMenu.add(displayID);
-		displayState = new JCheckBoxMenuItem("State", true);
-		displayMenu.add(displayState);
-		displayClass = new JCheckBoxMenuItem("Class", true);
-		displayMenu.add(displayClass);
-		displayMethod = new JCheckBoxMenuItem("Method", true);
-		displayMenu.add(displayMethod);
-		displayParamTypes = new JCheckBoxMenuItem("Parameter types", true);
-		displayMenu.add(displayParamTypes);
-		displayParamValues = new JCheckBoxMenuItem("Parameter values", true);
-		displayMenu.add(displayParamValues);
-
 		treePopup = new JPopupMenu();
 		popupSelect = treePopup.add("Select All");
 		popupDeselect = treePopup.add("Deselect All");
@@ -255,12 +244,34 @@ public class MainWindow {
 			}
 		});
 
+		displayOptionsPanel = new JPanel();
+		displayOptionsPanel.setLayout(new BoxLayout(displayOptionsPanel, BoxLayout.Y_AXIS));
+		displayID = new JCheckBox("Display node ID", true);
+		displayOptionsPanel.add(displayID);
+		displayState = new JCheckBox("Display state", true);
+		displayOptionsPanel.add(displayState);
+		displayClass = new JCheckBox("Display class names", true);
+		displayOptionsPanel.add(displayClass);
+		displayMethod = new JCheckBox("Display method names", true);
+		displayOptionsPanel.add(displayMethod);
+		displayParamTypes = new JCheckBox("Display parameter types", true);
+		displayOptionsPanel.add(displayParamTypes);
+		displayParamValues = new JCheckBox("Display parameter values", true);
+		displayOptionsPanel.add(displayParamValues);
+		displayUnselectedNodeLabels = new JCheckBox("Show unselected node labels", false);
+		displayOptionsPanel.add(displayUnselectedNodeLabels);
+		displayEdgeLabels = new JCheckBox("Show edge labels", false);
+		displayOptionsPanel.add(displayEdgeLabels);
+		displayUnselectedTransitionLabels = new JCheckBox("Show unselected transition labels (Petri nets)", false);
+		displayOptionsPanel.add(displayUnselectedTransitionLabels);
+
 		displayID.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayID = displayID.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -269,7 +280,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayState = displayState.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -278,7 +290,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayClass = displayClass.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -287,7 +300,8 @@ public class MainWindow {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LabelFormatOptions.displayMethod = displayMethod.isSelected();
-				graphPane.onLabelsChanged();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
@@ -295,18 +309,39 @@ public class MainWindow {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParamTypes = displayParamTypes
-						.isSelected();
-				graphPane.onLabelsChanged();
+				LabelFormatOptions.displayParamTypes = displayParamTypes.isSelected();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
 			}
 		});
 
 		displayParamValues.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LabelFormatOptions.displayParamValues = displayParamValues
-						.isSelected();
-				graphPane.onLabelsChanged();
+				LabelFormatOptions.displayParamValues = displayParamValues.isSelected();
+				for(JComponent graphPane : graphPaneSplitter.getContents())
+					((VertexGraphPane)graphPane).onLabelsChanged();
+			}
+		});
+
+		displayUnselectedNodeLabels.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayUnselectedNodeLabels = displayUnselectedNodeLabels.isSelected();
+			}
+		});
+
+		displayEdgeLabels.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayEdgeLabels = displayEdgeLabels.isSelected();
+			}
+		});
+
+		displayUnselectedTransitionLabels.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayUnselectedTransitionLabels = displayUnselectedTransitionLabels.isSelected();
 			}
 		});
 
@@ -338,7 +373,7 @@ public class MainWindow {
 					if (AUTO_RUN)
 						doTraceAndAnalysis();
 					else
-						graphPane.setGraph(null);
+						graphPaneSplitter.setContents(new JComponent[0]);
 				}
 			}
 		});
@@ -463,7 +498,6 @@ public class MainWindow {
 		});
 
 		menuBar.add(fileMenu);
-		menuBar.add(displayMenu);
 
 		treeModel = new DefaultTreeModel(new JarTreeItem("No file loaded"));
 		tree = new JTree(treeModel);
@@ -680,6 +714,9 @@ public class MainWindow {
 		graphConfigPanel.add(Box.createVerticalGlue());
 		//graphConfigPanel.add(minimap);
 
+		displayOptionsPanel.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+		graphConfigPanel.add(displayOptionsPanel);
+
 
 		treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
@@ -692,11 +729,11 @@ public class MainWindow {
 				BorderLayout.CENTER);
 		treePanel.add(configPanel, BorderLayout.SOUTH);
 
-		graphPane = new VertexGraphPane(/*this.minimap*/);
+		graphPaneSplitter = new MultiSplitPane();
 
 		splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitter.add(treePanel);
-		splitter.add(graphPane);
+		splitter.add(graphPaneSplitter);
 
 		window.setLayout(new BorderLayout());
 		window.add(menuBar, BorderLayout.NORTH);
@@ -900,7 +937,7 @@ public class MainWindow {
 
 						final Graph[] graphs = iva.getCurrentGraphs();
 
-						setGraphs(graphs);
+						setGraphs(graphs, algorithm);
 
 						Tracer.launchAndTraceAsync("-cp \"" + path + "\"",
 								mainClass + " " + ed.commandLineArguments,
@@ -1009,22 +1046,42 @@ public class MainWindow {
 			System.out.println(t.lines.get(0).state);
 		}
 
-		VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
+		final VisualizationAlgorithm algorithm = getSelectedAlgorithmInstance();
 		final Graph[] graphs = algorithm.generateGraph(traces);
 
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				setGraphs(graphs);
+				setGraphs(graphs, algorithm);
 			}
 		});
 	}
 
-	protected void setGraphs(Graph[] graphs) {
-		if(graphs.length == 1)
-			graphPane.setGraph(graphs[0]);
-		else
-			throw new RuntimeException("Cannot display "+graphs.length+" graphs at a time"); // TODO: support multiple graphs
+	protected void setGraphs(final Graph[] graphs, final VisualizationAlgorithm algorithm) {
+
+		// FOR TESTING
+		//final Graph[] graphs = new Graph[graphs_.length*10];
+		//for(int k = 0; k < graphs.length; k++)
+		//	graphs[k]=graphs_[k%graphs_.length];
+
+		final VertexGraphPane[] graphPanes = new VertexGraphPane[graphs.length];
+
+		for(int k = 0; k < graphPanes.length; k++)
+			graphPanes[k] = new VertexGraphPane();
+
+		graphPaneSplitter.setContents(graphPanes);
+
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				// Because someone implemented it weirdly, setGraph will throw an NPE if called before the graph pane is rendered.
+				for(int k = 0; k < graphPanes.length; k++)
+					graphPanes[k].setGraph(graphs[k]);
+
+				if(algorithm instanceof InteractiveVisualizationAlgorithm)
+					((InteractiveVisualizationAlgorithm) algorithm).setupInteractiveFeatures(graphPanes);
+			}
+		});
 	}
 
 	/**
@@ -1090,6 +1147,9 @@ public class MainWindow {
 		conf.displayMethod = LabelFormatOptions.displayMethod;
 		conf.displayParams = LabelFormatOptions.displayParamTypes;
 		conf.displayParamValues = LabelFormatOptions.displayParamValues;
+		conf.displayUnselNodes = LabelFormatOptions.displayUnselectedNodeLabels;
+		conf.displayUnselTransitions = LabelFormatOptions.displayUnselectedTransitionLabels;
+		conf.displayEdges = LabelFormatOptions.displayEdgeLabels;
 
 		conf.haveGraphPhysicsSettings = true;
 		conf.graphElectricStrength = electricStrengthSlider.getValue();
@@ -1178,17 +1238,23 @@ public class MainWindow {
 
 		// Set display settings
 		LabelFormatOptions.displayID = conf.displayID;
-		displayID.setState(LabelFormatOptions.displayID);
+		displayID.setSelected(LabelFormatOptions.displayID);
 		LabelFormatOptions.displayState = conf.displayState;
-		displayState.setState(LabelFormatOptions.displayState);
+		displayState.setSelected(LabelFormatOptions.displayState);
 		LabelFormatOptions.displayClass = conf.displayClass;
-		displayClass.setState(LabelFormatOptions.displayClass);
+		displayClass.setSelected(LabelFormatOptions.displayClass);
 		LabelFormatOptions.displayMethod = conf.displayMethod;
-		displayMethod.setState(LabelFormatOptions.displayMethod);
+		displayMethod.setSelected(LabelFormatOptions.displayMethod);
 		LabelFormatOptions.displayParamTypes = conf.displayParams;
-		displayParamTypes.setState(LabelFormatOptions.displayParamTypes);
+		displayParamTypes.setSelected(LabelFormatOptions.displayParamTypes);
 		LabelFormatOptions.displayParamValues = conf.displayParamValues;
-		displayParamValues.setState(LabelFormatOptions.displayParamValues);
+		displayParamValues.setSelected(LabelFormatOptions.displayParamValues);
+		LabelFormatOptions.displayUnselectedNodeLabels = conf.displayUnselNodes;
+		displayUnselectedNodeLabels.setSelected(LabelFormatOptions.displayUnselectedNodeLabels);
+		LabelFormatOptions.displayUnselectedTransitionLabels = conf.displayUnselTransitions;
+		displayUnselectedTransitionLabels.setSelected(LabelFormatOptions.displayUnselectedTransitionLabels);
+		LabelFormatOptions.displayEdgeLabels = conf.displayEdges;
+		displayEdgeLabels.setSelected(LabelFormatOptions.displayEdgeLabels);
 
 		// Set graph layout settings
 		if (conf.haveGraphPhysicsSettings) {

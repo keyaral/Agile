@@ -26,6 +26,8 @@ public class Node {
 	public double mass;
 	public double REPULSION = 2.0;
 
+	public boolean highlighted;
+
 	public Rectangle2D labelBounds;
 
 	public final boolean IsVirtual;
@@ -182,5 +184,9 @@ return count;
 
 	public void setLabel(Rectangle2D stringBounds) {
 		this.labelBounds = stringBounds;
+	}
+
+	public Object getState() {
+		return state;
 	}
 }

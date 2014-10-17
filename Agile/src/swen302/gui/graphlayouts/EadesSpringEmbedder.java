@@ -19,6 +19,7 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.GraphListener;
+import swen302.graph.LabelFormatOptions;
 import swen302.graph.Node;
 import swen302.graph.PetriTransitionNode;
 import swen302.gui.VertexGraphPane;
@@ -36,6 +37,9 @@ public class EadesSpringEmbedder {
 	private boolean mouseAttractive;
 	private Node selectedNode = null;
 	private VertexGraphPane graphPane;
+
+	private static final Color HIGHLIGHTED_NODE_COLOUR = new Color(128, 192, 255);
+	private static final Color HIGHLIGHTED_NODE_LABEL_COLOUR = new Color(130, 230, 230);
 
 
 	public AffineTransform afm;
@@ -69,6 +73,11 @@ public class EadesSpringEmbedder {
 			scale = 1;
 			afm = new AffineTransform();
 		}
+	}
+
+	public Node findNodeAtPoint(int pixelX, int pixelY) {
+		Point2D graphSpaceCoords = transformMouseCoords(new Point2D.Double(pixelX, pixelY));
+		return pointInNode(graphSpaceCoords.getX(), graphSpaceCoords.getY());
 	}
 
 	public void step(double timeStep, int pixelMouseX, int pixelMouseY){
@@ -219,6 +228,8 @@ public class EadesSpringEmbedder {
 
 	public void draw(Graphics2D graphics) {
 
+		final Color HIGHLIGHTED_EDGE_COLOUR = new Color(64, 128, 192);
+
 		synchronized(graph) {
 			graphics.setTransform(afm);
 
@@ -257,11 +268,15 @@ public class EadesSpringEmbedder {
 
 
 
-			graphics.setColor(Color.BLACK);
+			Node hoveredNode = this.pointInNode(mouseX, mouseY);
+			hoveredNode = selectedNode != null ? selectedNode : hoveredNode;
+
 
 			for (Node n : graph.nodes) {
 
 				for (Edge cn : n.getConnections()) {
+
+					graphics.setColor(cn.highlighted ? HIGHLIGHTED_EDGE_COLOUR : Color.BLACK);
 
 					Path2D.Double path = new Path2D.Double();
 					path.moveTo(cn.node1.getPosition().getX(), cn.node1
@@ -324,7 +339,8 @@ public class EadesSpringEmbedder {
 						cn.arrowAngle = evalBezierCurveDirection(v1,v2,v3,v4, intersectionT).scalarMultiply(-1);
 					}
 
-					graphics.drawString(String.valueOf(cn.label),
+					if(LabelFormatOptions.displayEdgeLabels)
+						graphics.drawString(String.valueOf(cn.label),
 							(int) labelPos.getX(), (int) labelPos.getY());
 
 					graphics.draw(path);
@@ -336,8 +352,10 @@ public class EadesSpringEmbedder {
 				double yPos = n.getPosition().getY();
 
 				Vector2D nCenter = new Vector2D(xPos, yPos);
-				if (nCenter.distance(new Vector2D(mouseX, mouseY)) < 10)
+				if (n == hoveredNode)
 					graphics.setColor(Color.BLUE);
+				else if(n.highlighted)
+					graphics.setColor(HIGHLIGHTED_NODE_COLOUR);
 				else
 					graphics.setColor(Color.LIGHT_GRAY);
 
@@ -351,10 +369,9 @@ public class EadesSpringEmbedder {
 				graphics.setColor(Color.BLACK);
 				graphics.draw(nodeShape);
 
-				Rectangle2D stringBounds = n.labelBounds;
-
 				graphics.setColor(Color.black);
-				drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
+				if(n instanceof PetriTransitionNode ? LabelFormatOptions.displayUnselectedTransitionLabels : LabelFormatOptions.displayUnselectedNodeLabels)
+					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
 
 
 				int[] arrowXPoints = new int[] {0, 5, 5};
@@ -373,6 +390,8 @@ public class EadesSpringEmbedder {
 					graphics.translate(arrowPt.getX(), arrowPt.getY());
 					graphics.rotate(angle);
 
+					graphics.setColor(e.highlighted ? HIGHLIGHTED_EDGE_COLOUR : Color.BLACK);
+
 					graphics.fillPolygon(arrowXPoints, arrowYPoints, 3);
 
 					graphics.setTransform(oldTransform);
@@ -380,15 +399,20 @@ public class EadesSpringEmbedder {
 
 			}
 
-			Node npm = this.pointInNode(mouseX, mouseY);
-			npm = selectedNode != null ? selectedNode : npm;
-			if (npm != null) {
-				drawNodeLabel(graphics, npm.getPosition(), npm.getLabel(), true);
+			for(Node n : graph.nodes)
+				if(n.highlighted)
+					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), true);
+
+			if (hoveredNode != null) {
+				drawNodeLabel(graphics, hoveredNode.getPosition(), hoveredNode.getLabel(), true);
 			}
 		}
 	}
 
 	private static void drawNodeLabel(Graphics2D graphics, Vector2D pos, String label, boolean highlighted) {
+		if(label.equals(""))
+			return;
+
 		AffineTransform oldTr = graphics.getTransform();
 		Point2D labelBottomCentre = oldTr.transform(new Point2D.Double(pos.getX(), pos.getY()), null);
 
@@ -400,7 +424,7 @@ public class EadesSpringEmbedder {
 
 		textRect.setRect(textRect.getX()-textRect.getWidth()/2, textRect.getY(), textRect.getWidth(), textRect.getHeight());
 
-		graphics.setColor(highlighted ? new Color(100, 215, 215) : new Color(200, 240, 240, 100));
+		graphics.setColor(highlighted ? HIGHLIGHTED_NODE_LABEL_COLOUR : new Color(200, 240, 240, 100));
 		graphics.fill(textRect);
 		graphics.setColor(Color.black);
 
