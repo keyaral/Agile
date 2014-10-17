@@ -19,6 +19,7 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import swen302.graph.Edge;
 import swen302.graph.Graph;
 import swen302.graph.GraphListener;
+import swen302.graph.LabelFormatOptions;
 import swen302.graph.Node;
 import swen302.graph.PetriTransitionNode;
 import swen302.gui.VertexGraphPane;
@@ -335,7 +336,8 @@ public class EadesSpringEmbedder {
 						cn.arrowAngle = evalBezierCurveDirection(v1,v2,v3,v4, intersectionT).scalarMultiply(-1);
 					}
 
-					graphics.drawString(String.valueOf(cn.label),
+					if(LabelFormatOptions.displayEdgeLabels)
+						graphics.drawString(String.valueOf(cn.label),
 							(int) labelPos.getX(), (int) labelPos.getY());
 
 					graphics.draw(path);
@@ -367,7 +369,8 @@ public class EadesSpringEmbedder {
 				Rectangle2D stringBounds = n.labelBounds;
 
 				graphics.setColor(Color.black);
-				drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
+				if(n instanceof PetriTransitionNode ? LabelFormatOptions.displayUnselectedTransitionLabels : LabelFormatOptions.displayUnselectedNodeLabels)
+					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
 
 
 				int[] arrowXPoints = new int[] {0, 5, 5};

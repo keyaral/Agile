@@ -38,7 +38,7 @@ public class TracerConfiguration implements Serializable {
 
 	public List<ExecutionData> executions = new ArrayList<>();
 
-	public boolean displayID,displayState,displayClass,displayMethod,displayParams,displayParamValues;
+	public boolean displayID,displayState,displayClass,displayMethod,displayParams,displayParamValues,displayUnselNodes,displayEdges,displayUnselTransitions;
 
 	public boolean continuousUpdating = false;
 
@@ -52,6 +52,9 @@ public class TracerConfiguration implements Serializable {
 	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
 
 		displayParamValues = true;
+		displayUnselNodes = true;
+		displayEdges = true;
+		displayUnselTransitions = true;
 		selectedParameters = new HashMap<>();
 
 		in.defaultReadObject();

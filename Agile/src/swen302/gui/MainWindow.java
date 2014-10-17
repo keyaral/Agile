@@ -120,6 +120,7 @@ public class MainWindow {
 
 	private JCheckBox displayID, displayState, displayClass,
 		displayMethod, displayParamTypes, displayParamValues;
+	private JCheckBox displayUnselectedNodeLabels, displayEdgeLabels, displayUnselectedTransitionLabels;
 	private JPanel displayOptionsPanel;
 
 	private JTree tree;
@@ -257,6 +258,12 @@ public class MainWindow {
 		displayOptionsPanel.add(displayParamTypes);
 		displayParamValues = new JCheckBox("Display parameter values", true);
 		displayOptionsPanel.add(displayParamValues);
+		displayUnselectedNodeLabels = new JCheckBox("Show unselected node labels", false);
+		displayOptionsPanel.add(displayUnselectedNodeLabels);
+		displayEdgeLabels = new JCheckBox("Show edge labels", false);
+		displayOptionsPanel.add(displayEdgeLabels);
+		displayUnselectedTransitionLabels = new JCheckBox("Show unselected transition labels (Petri nets)", false);
+		displayOptionsPanel.add(displayUnselectedTransitionLabels);
 
 		displayID.addActionListener(new ActionListener() {
 
@@ -314,6 +321,27 @@ public class MainWindow {
 				LabelFormatOptions.displayParamValues = displayParamValues.isSelected();
 				for(JComponent graphPane : graphPaneSplitter.getContents())
 					((VertexGraphPane)graphPane).onLabelsChanged();
+			}
+		});
+
+		displayUnselectedNodeLabels.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayUnselectedNodeLabels = displayUnselectedNodeLabels.isSelected();
+			}
+		});
+
+		displayEdgeLabels.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayEdgeLabels = displayEdgeLabels.isSelected();
+			}
+		});
+
+		displayUnselectedTransitionLabels.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LabelFormatOptions.displayUnselectedTransitionLabels = displayUnselectedTransitionLabels.isSelected();
 			}
 		});
 
@@ -1119,6 +1147,9 @@ public class MainWindow {
 		conf.displayMethod = LabelFormatOptions.displayMethod;
 		conf.displayParams = LabelFormatOptions.displayParamTypes;
 		conf.displayParamValues = LabelFormatOptions.displayParamValues;
+		conf.displayUnselNodes = LabelFormatOptions.displayUnselectedNodeLabels;
+		conf.displayUnselTransitions = LabelFormatOptions.displayUnselectedTransitionLabels;
+		conf.displayEdges = LabelFormatOptions.displayEdgeLabels;
 
 		conf.haveGraphPhysicsSettings = true;
 		conf.graphElectricStrength = electricStrengthSlider.getValue();
@@ -1218,6 +1249,12 @@ public class MainWindow {
 		displayParamTypes.setSelected(LabelFormatOptions.displayParamTypes);
 		LabelFormatOptions.displayParamValues = conf.displayParamValues;
 		displayParamValues.setSelected(LabelFormatOptions.displayParamValues);
+		LabelFormatOptions.displayUnselectedNodeLabels = conf.displayUnselNodes;
+		displayUnselectedNodeLabels.setSelected(LabelFormatOptions.displayUnselectedNodeLabels);
+		LabelFormatOptions.displayUnselectedTransitionLabels = conf.displayUnselTransitions;
+		displayUnselectedTransitionLabels.setSelected(LabelFormatOptions.displayUnselectedTransitionLabels);
+		LabelFormatOptions.displayEdgeLabels = conf.displayEdges;
+		displayEdgeLabels.setSelected(LabelFormatOptions.displayEdgeLabels);
 
 		// Set graph layout settings
 		if (conf.haveGraphPhysicsSettings) {
