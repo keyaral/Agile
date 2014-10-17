@@ -121,7 +121,7 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 	}
 
 	@Override
-	public Graph generateGraph(Trace[] trace) {
+	public Graph[] generateGraph(Trace[] trace) {
 		graph = new Graph();
 		nodes = new HashMap<>();
 		nextNodeID = 0;
@@ -140,7 +140,7 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 			}
 		}
 
-		return graph;
+		return new Graph[] {graph};
 	}
 
 	@Override

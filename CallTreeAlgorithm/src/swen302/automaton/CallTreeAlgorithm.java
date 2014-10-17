@@ -20,7 +20,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 	private Graph graph;
 
 	@Override
-	public Graph generateGraph(Trace[] traces) {
+	public Graph[] generateGraph(Trace[] traces) {
 		startIncremental();
 		boolean first = true;
 		for(Trace t : traces) {
@@ -30,7 +30,7 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 				processLine(line);
 			}
 		}
-		return getCurrentGraph();
+		return getCurrentGraphs();
 	}
 
 
@@ -48,8 +48,8 @@ public class CallTreeAlgorithm implements VisualizationAlgorithm, IncrementalVis
 	}
 
 	@Override
-	public Graph getCurrentGraph() {
-		return graph;
+	public Graph[] getCurrentGraphs() {
+		return new Graph[] {graph};
 	}
 
 

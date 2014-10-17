@@ -40,8 +40,8 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 	}
 
 	@Override
-	public Graph getCurrentGraph() {
-		return finalGraph;
+	public Graph[] getCurrentGraphs() {
+		return new Graph[] {finalGraph};
 	}
 
 	@Override
@@ -163,10 +163,10 @@ public class KTailsAlgorithm implements VisualizationAlgorithm, IncrementalVisua
 
 
 	@Override
-	public Graph generateGraph(Trace[] traces) {
+	public Graph[] generateGraph(Trace[] traces) {
 		this.traces.addAll(Arrays.asList(traces));
 		createEdgeSets();
-		return finalGraph;
+		return new Graph[] {finalGraph};
 	}
 
 
