@@ -404,6 +404,9 @@ public class EadesSpringEmbedder {
 	}
 
 	private static void drawNodeLabel(Graphics2D graphics, Vector2D pos, String label, boolean highlighted) {
+		if(label.equals(""))
+			return;
+
 		AffineTransform oldTr = graphics.getTransform();
 		Point2D labelBottomCentre = oldTr.transform(new Point2D.Double(pos.getX(), pos.getY()), null);
 

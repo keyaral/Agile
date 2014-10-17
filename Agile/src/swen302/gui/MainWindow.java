@@ -42,7 +42,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -118,9 +117,11 @@ public class MainWindow {
 	private JMenuItem fileLoadJAR, fileLoadTrace, fileLoadAdvanced,
 			fileEditExecutions, fileLoadConfig, fileSaveConfig, fileExit,
 			fileChangeK;
-	private JMenu displayMenu;
-	private JCheckBoxMenuItem displayID, displayState, displayClass,
-			displayMethod, displayParamTypes, displayParamValues;
+
+	private JCheckBox displayID, displayState, displayClass,
+		displayMethod, displayParamTypes, displayParamValues;
+	private JPanel displayOptionsPanel;
+
 	private JTree tree;
 	private DefaultTreeModel treeModel;
 	private JPanel treePanel;
@@ -206,21 +207,6 @@ public class MainWindow {
 		fileMenu.addSeparator();
 		fileExit = fileMenu.add("Exit");
 
-		displayMenu = new JMenu("Display");
-
-		displayID = new JCheckBoxMenuItem("ID", true);
-		displayMenu.add(displayID);
-		displayState = new JCheckBoxMenuItem("State", true);
-		displayMenu.add(displayState);
-		displayClass = new JCheckBoxMenuItem("Class", true);
-		displayMenu.add(displayClass);
-		displayMethod = new JCheckBoxMenuItem("Method", true);
-		displayMenu.add(displayMethod);
-		displayParamTypes = new JCheckBoxMenuItem("Parameter types", true);
-		displayMenu.add(displayParamTypes);
-		displayParamValues = new JCheckBoxMenuItem("Parameter values", true);
-		displayMenu.add(displayParamValues);
-
 		treePopup = new JPopupMenu();
 		popupSelect = treePopup.add("Select All");
 		popupDeselect = treePopup.add("Deselect All");
@@ -256,6 +242,21 @@ public class MainWindow {
 				treeModel.insertNodeInto(groupNode, selectedNode, selectedNode.getChildCount());
 			}
 		});
+
+		displayOptionsPanel = new JPanel();
+		displayOptionsPanel.setLayout(new BoxLayout(displayOptionsPanel, BoxLayout.Y_AXIS));
+		displayID = new JCheckBox("Display node ID", true);
+		displayOptionsPanel.add(displayID);
+		displayState = new JCheckBox("Display state", true);
+		displayOptionsPanel.add(displayState);
+		displayClass = new JCheckBox("Display class names", true);
+		displayOptionsPanel.add(displayClass);
+		displayMethod = new JCheckBox("Display method names", true);
+		displayOptionsPanel.add(displayMethod);
+		displayParamTypes = new JCheckBox("Display parameter types", true);
+		displayOptionsPanel.add(displayParamTypes);
+		displayParamValues = new JCheckBox("Display parameter values", true);
+		displayOptionsPanel.add(displayParamValues);
 
 		displayID.addActionListener(new ActionListener() {
 
@@ -469,7 +470,6 @@ public class MainWindow {
 		});
 
 		menuBar.add(fileMenu);
-		menuBar.add(displayMenu);
 
 		treeModel = new DefaultTreeModel(new JarTreeItem("No file loaded"));
 		tree = new JTree(treeModel);
@@ -685,6 +685,9 @@ public class MainWindow {
 		graphConfigPanel.add(springLengthSlider);
 		graphConfigPanel.add(Box.createVerticalGlue());
 		//graphConfigPanel.add(minimap);
+
+		displayOptionsPanel.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+		graphConfigPanel.add(displayOptionsPanel);
 
 
 		treePanel = new JPanel();
@@ -1204,17 +1207,17 @@ public class MainWindow {
 
 		// Set display settings
 		LabelFormatOptions.displayID = conf.displayID;
-		displayID.setState(LabelFormatOptions.displayID);
+		displayID.setSelected(LabelFormatOptions.displayID);
 		LabelFormatOptions.displayState = conf.displayState;
-		displayState.setState(LabelFormatOptions.displayState);
+		displayState.setSelected(LabelFormatOptions.displayState);
 		LabelFormatOptions.displayClass = conf.displayClass;
-		displayClass.setState(LabelFormatOptions.displayClass);
+		displayClass.setSelected(LabelFormatOptions.displayClass);
 		LabelFormatOptions.displayMethod = conf.displayMethod;
-		displayMethod.setState(LabelFormatOptions.displayMethod);
+		displayMethod.setSelected(LabelFormatOptions.displayMethod);
 		LabelFormatOptions.displayParamTypes = conf.displayParams;
-		displayParamTypes.setState(LabelFormatOptions.displayParamTypes);
+		displayParamTypes.setSelected(LabelFormatOptions.displayParamTypes);
 		LabelFormatOptions.displayParamValues = conf.displayParamValues;
-		displayParamValues.setState(LabelFormatOptions.displayParamValues);
+		displayParamValues.setSelected(LabelFormatOptions.displayParamValues);
 
 		// Set graph layout settings
 		if (conf.haveGraphPhysicsSettings) {
