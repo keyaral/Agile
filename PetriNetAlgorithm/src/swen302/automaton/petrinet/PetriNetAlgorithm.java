@@ -33,7 +33,7 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 			return node;
 
 		node = new Node(String.valueOf(nextNodeID++));
-		node.setState(fvk);
+		node.setLabel(fvk);
 
 		nodes.put(fvk, node);
 		graph.addNode(node);
@@ -83,7 +83,7 @@ public class PetriNetAlgorithm implements VisualizationAlgorithm {
 				return; // already added an identical transition
 
 			Node transition = new PetriTransitionNode(String.valueOf(nextNodeID++));
-			transition.setState(AutomatonGraphUtils.createMethodLabelObject(longMethodName, arguments));
+			transition.setLabel(AutomatonGraphUtils.createMethodLabelObject(longMethodName, arguments));
 			graph.addNode(transition);
 
 			for(FieldKey field : key.beforeValues.keySet()) {

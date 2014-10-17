@@ -17,7 +17,7 @@ public class Node {
 	private Set<Edge> outgoingEdges = new HashSet<Edge>();
 	private Set<Edge> springs = new HashSet<Edge>();
 	private String id;
-	private Object state = "";
+	private Object label = "";
 	private Vector2D position;
 	private Vector2D velocity;
 	private Vector2D acceleration;
@@ -102,14 +102,13 @@ public class Node {
 	}
 
 	private int hasEdgeAlreadyCount(Edge tran) {
-		int count= 0;
+		int count = 0;
 
-		for (Edge e : outgoingEdges) {
-			if ( e.node2.equals(tran.node2)    ) { count++; }
+		for (Edge e : outgoingEdges)
+			if (e.node2.equals(tran.node2))
+				count++;
 
-		}
-
-return count;
+		return count;
 	}
 
 	public void addSpring(Edge edge){
@@ -133,19 +132,15 @@ return count;
 		this.position = newPos;
 	}
 
-	/**
-	 * Sets the state of the node
-	 * @param state
-	 */
-	public void setState(Object state) {
-		this.state = state;
+	public void setLabel(Object label) {
+		this.label = label;
 	}
 
 	/**
 	 * Returns the ID of the node with the state appended if one exists.
 	 * @return
 	 */
-	public String getLabel(){
+	public String getFormattedLabel(){
 		if(!LabelFormatOptions.displayState) {
 			if(LabelFormatOptions.displayID)
 				return id;
@@ -154,9 +149,9 @@ return count;
 
 		} else {
 			if(LabelFormatOptions.displayID)
-				return id+": "+state;
+				return id+": "+label;
 			else
-				return String.valueOf(state);
+				return String.valueOf(label);
 		}
 	}
 
@@ -179,7 +174,7 @@ return count;
 		this.position = new Vector2D(x,y);
 	}
 
-	public Object getState() {
-		return state;
+	public Object getLabel() {
+		return label;
 	}
 }

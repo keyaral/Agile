@@ -94,14 +94,14 @@ public class HMMGraphCreator {
                      if (hmm.getPi(i) >= minimumPi) {
 
                     	 newNode = new Node( Integer.toString(i) );
-                    	newNode.setState(""+i + "Pi= " + probabilityFormat.format(hmm.getPi(i)) + " - " +
+                    	newNode.setLabel(""+i + "Pi= " + probabilityFormat.format(hmm.getPi(i)) + " - " +
                                 opdfLabel(hmm, i) + "]");
 
                            //  += "shape=doublecircle, label=\"" + i +
                            //  " -  + "\"";
                      } else {
                     	 newNode = new Node( Integer.toString(i) );
-                    		newNode.setState("" + i + " - " +
+                    		newNode.setLabel("" + i + " - " +
                              opdfLabel(hmm, i) + "]");
                      }
                      nodesByNumber.add(newNode);

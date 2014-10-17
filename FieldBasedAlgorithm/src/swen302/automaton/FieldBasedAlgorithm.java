@@ -45,7 +45,7 @@ public class FieldBasedAlgorithm implements VisualizationAlgorithm, IncrementalV
 	private Node getStateNode(State state) {
 		if(!states.containsKey(state)){
 			Node n = new Node(String.valueOf(nodeCount++));
-			n.setState(state);
+			n.setLabel(state);
 			states.put(state, n);
 		}
 		return states.get(state);

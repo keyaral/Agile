@@ -359,7 +359,7 @@ public class EadesSpringEmbedder {
 
 				graphics.setColor(Color.black);
 				if(n instanceof PetriTransitionNode ? LabelFormatOptions.displayUnselectedTransitionLabels : LabelFormatOptions.displayUnselectedNodeLabels)
-					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), false);
+					drawNodeLabel(graphics, n.getPosition(), n.getFormattedLabel(), false);
 
 
 				int[] arrowXPoints = new int[] {0, 5, 5};
@@ -389,10 +389,10 @@ public class EadesSpringEmbedder {
 
 			for(Node n : graph.nodes)
 				if(n.highlighted)
-					drawNodeLabel(graphics, n.getPosition(), n.getLabel(), true);
+					drawNodeLabel(graphics, n.getPosition(), n.getFormattedLabel(), true);
 
 			if (hoveredNode != null) {
-				drawNodeLabel(graphics, hoveredNode.getPosition(), hoveredNode.getLabel(), true);
+				drawNodeLabel(graphics, hoveredNode.getPosition(), hoveredNode.getFormattedLabel(), true);
 			}
 		}
 	}

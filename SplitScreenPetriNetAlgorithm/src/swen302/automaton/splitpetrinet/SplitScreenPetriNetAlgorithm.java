@@ -45,20 +45,20 @@ public class SplitScreenPetriNetAlgorithm implements VisualizationAlgorithm, Int
 			@Override
 			public void onMouseHover(Node node) {
 
-				if(node == null || !(node.getState() instanceof ObjectState)) {
+				if(node == null || !(node.getLabel() instanceof ObjectState)) {
 					for(Node n : pnGraph.nodes)
 						n.highlighted = false;
 					return;
 				}
 
-				ObjectState automatonState = (ObjectState)node.getState();
+				ObjectState automatonState = (ObjectState)node.getLabel();
 
 				for(Node n : pnGraph.nodes)
 				{
-					if(n instanceof PetriTransitionNode || !(n.getState() instanceof FieldValueKey))
+					if(n instanceof PetriTransitionNode || !(n.getLabel() instanceof FieldValueKey))
 						continue;
 
-					FieldValueKey fvk = (FieldValueKey)n.getState();
+					FieldValueKey fvk = (FieldValueKey)n.getLabel();
 
 					State automatonValue = automatonState.fields.get(fvk.field);
 					State petriValue = fvk.value;
@@ -76,27 +76,27 @@ public class SplitScreenPetriNetAlgorithm implements VisualizationAlgorithm, Int
 					for(Node n : fbGraph.nodes)
 						n.highlighted = false;
 					for(Edge e : fbGraph.edges)
-						e.highlighted = e.label.equals(node.getState());
+						e.highlighted = e.label.equals(node.getLabel());
 					return;
 				}
 
 				for(Edge e : fbGraph.edges)
 					e.highlighted = false;
 
-				if(node == null || !(node.getState() instanceof FieldValueKey)) {
+				if(node == null || !(node.getLabel() instanceof FieldValueKey)) {
 					for(Node n : fbGraph.nodes)
 						n.highlighted = false;
 					return;
 				}
 
-				FieldValueKey fvk = (FieldValueKey)node.getState();
+				FieldValueKey fvk = (FieldValueKey)node.getLabel();
 
 				for(Node n : fbGraph.nodes)
 				{
-					if(!(n.getState() instanceof ObjectState))
+					if(!(n.getLabel() instanceof ObjectState))
 						continue;
 
-					ObjectState automatonState = (ObjectState)n.getState();
+					ObjectState automatonState = (ObjectState)n.getLabel();
 
 					State automatonValue = automatonState.fields.get(fvk.field);
 					State petriValue = fvk.value;
