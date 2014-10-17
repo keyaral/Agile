@@ -1,6 +1,5 @@
 package swen302.graph;
 
-import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -27,8 +26,6 @@ public class Node {
 	public double REPULSION = 2.0;
 
 	public boolean highlighted;
-
-	public Rectangle2D labelBounds;
 
 	public final boolean IsVirtual;
 
@@ -180,10 +177,6 @@ return count;
 
 	public void setPosition(int x, int y){
 		this.position = new Vector2D(x,y);
-	}
-
-	public void setLabel(Rectangle2D stringBounds) {
-		this.labelBounds = stringBounds;
 	}
 
 	public Object getState() {

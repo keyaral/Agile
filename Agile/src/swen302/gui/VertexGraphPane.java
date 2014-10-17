@@ -191,10 +191,8 @@ public class VertexGraphPane extends JPanel {
 		if(graph == null)
 			return;
 
-		if(labelsChanged) {
-			graph.graph.onLabelsChanged(g2d);
+		if(labelsChanged)
 			labelsChanged = false;
-		}
 
 		graph.draw(g2d);
 	}

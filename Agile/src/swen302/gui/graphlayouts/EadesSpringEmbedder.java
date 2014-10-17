@@ -57,7 +57,6 @@ public class EadesSpringEmbedder {
 		public void onNodeAdded(Node n) {
 			n.randPosition(new Random());
 			n.mass = 1.0f;
-			graph.onLabelsChanged(graphics);
 		}
 	};
 
@@ -114,17 +113,6 @@ public class EadesSpringEmbedder {
 				for (Node m : virtualNodes) {
 					if (n != m) {
 						tempForce = tempForce.add(coulombsLaw(n, m));
-
-						if (!m.IsVirtual) {
-
-							if (m.labelBounds == null) { continue; }
-
-							double x = m.getPosition().getX();
-							double y = m.getPosition().getY() + 10 - m.labelBounds.getHeight()/2;
-
-							Vector2D label = new Vector2D(x, y);
-							tempForce = tempForce.add(coulombsLaw(n, new Node(label)));
-						}
 					}
 				}
 

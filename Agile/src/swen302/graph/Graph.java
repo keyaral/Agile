@@ -1,6 +1,5 @@
 package swen302.graph;
 
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,8 +59,6 @@ public class Graph {
 
 			n.mass = 1.0f;
 		}
-
-		onLabelsChanged(graphics);
 	}
 
 	public void replicateLayout(int width, int height, Graph g){
@@ -73,13 +70,6 @@ public class Graph {
 			}
 		}
 		//onLabelsChanged(graphics); //TODO clean
-	}
-
-	public void onLabelsChanged(Graphics graphics) {
-		for (Node n : nodes) {
-			FontMetrics fm = graphics.getFontMetrics();
-			n.setLabel(fm.getStringBounds(n.getLabel(), graphics));
-		}
 	}
 
 }
